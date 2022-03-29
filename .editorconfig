@@ -1,0 +1,33 @@
+# Provide formatting directives for editors.
+#
+# This is supported by many IDEs, see https://editorconfig.org for details.
+
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+end_of_line = lf
+charset = utf-8
+
+[{Makefile, *.mk, *.bat}]
+# Makefiles *require* ``tab`` by default
+indent_style = tab
+indent_size = 2
+
+[*.html]
+indent_size = 2
+
+[*.json]
+indent_size = 2
+insert_final_newline = false
+
+[{*.md, *.rst}]
+indent_size = 2
+# keep trailing whitespaces in documentation files
+trim_trailing_whitespace = false
+
+[*.{yaml|yml}]
+indent_size = 2
