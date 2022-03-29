@@ -1,0 +1,5 @@
+# do not track tox's working directory
+.tox/
+
+# do not track the repository's internal make stamps
+.make-stamps/
