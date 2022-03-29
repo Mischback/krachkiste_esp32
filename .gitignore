@@ -3,3 +3,13 @@
 
 # do not track the repository's internal make stamps
 .make-stamps/
+
+# do not track the actual configuration, as it may include private settings
+sdkconfig
+sdkconfig.old
+
+# obviously don't track the build directory
+build/
+
+# just for internal use and learning...
+build_stats.log
