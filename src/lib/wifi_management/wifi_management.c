@@ -22,7 +22,6 @@
 
 #include "esp_event.h"  // porting example code
 #include "esp_wifi.h"  // porting example code
-#include "nvs_flash.h"  // porting example code
 
 
 #define DEFAULT_SCAN_LIST_SIZE 5
@@ -44,15 +43,6 @@ void initialize_wifi(void) {
 
 
     // ported example code
-    // Initialize NVS
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
-        ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
