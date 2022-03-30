@@ -23,8 +23,10 @@
 STAMP_DIR := .make-stamps
 
 STAMP_TOX_UTIL := $(STAMP_DIR)/tox-util
+STAMP_TOX_SPHINX := $(STAMP_DIR)/tox-sphinx
 
 UTIL_REQUIREMENTS := .python-requirements/util.txt
+DOCUMENTATION_REQUIREMENTS := .python-requirements/documentation.txt
 
 # some make settings
 .SILENT :
@@ -103,6 +105,11 @@ sphinx/linkcheck : $(STAMP_TOX_SPHINX)
 $(STAMP_TOX_UTIL) : $(UTIL_REQUIREMENTS) tox.ini .pre-commit-config.yaml
 	$(create_dir)
 	tox --recreate -e util
+	touch $@
+
+$(STAMP_TOX_SPHINX) : $(DOCUMENTATION_REQUIREMENTS) tox.ini
+	$(create_dir)
+	tox --recreate -e sphinx
 	touch $@
 
 # utility function to create required directories on the fly
