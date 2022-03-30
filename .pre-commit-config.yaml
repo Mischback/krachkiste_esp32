@@ -1,0 +1,36 @@
+default_language_version:
+  python: python3.9
+
+exclude: "^.*/migrations/.*$"
+fail_fast: true
+
+minimum_pre_commit_version: "2.16.0"
+
+repos:
+  # cpplint (Google's C/C++ linter)
+  - repo: https://github.com/cpplint/cpplint
+    rev: 1.6.0
+    hooks:
+      - id: cpplint
+        # args: [--filter=-build/include_subdir]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.1.0
+    hooks:
+      # check JSON files
+      - id: check-json
+    #   # check TOML files
+    #   - id: check-toml
+      # check YAML files
+      - id: check-yaml
+      # let all files end with a single new line (this *should be ensured by
+      # .editorconfig already)
+      - id: end-of-file-fixer
+      # remove all trailing whitespaces (this *should* be ensured by
+      # .editorconfig already)
+      - id: trailing-whitespace
+      # provide uniform line endings for the project ('lf'; this *should be
+      # ensured by .editorconfig already)
+      - id: mixed-line-ending
+        args: [--fix, lf]
+      # remove utf-8 byte order marker
+      - id: fix-byte-order-marker
