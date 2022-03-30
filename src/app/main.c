@@ -19,7 +19,7 @@
 /**
  * Set the module-specific ``TAG`` to be used with ESP-IDF's logging library.
  *
- * See https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html#how-to-use-this-library
+ * See :idf_api:`its API documentation <system/log.html#how-to-use-this-library>`.
  */
 static const char* TAG = "Krachkiste.main";
 
