@@ -6,9 +6,10 @@ cmake_minimum_required(VERSION 3.5)
 
 # The project does not follow the pre-defined directory structure of the ESP-IDF
 # framework. Thus, the actual "components" of the project have to be specified
-# manually, including the project's "main" component ("src/app").
+# manually, including the project's "main" component ("src/app") and
+# project-specific libraries ("src/lib").
 # See https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#renaming-main-component
-set(EXTRA_COMPONENT_DIRS "src/app")
+set(EXTRA_COMPONENT_DIRS "src/app src/lib")
 
 # By default, all available components are built, including all components of
 # ESP-IDF and the project.

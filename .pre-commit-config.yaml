@@ -12,7 +12,7 @@ repos:
     rev: 1.6.0
     hooks:
       - id: cpplint
-        # args: [--filter=-build/include_subdir]
+        args: [--filter=-build/include_subdir]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0
     hooks:
