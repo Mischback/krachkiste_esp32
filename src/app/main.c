@@ -14,14 +14,16 @@
  * - ESP_LOGD(TAG, "Debug");
  * - ESP_LOGV(TAG, "Verbose");
 */
-#include <esp_log.h>
+#include "esp_log.h"
+
+#include "wifi_management.h"
 
 /**
  * Set the module-specific ``TAG`` to be used with ESP-IDF's logging library.
  *
  * See :idf_api:`its API documentation <system/log.html#how-to-use-this-library>`.
  */
-static const char* TAG = "Krachkiste.main";
+static const char* TAG = "krachkiste.main";
 
 /**
  * The application's main entry point.
@@ -31,4 +33,6 @@ void app_main(void) {
     // default log-level to INFO)
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
     ESP_LOGD(TAG, "Entering app_main()");
+
+    initialize_wifi();
 }
