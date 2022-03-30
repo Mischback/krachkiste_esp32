@@ -17,6 +17,7 @@ set(EXTRA_COMPONENT_DIRS "src/app")
 # actually used, minimizing build time.
 # This relies on ``REQUIRES`` and ``PRIV_REQUIRES`` in the actual components.
 # See https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#optional-project-variables
+# and https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#component-requirements
 #
 # Best case: It is sufficient to specify just the project's main component,
 # which is "app" in "src/app" (see EXTRA_COMPONENT_DIRS above).
