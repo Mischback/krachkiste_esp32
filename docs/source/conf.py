@@ -37,6 +37,8 @@ extensions = [
     "sphinx.ext.extlinks",
     # provide links to other, sphinx-generated, documentation
     "sphinx.ext.intersphinx",
+    # generate documentation for C sources
+    "hawkmoth",
     # use the RTD theme
     # configuration is provided in the HTML Output section
     "sphinx_rtd_theme",
@@ -89,6 +91,15 @@ extlinks = {
     # will show "Wikipedia: [title]"
     "wiki": ("https://en.wikipedia.org/wiki/%s", "Wikipedia: "),
 }
+
+# ##### hawkmoth
+cautodoc_root = os.path.abspath("../../src")
+cautodoc_transformations = {
+    None: None,
+}
+
+from clang.cindex import Config
+Config.set_library_file("/usr/lib/llvm-11/lib/libclang.so")
 
 # ### HTML Output
 
