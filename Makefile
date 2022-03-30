@@ -39,6 +39,10 @@ MAKEFLAGS += --no-builtin-rules
 tree : util/tree/project
 .PHONY : tree
 
+## Shortcut to build and serve the documentation
+doc: sphinx/serve/html
+.PHONY : doc
+
 
 ## Run "cpplint" on all files
 ## @category Code Quality
@@ -71,6 +75,27 @@ util/pre-commit/update : $(STAMP_TOX_UTIL)
 util/tree/project :
 	tree -alI ".git|build|.tox" --dirsfirst
 .PHONY : util/tree/project
+
+
+# ### Sphinx-related commands
+
+## Build the documentation using "Sphinx"
+## @category Documentation
+sphinx/build/html : $(STAMP_TOX_SPHINX)
+	tox -q -e sphinx
+.PHONY : sphinx/build/html
+
+## Serve the documentation locally on port 8082
+## @category Documentation
+sphinx/serve/html : sphinx/build/html
+	tox -q -e sphinx-serve
+.PHONY : sphinx/serve/html
+
+## Check documentation's external links
+## @category Documentation
+sphinx/linkcheck : $(STAMP_TOX_SPHINX)
+	tox -q -e sphinx -- make linkcheck
+.PHONY : sphinx/linkcheck
 
 
 # ### INTERNAL RECIPES
