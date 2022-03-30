@@ -32,6 +32,14 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
 
+## Shortcut for "util/tree/project"
+## @category Shortcuts
+tree : util/tree/project
+.PHONY : tree
+
+
+## Run "cpplint" on all files
+## @category Code Quality
 util/cpplint : | $(STAMP_TOX_UTIL)
 	$(MAKE) util/pre-commit pre-commit_id="cpplint" pre-commit_files="--all-files"
 .PHONY : util/cpplint
@@ -55,6 +63,13 @@ util/pre-commit/install : $(STAMP_TOX_UTIL)
 util/pre-commit/update : $(STAMP_TOX_UTIL)
 	tox -q -e util -- pre-commit autoupdate
 .PHONY : util/pre-commit/update
+
+## Use "tree" to list project files
+## @category Utility
+util/tree/project :
+	tree -alI ".git|build|.tox" --dirsfirst
+.PHONY : util/tree/project
+
 
 # ### INTERNAL RECIPES
 
