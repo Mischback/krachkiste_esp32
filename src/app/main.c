@@ -1,10 +1,10 @@
-/*
- * SPDX-FileCopyrightText: 2022 Mischback
- * SPDX-License-Identifier: MIT
- * SPDX-FileType: SOURCE
- *
- * This is the applications main file, providing the required main entry point
- * of the application.
+// SPDX-FileCopyrightText: 2022 Mischback
+// SPDX-License-Identifier: MIT
+// SPDX-FileType: SOURCE
+
+/**
+ * This is the applications main module, providing the required main entry point
+ * of the application with its :c:func:`app_main`.
  */
 
 /* This is ESP-IDF's logging library.
@@ -16,9 +16,16 @@
 */
 #include <esp_log.h>
 
-// label for the file (or module)-specific logger
+/**
+ * Set the module-specific ``TAG`` to be used with ESP-IDF's logging library.
+ *
+ * See https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html#how-to-use-this-library
+ */
 static const char* TAG = "Krachkiste.main";
 
+/**
+ * The application's main entry point.
+ */
 void app_main(void) {
     // set log-level of our own code to DEBUG (sdkconfig.defaults sets the
     // default log-level to INFO)
