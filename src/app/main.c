@@ -45,5 +45,5 @@ void app_main(void) {
     }
     ESP_ERROR_CHECK(ret);
 
-    initialize_wifi();
+    wifi_initialize();
 }

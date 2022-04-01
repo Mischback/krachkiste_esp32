@@ -35,13 +35,7 @@
 static const char* TAG = "krachkiste.wifi";
 
 
-void initialize_wifi(void) {
-    // set log-level of our own code to DEBUG (sdkconfig.defaults sets the
-    // default log-level to INFO)
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-    ESP_LOGD(TAG, "Entering initializewifi()");
-
-
+static void wifi_scan_for_networks(void) {
     // ported example code
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -73,4 +67,12 @@ void initialize_wifi(void) {
         }
         ESP_LOGI(TAG, "Channel \t\t%d\n", ap_info[i].primary);
     }
+}
+
+
+void wifi_initialize(void) {
+    // set log-level of our own code to DEBUG (sdkconfig.defaults sets the
+    // default log-level to INFO)
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+    ESP_LOGD(TAG, "Entering wifi_initialize()");
 }

@@ -5,6 +5,6 @@
 #ifndef SRC_LIB_WIFI_MANAGEMENT_WIFI_MANAGEMENT_H_
 #define SRC_LIB_WIFI_MANAGEMENT_WIFI_MANAGEMENT_H_
 
-void initialize_wifi(void);
+void wifi_initialize(void);
 
 #endif  // SRC_LIB_WIFI_MANAGEMENT_WIFI_MANAGEMENT_H_
