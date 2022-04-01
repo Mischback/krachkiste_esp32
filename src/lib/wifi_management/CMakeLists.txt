@@ -4,4 +4,4 @@
 # they are included by default, see https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#common-component-requirements
 idf_component_register(SRCS "wifi_management.c"
                        INCLUDE_DIRS "."
-                       PRIV_REQUIRES "esp_event esp_wifi log")
+                       PRIV_REQUIRES "esp_wifi log")

@@ -7,17 +7,28 @@
  * of the application with its :c:func:`app_main`.
  */
 
+/* This is ESP-IDF's event library.
+ * It is used by several components to publish internal state information to
+ * other components as needed.
+ * While it is possible to maintain app-specific event loops, most of the
+ * components provided by ESP-IDF use a ``default`` event loop, which may be
+ * re-used / shared by application code.
+ */
+#include "esp_event.h"
+
 /* This is ESP-IDF's logging library.
  * - ESP_LOGE(TAG, "Error");
  * - ESP_LOGW(TAG, "Warning");
  * - ESP_LOGI(TAG, "Info");
  * - ESP_LOGD(TAG, "Debug");
  * - ESP_LOGV(TAG, "Verbose");
-*/
+ */
 #include "esp_log.h"
 
-#include "nvs_flash.h"  // porting example code
+/* This is ESP-IDF's library to interface the non-volatile storage (NVS). */
+#include "nvs_flash.h"
 
+/* Project-specific library to manage wifi connections. */
 #include "wifi_management.h"
 
 /**
@@ -36,7 +47,14 @@ void app_main(void) {
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
     ESP_LOGD(TAG, "Entering app_main()");
 
-    // Initialize NVS
+    // Initialize the default event loop
+    // The default event loop is used (and thus, required) by ESP-IDF's esp_wifi
+    // component (at least).
+    // As the default event loop may be re-used by application code, no
+    // application-speciifc custom event loop is created.
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    // Initialize the non-volatile storage (NVS)
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
         ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {

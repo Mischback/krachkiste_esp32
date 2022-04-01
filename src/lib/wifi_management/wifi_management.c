@@ -20,8 +20,8 @@
 */
 #include "esp_log.h"
 
-#include "esp_event.h"  // porting example code
-#include "esp_wifi.h"  // porting example code
+/* ESP-IDF's wifi library */
+#include "esp_wifi.h"
 
 
 #define DEFAULT_SCAN_LIST_SIZE 5
@@ -38,10 +38,10 @@ static const char* TAG = "krachkiste.wifi";
 static void wifi_scan_for_networks(void) {
     // ported example code
     ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
     assert(sta_netif);
 
+    // initialize the wifi configuration with known defaults (of ESP-IDF)
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
