@@ -29,7 +29,7 @@
 #include "nvs_flash.h"
 
 /* Project-specific library to manage wifi connections. */
-#include "wifi_management.h"
+#include "networking.h"
 
 /**
  * Set the module-specific ``TAG`` to be used with ESP-IDF's logging library.

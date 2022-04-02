@@ -7,7 +7,7 @@
  */
 
 // This is the components PUBLIC header file (forward declaration)
-#include "include/wifi_management.h"
+#include "include/networking.h"
 
 #include <string.h>  // porting example code
 
