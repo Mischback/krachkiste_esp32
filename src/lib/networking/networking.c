@@ -6,8 +6,9 @@
  * Provide a basic management of the WiFi capabilities of the MCU.
  */
 
-// This is the components PUBLIC header file (forward declaration)
-#include "include/networking.h"
+// The components header files (forward declaration)
+#include "include/networking.h"  // public header
+#include "networking_p.h"  // private header
 
 #include <string.h>  // porting example code
 
