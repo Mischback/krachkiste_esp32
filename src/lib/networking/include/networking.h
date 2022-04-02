@@ -5,6 +5,6 @@
 #ifndef SRC_LIB_NETWORKING_INCLUDE_NETWORKING_H_
 #define SRC_LIB_NETWORKING_INCLUDE_NETWORKING_H_
 
-void wifi_initialize(void);
+void networking_initialize(void);
 
 #endif  // SRC_LIB_NETWORKING_INCLUDE_NETWORKING_H_

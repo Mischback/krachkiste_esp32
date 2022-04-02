@@ -32,7 +32,7 @@
  *
  * See :idf_api:`its API documentation <system/log.html#how-to-use-this-library>`.
  */
-static const char* TAG = "krachkiste.wifi";
+static const char* TAG = "krachkiste.networking";
 
 
 static void wifi_scan_for_networks(void) {
@@ -70,9 +70,9 @@ static void wifi_scan_for_networks(void) {
 }
 
 
-void wifi_initialize(void) {
+void networking_initialize(void) {
     // set log-level of our own code to DEBUG (sdkconfig.defaults sets the
     // default log-level to INFO)
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
-    ESP_LOGD(TAG, "Entering wifi_initialize()");
+    ESP_LOGD(TAG, "Entering networking_initialize()");
 }
