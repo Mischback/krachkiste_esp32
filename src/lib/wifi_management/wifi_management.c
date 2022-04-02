@@ -6,8 +6,8 @@
  * Provide a basic management of the WiFi capabilities of the MCU.
  */
 
-// This is the components header file (forward declaration)
-#include "wifi_management.h"
+// This is the components PUBLIC header file (forward declaration)
+#include "include/wifi_management.h"
 
 #include <string.h>  // porting example code
 
