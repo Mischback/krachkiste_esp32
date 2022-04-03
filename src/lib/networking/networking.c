@@ -10,7 +10,15 @@
 #include "include/networking.h"  // public header
 #include "networking_p.h"  // private header
 
-#include <string.h>  // porting example code
+/* C-standard for string operations */
+#include <string.h>
+
+/* This is ESP-IDF's error handling library.
+ * - defines the type ``esp_err_t``
+ * - defines the macro ESP_ERROR_CHECK
+ * - defines the return values ESP_OK (0) and ESP_FAIL (-1)
+ */
+#include "esp_err.h"
 
 /* This is ESP-IDF's logging library.
  * - ESP_LOGE(TAG, "Error");
@@ -18,7 +26,7 @@
  * - ESP_LOGI(TAG, "Info");
  * - ESP_LOGD(TAG, "Debug");
  * - ESP_LOGV(TAG, "Verbose");
-*/
+ */
 #include "esp_log.h"
 
 /* ESP-IDF's wifi library */
@@ -71,9 +79,37 @@ static void wifi_scan_for_networks(void) {
 }
 
 
+static esp_err_t networking_get_wifi_credentials(
+    char* wifi_ssid,
+    char* wifi_password) {
+    ESP_LOGV(TAG, "Entering networking_get_wifi_credentials()");
+
+    char* ssid = "foobar";
+    char* password = "123456789a";
+
+    strncpy(wifi_ssid, ssid, strlen(ssid) + 1);
+    strncpy(wifi_password, password, strlen(password) + 1);
+
+    return ESP_OK;
+}
+
+
 void networking_initialize(void) {
-    // set log-level of our own code to DEBUG (sdkconfig.defaults sets the
+    // set log-level of our own code to VERBOSE (sdkconfig.defaults sets the
     // default log-level to INFO)
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-    ESP_LOGD(TAG, "Entering networking_initialize()");
+    // FIXME: Final code should not do this, but respect the project's settings
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+    ESP_LOGV(TAG, "Entering networking_initialize()");
+
+    // Read WiFi credentials from non-volatile storage (NVS)
+    // TODO(mischback): Make this configurable, IEEE says 32 chars
+    char wifi_ssid[33];
+    // TODO(mischback): Make this configurable, IEEE says 64 chars
+    char wifi_password[65];
+    memset(&wifi_ssid, 0, sizeof(wifi_ssid));
+    memset(&wifi_password, 0, sizeof(wifi_password));
+    ESP_ERROR_CHECK(
+        networking_get_wifi_credentials(wifi_ssid, wifi_password));
+    ESP_LOGD(TAG, "SSID: >%s<", wifi_ssid);
+    ESP_LOGD(TAG, "Password: >%s<", wifi_password);
 }
