@@ -32,8 +32,33 @@
 /* ESP-IDF's wifi library */
 #include "esp_wifi.h"
 
+/* This is ESP-IDF's library to interface the non-volatile storage (NVS). */
+#include "nvs_flash.h"
+
 
 #define DEFAULT_SCAN_LIST_SIZE 5
+
+/**
+ * The project-specific namespace to access the non-volatile storage.
+ *
+ * TODO(mischback): Make this configurable!
+ *                  Respect NVS_KEY_NAME_SIZE - 1 as per https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html#_CPPv48nvs_openPKc15nvs_open_mode_tP12nvs_handle_t
+ */
+#define PROJECT_NVS_STORAGE_NAMESPACE "krachkiste"
+
+/**
+ * The component-specific key of the stored SSID
+ *
+ * TODO(mischback): Make this configurable!
+ */
+#define NETWORKING_NVS_SSID_KEY "net_ssid"
+
+/**
+ * The component-specific key of the stored WiFi password
+ *
+ * TODO(mischback): Make this configurable!
+ */
+#define NETWORKING_NVS_PASSWORD_KEY "net_pass"
 
 
 /**
@@ -84,11 +109,67 @@ static esp_err_t networking_get_wifi_credentials(
     char* wifi_password) {
     ESP_LOGV(TAG, "Entering networking_get_wifi_credentials()");
 
-    char* ssid = "foobar";
-    char* password = "123456789a";
+    // Open NVS storage of the given namespace
+    nvs_handle_t storage_handle;
+    esp_err_t err = nvs_open(
+        PROJECT_NVS_STORAGE_NAMESPACE,
+        NVS_READONLY,
+        &storage_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Could not open NVS handle (%s)", esp_err_to_name(err));
+        return ESP_FAIL;
+    }
 
-    strncpy(wifi_ssid, ssid, strlen(ssid) + 1);
-    strncpy(wifi_password, password, strlen(password) + 1);
+    // Got a handle to the NVS, no read the required values!
+    ESP_LOGD(
+        TAG,
+        "NVS handle %s successfully opened.",
+        PROJECT_NVS_STORAGE_NAMESPACE);
+
+    // Read the SSID and password from NVS
+    size_t required_size;
+    ESP_ERROR_CHECK(
+        nvs_get_str(
+            storage_handle,
+            NETWORKING_NVS_SSID_KEY,
+            NULL,
+            &required_size));
+    err = nvs_get_str(
+        storage_handle,
+        NETWORKING_NVS_SSID_KEY,
+        wifi_ssid,
+        &required_size);
+    if (err != ESP_OK) {
+        ESP_LOGE(
+            TAG,
+            "Could not read value of %s (%s)",
+            NETWORKING_NVS_SSID_KEY,
+            esp_err_to_name(err));
+        return ESP_FAIL;
+    }
+
+    ESP_ERROR_CHECK(
+        nvs_get_str(
+            storage_handle,
+            NETWORKING_NVS_PASSWORD_KEY,
+            NULL,
+            &required_size));
+    err = nvs_get_str(
+        storage_handle,
+        NETWORKING_NVS_PASSWORD_KEY,
+        wifi_password,
+        &required_size);
+    if (err != ESP_OK) {
+        ESP_LOGE(
+            TAG,
+            "Could not read value of %s (%s)",
+            NETWORKING_NVS_PASSWORD_KEY,
+            esp_err_to_name(err));
+        return ESP_FAIL;
+    }
+
+    // Close the handle to the NVS
+    nvs_close(storage_handle);
 
     return ESP_OK;
 }

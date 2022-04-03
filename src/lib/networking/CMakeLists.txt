@@ -5,4 +5,4 @@
 idf_component_register(SRCS "networking.c"
                        INCLUDE_DIRS "./include"
                        REQUIRES "esp_common"
-                       PRIV_REQUIRES "esp_wifi log")
+                       PRIV_REQUIRES "esp_wifi log nvs_flash")
