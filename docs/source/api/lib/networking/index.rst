@@ -1,9 +1,9 @@
-###
-lib
-###
+##########
+networking
+##########
 
 .. toctree::
     :maxdepth: 5
     :caption: Contents:
 
-    networking/index
+    networking_c
