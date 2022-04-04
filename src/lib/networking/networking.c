@@ -300,6 +300,7 @@ static esp_err_t networking_wifi_ap_initialize(void) {
     //                  it really hardcoded in the esp_wifi library/component?
     if (strlen(NETWORKING_WIFI_AP_PSK) <= 8) {
         ap_config.ap.authmode = WIFI_AUTH_OPEN;
+        memset(ap_config.ap.password, 0, sizeof(ap_config.ap.password));
         ESP_LOGW(
             TAG,
             "The provided PSK for the access point has less than 8 characters, "
@@ -313,8 +314,9 @@ static esp_err_t networking_wifi_ap_initialize(void) {
 
     ESP_LOGI(
         TAG,
-        "Launched Access Point! SSID: '%s'",
-        NETWORKING_WIFI_AP_SSID);
+        "Launched Access Point! SSID: '%s', PSK: '%s'",
+        ap_config.ap.ssid,
+        ap_config.ap.password);
 
     return ESP_OK;
 }
