@@ -13,6 +13,10 @@
 /* C-standard for string operations */
 #include <string.h>
 
+/* The FreeRTOS headers are required for timers */
+#include "freertos/FreeRTOS.h"
+#include "freertos/timers.h"
+
 /* This is ESP-IDF's error handling library.
  * - defines the type ``esp_err_t``
  * - defines the macro ESP_ERROR_CHECK
@@ -56,6 +60,17 @@
  * TODO(mischback): Make this configurable (with ``sdkconfig``)
  */
 #define NETWORKING_WIFI_AP_CHANNEL 5
+
+/**
+ * The project-specific access point is only started for a pre-determined
+ * lifetime.
+ *
+ * The value is specified in milliseconds, default value of ``120000`` are
+ * ``120 seconds``.
+ *
+ * TODO(mischback): Make this configurable (with ``sdkconfig``)
+ */
+#define NETWORKING_WIFI_AP_LIFETIME 120000
 
 /**
  * The maximum number of allowed clients while providing the project-specific
@@ -131,6 +146,11 @@ static const char* TAG = "krachkiste.networking";
  */
 static esp_netif_t* networking_wifi_ap_netif = NULL;
 
+/**
+ * Reference to the ``timer`` object that is used to shutdown the access point.
+ */
+static TimerHandle_t networking_wifi_ap_shutdown_timer = NULL;
+
 
 static void wifi_scan_for_networks(void) {
     // ported example code
@@ -166,6 +186,21 @@ static void wifi_scan_for_networks(void) {
     }
 }
 
+static void networking_wifi_ap_shutdown_callback(TimerHandle_t xTimer) {
+    ESP_LOGW(TAG, "Access Point is shutting down...");
+
+    // stop the access point and remove its netif
+    ESP_ERROR_CHECK(esp_wifi_stop());
+    esp_netif_destroy_default_wifi(networking_wifi_ap_netif);
+    networking_wifi_ap_netif = NULL;
+
+    // stop and remove the timer
+    xTimerStop(xTimer, (TickType_t) 0);
+    xTimerDelete(xTimer, (TickType_t) 0);
+    networking_wifi_ap_shutdown_timer = NULL;
+
+    ESP_LOGI(TAG, "Access Point is shut down!")
+}
 
 static esp_err_t networking_get_wifi_credentials(
     char* wifi_ssid,
@@ -254,9 +289,18 @@ static void networking_wifi_ap_event_handler(
 
     switch (event_id) {
         // Please note, that all ``case`` statements have an empty statement
-        // (``;``) appended to enable the declaration of variables with the
+        // (``{}``) appended to enable the declaration of variables with the
         // correct scope. See https://stackoverflow.com/a/18496437
-        case WIFI_EVENT_AP_STACONNECTED: ;
+        // However, ``cpplint`` does not like the recommended ``;`` and
+        // recommends an empty block ``{}``.
+        case WIFI_EVENT_AP_START: {}
+            ESP_LOGV(TAG, "WIFI_EVENT_AP_START");
+
+            // The access point got started: create a timer to shut it down
+            // (eventually).
+            xTimerStart(networking_wifi_ap_shutdown_timer, (TickType_t) 0);
+            break;
+        case WIFI_EVENT_AP_STACONNECTED: {}
             ESP_LOGV(TAG, "WIFI_EVENT_AP_STACONNECTED");
 
             wifi_event_ap_staconnected_t* connect =
@@ -266,8 +310,14 @@ static void networking_wifi_ap_event_handler(
                 "[connect] "MACSTR" (%d)",
                 MAC2STR(connect->mac),
                 connect->aid);
+
+            // A client connected to the access point, stop the shutdown timer!
+            if (xTimerIsTimerActive(
+                networking_wifi_ap_shutdown_timer) == pdTRUE) {
+                xTimerStop(networking_wifi_ap_shutdown_timer, (TickType_t) 0);
+            }
             break;
-        case WIFI_EVENT_AP_STADISCONNECTED: ;
+        case WIFI_EVENT_AP_STADISCONNECTED: {}
             ESP_LOGV(TAG, "WIFI_EVENT_AP_STADISCONNECTED");
 
             wifi_event_ap_stadisconnected_t* disconnect =
@@ -289,6 +339,12 @@ static esp_err_t networking_wifi_ap_initialize(void) {
     ESP_LOGV(TAG, "Entering networking_wifi_ap_initialize()");
 
     networking_wifi_ap_netif = esp_netif_create_default_wifi_ap();
+    networking_wifi_ap_shutdown_timer = xTimerCreate(
+        NULL,
+        pdMS_TO_TICKS(NETWORKING_WIFI_AP_LIFETIME),
+        pdFALSE,
+        (void *) 0,
+        networking_wifi_ap_shutdown_callback);
 
     wifi_init_config_t ap_init_cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&ap_init_cfg));
