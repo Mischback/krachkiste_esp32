@@ -138,6 +138,13 @@ static esp_err_t networking_get_wifi_credentials(
         NVS_READONLY,
         &storage_handle);
     if (err != ESP_OK) {
+        // This might fail for different reasons, e.g. the NVS is not correctly
+        // set up or initialized.
+        // Assuming that the NVS **is** available, this will fail with
+        // ESP_ERR_NVS_NOT_FOUND, which means that there is no namespace of
+        // the name PROJECT_NVS_STORAGE_NAMESPACE (yet).
+        // This might happen during first start of the applications, as there
+        // is no WiFi config yet, so the namespace was never used before.
         ESP_LOGE(TAG, "Could not open NVS handle (%s)", esp_err_to_name(err));
         return ESP_FAIL;
     }
@@ -209,8 +216,12 @@ void networking_initialize(void) {
     char wifi_password[NETWORKING_WIFI_PSK_MAX_LEN];
     memset(&wifi_ssid, 0, NETWORKING_WIFI_SSID_MAX_LEN);
     memset(&wifi_password, 0, NETWORKING_WIFI_PSK_MAX_LEN);
-    ESP_ERROR_CHECK(
-        networking_get_wifi_credentials(wifi_ssid, wifi_password));
-    ESP_LOGD(TAG, "SSID: >%s<", wifi_ssid);
-    ESP_LOGD(TAG, "Password: >%s<", wifi_password);
+    esp_err_t err = networking_get_wifi_credentials(wifi_ssid, wifi_password);
+    if (err != ESP_OK) {
+        ESP_LOGI(TAG, "Could not read WiFi credentials from NVS");
+        ESP_LOGD(TAG, "Try to start access point now!");
+    } else {
+        ESP_LOGD(TAG, "SSID: >%s<", wifi_ssid);
+        ESP_LOGD(TAG, "Password: >%s<", wifi_password);
+    }
 }
