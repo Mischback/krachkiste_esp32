@@ -47,18 +47,40 @@
 #define PROJECT_NVS_STORAGE_NAMESPACE "krachkiste"
 
 /**
- * The component-specific key of the stored SSID
+ * The maximum length of the :c:type:`char` array to store SSID.
  *
- * TODO(mischback): Make this configurable!
+ * IEEE says, that the maximum length of an SSID is 32, so this is set to 33,
+ * to allow for the terminating ``\0``.
+ *
+ * TODO(mischback): Should this be made configurable by project settings?
  */
-#define NETWORKING_NVS_SSID_KEY "net_ssid"
+#define NETWORKING_WIFI_SSID_MAX_LEN 33
 
 /**
- * The component-specific key of the stored WiFi password
+ * The component-specific key to access the NVS to set/get the stored SSID.
  *
  * TODO(mischback): Make this configurable!
  */
-#define NETWORKING_NVS_PASSWORD_KEY "net_pass"
+#define NETWORKING_WIFI_SSID_NVS_KEY "net_ssid"
+
+/**
+ * The maximum length of the :c:type:`char` array to store the pre-shared key
+ * for a WiFi connection.
+ *
+ * IEEE says, that the maximum length of an PSK is 64, so this is set to 65,
+ * to allow for the terminating ``\0``.
+ *
+ * TODO(mischback): Should this be made configurable by project settings?
+ */
+#define NETWORKING_WIFI_PSK_MAX_LEN 65
+
+/**
+ * The component-specific key to access the NVS to set/get the stored WiFi
+ * password.
+ *
+ * TODO(mischback): Make this configurable!
+ */
+#define NETWORKING_WIFI_PSK_NVS_KEY "net_pass"
 
 
 /**
@@ -131,19 +153,19 @@ static esp_err_t networking_get_wifi_credentials(
     ESP_ERROR_CHECK(
         nvs_get_str(
             storage_handle,
-            NETWORKING_NVS_SSID_KEY,
+            NETWORKING_WIFI_SSID_NVS_KEY,
             NULL,
             &required_size));
     err = nvs_get_str(
         storage_handle,
-        NETWORKING_NVS_SSID_KEY,
+        NETWORKING_WIFI_SSID_NVS_KEY,
         wifi_ssid,
         &required_size);
     if (err != ESP_OK) {
         ESP_LOGE(
             TAG,
             "Could not read value of %s (%s)",
-            NETWORKING_NVS_SSID_KEY,
+            NETWORKING_WIFI_SSID_NVS_KEY,
             esp_err_to_name(err));
         return ESP_FAIL;
     }
@@ -151,19 +173,19 @@ static esp_err_t networking_get_wifi_credentials(
     ESP_ERROR_CHECK(
         nvs_get_str(
             storage_handle,
-            NETWORKING_NVS_PASSWORD_KEY,
+            NETWORKING_WIFI_PSK_NVS_KEY,
             NULL,
             &required_size));
     err = nvs_get_str(
         storage_handle,
-        NETWORKING_NVS_PASSWORD_KEY,
+        NETWORKING_WIFI_PSK_NVS_KEY,
         wifi_password,
         &required_size);
     if (err != ESP_OK) {
         ESP_LOGE(
             TAG,
             "Could not read value of %s (%s)",
-            NETWORKING_NVS_PASSWORD_KEY,
+            NETWORKING_WIFI_PSK_NVS_KEY,
             esp_err_to_name(err));
         return ESP_FAIL;
     }
@@ -183,12 +205,10 @@ void networking_initialize(void) {
     ESP_LOGV(TAG, "Entering networking_initialize()");
 
     // Read WiFi credentials from non-volatile storage (NVS)
-    // TODO(mischback): Make this configurable, IEEE says 32 chars
-    char wifi_ssid[33];
-    // TODO(mischback): Make this configurable, IEEE says 64 chars
-    char wifi_password[65];
-    memset(&wifi_ssid, 0, sizeof(wifi_ssid));
-    memset(&wifi_password, 0, sizeof(wifi_password));
+    char wifi_ssid[NETWORKING_WIFI_SSID_MAX_LEN];
+    char wifi_password[NETWORKING_WIFI_PSK_MAX_LEN];
+    memset(&wifi_ssid, 0, NETWORKING_WIFI_SSID_MAX_LEN);
+    memset(&wifi_password, 0, NETWORKING_WIFI_PSK_MAX_LEN);
     ESP_ERROR_CHECK(
         networking_get_wifi_credentials(wifi_ssid, wifi_password));
     ESP_LOGD(TAG, "SSID: >%s<", wifi_ssid);
