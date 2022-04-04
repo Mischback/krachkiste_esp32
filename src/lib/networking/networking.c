@@ -72,9 +72,8 @@
  * badly otherwise.
  *
  * TODO(mischback): Make this configurable (with ``sdkconfig``)
- * TODO(mischback): Can our code recover from passwords being *too short*?
  */
-#define NETWORKING_WIFI_AP_PSK "foobarfoobar"
+#define NETWORKING_WIFI_AP_PSK "foobar"
 
 /**
  * The actual SSID of the project-specific access point.
@@ -294,8 +293,18 @@ static esp_err_t networking_wifi_ap_initialize(void) {
             .authmode = WIFI_AUTH_WPA_WPA2_PSK,
         },
     };
-    if (strlen(NETWORKING_WIFI_AP_PSK) == 0) {
+    // esp_wifi requires PSKs to be at least 8 characters. Just switch to
+    // an **open** WiFi, if the provided PSK has less than 8 characters.
+    // TODO(mischback): Verify how that minimal password length is set. Is this
+    //                  an ``#define`` that may be picked up in our code or is
+    //                  it really hardcoded in the esp_wifi library/component?
+    if (strlen(NETWORKING_WIFI_AP_PSK) <= 8) {
         ap_config.ap.authmode = WIFI_AUTH_OPEN;
+        ESP_LOGW(
+            TAG,
+            "The provided PSK for the access point has less than 8 characters, "
+            "switching to an open WiFi. No password will be required to "
+            "connect to the access point.");
     }
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
@@ -304,9 +313,8 @@ static esp_err_t networking_wifi_ap_initialize(void) {
 
     ESP_LOGI(
         TAG,
-        "Launched Access Point! SSID: %s; PSK: %s",
-        NETWORKING_WIFI_AP_SSID,
-        NETWORKING_WIFI_AP_PSK);
+        "Launched Access Point! SSID: '%s'",
+        NETWORKING_WIFI_AP_SSID);
 
     return ESP_OK;
 }
