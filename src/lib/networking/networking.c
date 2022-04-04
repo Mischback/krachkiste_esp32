@@ -126,6 +126,11 @@
  */
 static const char* TAG = "krachkiste.networking";
 
+/**
+ * Reference to the ``netif`` object for the access point.
+ */
+static esp_netif_t* networking_wifi_ap_netif = NULL;
+
 
 static void wifi_scan_for_networks(void) {
     // ported example code
@@ -270,7 +275,7 @@ static void networking_wifi_ap_event_handler(
 static esp_err_t networking_wifi_ap_initialize(void) {
     ESP_LOGV(TAG, "Entering networking_wifi_ap_initialize()");
 
-    esp_netif_create_default_wifi_ap();
+    networking_wifi_ap_netif = esp_netif_create_default_wifi_ap();
 
     wifi_init_config_t ap_init_cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&ap_init_cfg));
@@ -334,6 +339,9 @@ void networking_initialize(void) {
     // networking-related code.
     ESP_ERROR_CHECK(esp_netif_init());
 
+    // FIXME(mischback): just for debugging during development
+    ESP_LOGD(TAG, "Address of 'ap_netif': %p", networking_wifi_ap_netif);
+
     // Read WiFi credentials from non-volatile storage (NVS)
     char wifi_ssid[NETWORKING_WIFI_SSID_MAX_LEN];
     char wifi_password[NETWORKING_WIFI_PSK_MAX_LEN];
@@ -349,4 +357,7 @@ void networking_initialize(void) {
         ESP_LOGD(TAG, "SSID: >%s<", wifi_ssid);
         ESP_LOGD(TAG, "Password: >%s<", wifi_password);
     }
+
+    // FIXME(mischback): just for debugging during development
+    ESP_LOGD(TAG, "Address of 'ap_netif': %p", networking_wifi_ap_netif);
 }
