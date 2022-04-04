@@ -7,6 +7,10 @@
  * of the application with its :c:func:`app_main`.
  */
 
+// grabbed this from https://github.com/tonyp7/esp32-wifi-manager/blob/master/examples/default_demo/main/user_main.c
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 /* This is ESP-IDF's event library.
  * It is used by several components to publish internal state information to
  * other components as needed.
@@ -38,6 +42,14 @@
  */
 static const char* TAG = "krachkiste.main";
 
+// grabbed this from https://github.com/tonyp7/esp32-wifi-manager/blob/master/examples/default_demo/main/user_main.c
+void monitoring_task(void *pvParameter) {
+    for (;;) {
+        ESP_LOGI(TAG, "free heap: %d", esp_get_free_heap_size());
+        vTaskDelay(pdMS_TO_TICKS(10000));
+    }
+}
+
 /**
  * The application's main entry point.
  */
@@ -62,6 +74,19 @@ void app_main(void) {
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+
+    // grabbed this from https://github.com/tonyp7/esp32-wifi-manager/blob/master/examples/default_demo/main/user_main.c
+    /* your code should go here. Here we simply create a task on core 2 that
+     * monitors free heap memory
+     */
+    xTaskCreatePinnedToCore(
+        &monitoring_task,
+        "monitoring_task",
+        2048,
+        NULL,
+        1,
+        NULL,
+        1);
 
     networking_initialize();
 }
