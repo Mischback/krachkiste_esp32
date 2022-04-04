@@ -189,12 +189,18 @@ static void wifi_scan_for_networks(void) {
 static void networking_wifi_ap_shutdown_callback(TimerHandle_t xTimer) {
     ESP_LOGW(TAG, "Access Point is shutting down...");
 
-    // stop the access point and remove its netif
+    // Unregister the event handler for AP mode
+    ESP_ERROR_CHECK(esp_event_handler_instance_unregister(
+        WIFI_EVENT,
+        ESP_EVENT_ANY_ID,
+        &networking_wifi_ap_event_handler));
+
+    // Stop the access point and remove its netif
     ESP_ERROR_CHECK(esp_wifi_stop());
     esp_netif_destroy_default_wifi(networking_wifi_ap_netif);
     networking_wifi_ap_netif = NULL;
 
-    // stop and remove the timer
+    // Stop and remove the timer
     xTimerStop(xTimer, (TickType_t) 0);
     xTimerDelete(xTimer, (TickType_t) 0);
     networking_wifi_ap_shutdown_timer = NULL;
