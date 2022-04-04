@@ -29,6 +29,9 @@
  */
 #include "esp_log.h"
 
+/* ESP-IDF's network abstraction layer */
+#include "esp_netif.h"
+
 /* ESP-IDF's wifi library */
 #include "esp_wifi.h"
 
@@ -45,6 +48,40 @@
  *                  Respect NVS_KEY_NAME_SIZE - 1 as per https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html#_CPPv48nvs_openPKc15nvs_open_mode_tP12nvs_handle_t
  */
 #define PROJECT_NVS_STORAGE_NAMESPACE "krachkiste"
+
+/**
+ * The channel to use while providing the project-specific access point.
+ *
+ * TODO(mischback): Is there a nice way to provide a **dynamic** channel?
+ * TODO(mischback): Make this configurable (with ``sdkconfig``)
+ */
+#define NETWORKING_WIFI_AP_CHANNEL 5
+
+/**
+ * The maximum number of allowed clients while providing the project-specific
+ * access point.
+ *
+ * TODO(mischback): Make this configurable (with ``sdkconfig``)
+ */
+#define NETWORKING_WIFI_AP_MAX_CONNS 3
+
+/**
+ * The password to access the project-specific access point.
+ *
+ * ``esp_wifi`` requires the password to be at least 8 characters! It fails
+ * badly otherwise.
+ *
+ * TODO(mischback): Make this configurable (with ``sdkconfig``)
+ * TODO(mischback): Can our code recover from passwords being *too short*?
+ */
+#define NETWORKING_WIFI_AP_PSK "foobarfoobar"
+
+/**
+ * The actual SSID of the project-specific access point.
+ *
+ * TODO(mischback): Make this configurable (with ``sdkconfig``)
+ */
+#define NETWORKING_WIFI_AP_SSID "krachkiste_ap"
 
 /**
  * The maximum length of the :c:type:`char` array to store SSID.
@@ -203,6 +240,70 @@ static esp_err_t networking_get_wifi_credentials(
     return ESP_OK;
 }
 
+// Just porting the code from ESP-IDF's examle:
+// https://github.com/espressif/esp-idf/blob/master/examples/wifi/getting_started/softAP/main/softap_example_main.c
+static void networking_wifi_ap_event_handler(
+    void* arg,
+    esp_event_base_t event_base,
+    int32_t event_id,
+    void* event_data) {
+    if (event_id == WIFI_EVENT_AP_STACONNECTED) {
+        wifi_event_ap_staconnected_t* event =
+            (wifi_event_ap_staconnected_t*) event_data;
+        ESP_LOGI(TAG, "station "MACSTR" join, AID=%d",
+                 MAC2STR(event->mac), event->aid);
+    } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
+        wifi_event_ap_stadisconnected_t* event =
+            (wifi_event_ap_stadisconnected_t*) event_data;
+        ESP_LOGI(TAG, "station "MACSTR" leave, AID=%d",
+                 MAC2STR(event->mac), event->aid);
+    }
+}
+
+// Just porting the code from ESP-IDF's examle:
+// https://github.com/espressif/esp-idf/blob/master/examples/wifi/getting_started/softAP/main/softap_example_main.c
+static esp_err_t networking_wifi_ap_initialize(void) {
+    ESP_LOGV(TAG, "Entering networking_wifi_ap_initialize()");
+
+    esp_netif_create_default_wifi_ap();
+
+    wifi_init_config_t ap_init_cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&ap_init_cfg));
+
+    // Register event handler for AP mode
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        WIFI_EVENT,
+        ESP_EVENT_ANY_ID,
+        &networking_wifi_ap_event_handler,
+        NULL,
+        NULL));
+
+    wifi_config_t ap_config = {
+        .ap = {
+            .ssid = NETWORKING_WIFI_AP_SSID,
+            .ssid_len = strlen(NETWORKING_WIFI_AP_SSID),
+            .channel = NETWORKING_WIFI_AP_CHANNEL,
+            .password = NETWORKING_WIFI_AP_PSK,
+            .max_connection = NETWORKING_WIFI_AP_MAX_CONNS,
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK,
+        },
+    };
+    if (strlen(NETWORKING_WIFI_AP_PSK) == 0) {
+        ap_config.ap.authmode = WIFI_AUTH_OPEN;
+    }
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    ESP_LOGI(
+        TAG,
+        "Launched Access Point! SSID: %s; PSK: %s",
+        NETWORKING_WIFI_AP_SSID,
+        NETWORKING_WIFI_AP_PSK);
+
+    return ESP_OK;
+}
 
 void networking_initialize(void) {
     // set log-level of our own code to VERBOSE (sdkconfig.defaults sets the
@@ -210,6 +311,12 @@ void networking_initialize(void) {
     // FIXME: Final code should not do this, but respect the project's settings
     esp_log_level_set(TAG, ESP_LOG_VERBOSE);
     ESP_LOGV(TAG, "Entering networking_initialize()");
+
+    // Initialize the underlying TCP/IP stack
+    // This should be done exactly once from application code, so this function
+    // seems like a good enough place, as it is the starting point for all
+    // networking-related code.
+    ESP_ERROR_CHECK(esp_netif_init());
 
     // Read WiFi credentials from non-volatile storage (NVS)
     char wifi_ssid[NETWORKING_WIFI_SSID_MAX_LEN];
@@ -219,7 +326,9 @@ void networking_initialize(void) {
     esp_err_t err = networking_get_wifi_credentials(wifi_ssid, wifi_password);
     if (err != ESP_OK) {
         ESP_LOGI(TAG, "Could not read WiFi credentials from NVS");
-        ESP_LOGD(TAG, "Try to start access point now!");
+        ESP_LOGD(TAG, "Trying to start access point now!");
+
+        ESP_ERROR_CHECK(networking_wifi_ap_initialize());
     } else {
         ESP_LOGD(TAG, "SSID: >%s<", wifi_ssid);
         ESP_LOGD(TAG, "Password: >%s<", wifi_password);
