@@ -251,22 +251,35 @@ static void networking_wifi_ap_event_handler(
     esp_event_base_t event_base,
     int32_t event_id,
     void* event_data) {
-    if (event_id == WIFI_EVENT_AP_STACONNECTED) {
-        wifi_event_ap_staconnected_t* event =
-            (wifi_event_ap_staconnected_t*) event_data;
-        ESP_LOGI(
-            TAG,
-            "station "MACSTR" join, AID=%d",
-            MAC2STR(event->mac),
-            event->aid);
-    } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
-        wifi_event_ap_stadisconnected_t* event =
-            (wifi_event_ap_stadisconnected_t*) event_data;
-        ESP_LOGI(
-            TAG,
-            "station "MACSTR" leave, AID=%d",
-            MAC2STR(event->mac),
-            event->aid);
+
+    switch (event_id) {
+        // Please note, that all ``case`` statements have an empty statement
+        // (``;``) appended to enable the declaration of variables with the
+        // correct scope. See https://stackoverflow.com/a/18496437
+        case WIFI_EVENT_AP_STACONNECTED: ;
+            ESP_LOGV(TAG, "WIFI_EVENT_AP_STACONNECTED");
+
+            wifi_event_ap_staconnected_t* connect =
+                (wifi_event_ap_staconnected_t*) event_data;
+            ESP_LOGD(
+                TAG,
+                "[connect] "MACSTR" (%d)",
+                MAC2STR(connect->mac),
+                connect->aid);
+            break;
+        case WIFI_EVENT_AP_STADISCONNECTED: ;
+            ESP_LOGV(TAG, "WIFI_EVENT_AP_STADISCONNECTED");
+
+            wifi_event_ap_stadisconnected_t* disconnect =
+                (wifi_event_ap_stadisconnected_t*) event_data;
+            ESP_LOGD(
+                TAG,
+                "[disconnect] "MACSTR" (%d)",
+                MAC2STR(disconnect->mac),
+                disconnect->aid);
+            break;
+        default:
+            break;
     }
 }
 
