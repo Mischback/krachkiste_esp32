@@ -9,5 +9,3 @@ The application, including this documentation's source, lives
 .. toctree::
     :maxdepth: 2
     :caption: Contents:
-
-    api/index

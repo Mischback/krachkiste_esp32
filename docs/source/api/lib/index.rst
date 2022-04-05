@@ -1,9 +1,0 @@
-###
-lib
-###
-
-.. toctree::
-    :maxdepth: 5
-    :caption: Contents:
-
-    networking/index
