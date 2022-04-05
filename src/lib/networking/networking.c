@@ -10,7 +10,7 @@
  *   - https://github.com/tonyp7/esp32-wifi-manager/blob/master/src/wifi_manager.c
  */
 
-// The components header files (forward declaration)
+/* The components header files (forward declaration) */
 #include "include/networking.h"  // public header
 #include "networking_p.h"  // private header
 
@@ -23,8 +23,8 @@
 
 /* This is ESP-IDF's error handling library.
  * - defines the type ``esp_err_t``
- * - defines the macro ESP_ERROR_CHECK
- * - defines the return values ESP_OK (0) and ESP_FAIL (-1)
+ * - defines the macro ``ESP_ERROR_CHECK``
+ * - defines the return values ``ESP_OK`` (0) and ``ESP_FAIL`` (-1)
  */
 #include "esp_err.h"
 
@@ -52,18 +52,17 @@
 /**
  * The project-specific namespace to access the non-volatile storage.
  *
- * TODO(mischback):
- *   - Make this configurable!
- *   - Respect NVS_KEY_NAME_SIZE - 1 as per https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html#_CPPv48nvs_openPKc15nvs_open_mode_tP12nvs_handle_t
+ * @todo Make this configurable (pre-build with ``sdkconfig``), consider
+ *       ``ESP-IDF``'s ``NVS_KEY_NAME_SIZE``
+ *       (https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html#_CPPv48nvs_openPKc15nvs_open_mode_tP12nvs_handle_t)
  */
 #define PROJECT_NVS_STORAGE_NAMESPACE "krachkiste"
 
 /**
  * The channel to use while providing the project-specific access point.
  *
- * TODO(mischback):
- *   - Is there a nice way to provide a **dynamic** channel?
- *   - Make this configurable (with ``sdkconfig``)
+ * @todo Is there a nice way to provide a **dynamic** channel?
+ * @todo Make this configurable (pre-build with ``sdkconfig``)!
  */
 #define NETWORKING_WIFI_AP_CHANNEL 5
 
@@ -72,10 +71,9 @@
  * lifetime.
  *
  * The value is specified in milliseconds, default value of ``120000`` are
- * ``120 seconds``.
+ * *120 seconds*.
  *
- * TODO(mischback):
- *   - Make this configurable (with ``sdkconfig``)
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
 #define NETWORKING_WIFI_AP_LIFETIME 120000
 
@@ -83,46 +81,45 @@
  * The maximum number of allowed clients while providing the project-specific
  * access point.
  *
- * TODO(mischback):
- *   - Make this configurable (with ``sdkconfig``)
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
 #define NETWORKING_WIFI_AP_MAX_CONNS 3
 
 /**
  * The password to access the project-specific access point.
  *
- * ``esp_wifi`` requires the password to be at least 8 characters! It fails
- * badly otherwise.
+ * The component ``esp_wifi`` requires the password to be at least 8
+ * characters! It fails badly otherwise. ``networking_wifi_ap_initialize`` does
+ * handle this.
  *
- * TODO(mischback):
- *   - Make this configurable (with ``sdkconfig``)
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
 #define NETWORKING_WIFI_AP_PSK "foobar"
 
 /**
  * The actual SSID of the project-specific access point.
  *
- * TODO(mischback):
- *   - Make this configurable (with ``sdkconfig``)
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
 #define NETWORKING_WIFI_AP_SSID "krachkiste_ap"
 
 /**
  * The maximum length of the ``char`` array to store SSID.
  *
- * IEEE says, that the maximum length of an SSID is 32, so this is set to 33,
- * to allow for the terminating ``\0``.
+ * IEEE 802.11 says, that the maximum length of an SSID is 32, so this is set
+ * to 33 (to allow for the terminating ``"\0"``).
  *
- * TODO(mischback):
- *   - Should this be made configurable by project settings?
+ * @todo Should this be made configurable by project settings? 33 is in fact
+ *       a value derived from IEEE 802.11, so allowing for manual configuration
+ *       can *only* be used to minimize the required memory usage. But the
+ *       saving would be minimal, probably not worth the effort.
  */
 #define NETWORKING_WIFI_SSID_MAX_LEN 33
 
 /**
  * The component-specific key to access the NVS to set/get the stored SSID.
  *
- * TODO(mischback):
- *   - Make this configurable!
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
 #define NETWORKING_WIFI_SSID_NVS_KEY "net_ssid"
 
@@ -130,11 +127,13 @@
  * The maximum length of the ``char`` array to store the pre-shared key
  * for a WiFi connection.
  *
- * IEEE says, that the maximum length of an PSK is 64, so this is set to 65,
- * to allow for the terminating ``\0``.
+ * IEEE 801.11 says, that the maximum length of an PSK is 64, so this is set
+ * to 65 (to allow for the terminating ``"\0"``).
  *
- * TODO(mischback):
- *   - Should this be made configurable by project settings?
+ * @todo Should this be made configurable by project settings? 65 is in fact
+ *       a value derived from IEEE 802.11, so allowing for manual configuration
+ *       can *only* be used to minimize the required memory usage. But the
+ *       saving would be minimal, probably not worth the effort.
  */
 #define NETWORKING_WIFI_PSK_MAX_LEN 65
 
@@ -142,8 +141,7 @@
  * The component-specific key to access the NVS to set/get the stored WiFi
  * password.
  *
- * TODO(mischback):
- *   - Make this configurable!
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
 #define NETWORKING_WIFI_PSK_NVS_KEY "net_pass"
 
@@ -203,12 +201,13 @@ static void wifi_scan_for_networks(void) {
 /**
  * Shut down the access point and clean up.
  *
- * @param xTimer
+ * @param xTimer Reference to the freeRTOS' ``timer`` that triggered this
+ *               callback.
  *
  * This function is a callback to freeRTOS' ``timer`` implementation. The
- * actual ``TimerHandle_t`` is :c:var:`networking_wifi_ap_shutdown_timer`,
- * which is created/initialized in :c:func:`networking_wifi_ap_initialize` and
- * started in :c:func:`networking_wifi_ap_event_handler`.
+ * actual ``TimerHandle_t`` is ``networking_wifi_ap_shutdown_timer``,
+ * which is created/initialized in ``networking_wifi_ap_initialize`` and
+ * started in ``networking_wifi_ap_event_handler``.
  */
 static void networking_wifi_ap_shutdown_callback(TimerHandle_t xTimer) {
     ESP_LOGW(TAG, "Access Point is shutting down...");
@@ -364,13 +363,12 @@ static void networking_wifi_ap_event_handler(
 /**
  * Initializes and starts an access point.
  *
- * :return type: esp_err_t
- * :return: ``ESP_OK`` (= ``0``) on success, non-zero error code on error
+ * @return ``ESP_OK`` (= ``0``) on success, non-zero error code on error
  *
  * This function is responsible for the whole setup process of the access
  * point, including its initial configuration, setting up the required network
  * interface (``netif``), registering the event handler
- * :c:func:`networking_wifi_ap_event_handler` and preparing the required timer
+ * ``networking_wifi_ap_event_handler`` and preparing the required timer
  * to shutdown the access point after a given time.
  *
  * The function will provide a log message of level ``INFO`` containing the
