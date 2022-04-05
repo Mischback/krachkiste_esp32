@@ -102,6 +102,12 @@ sphinx/linkcheck : | $(STAMP_TOX_SPHINX)
 	tox -q -e sphinx -- make linkcheck
 .PHONY : sphinx/linkcheck
 
+## Serve doxygen's generated documentation locally on port 8082
+## @category Documentation
+doxygen/serve/html : $(STAMP_DOXYGEN) | $(STAMP_TOX_SPHINX)
+	tox -q -e doxygen-html-serve
+.PHONY : doxygen/serve/html
+
 $(STAMP_DOXYGEN) : $(SOURCE_ALL_FILES) $(DOXYGEN_CONFIG)
 	$(create_dir)
 	doxygen $(DOXYGEN_CONFIG)
