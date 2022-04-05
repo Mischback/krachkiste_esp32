@@ -78,7 +78,7 @@ util/pre-commit/update : $(STAMP_TOX_UTIL)
 ## Use "tree" to list project files
 ## @category Utility
 util/tree/project :
-	tree -alI ".git|build|.tox" --dirsfirst
+	tree -alI ".git|build|.tox|doxygen" --dirsfirst
 .PHONY : util/tree/project
 
 
