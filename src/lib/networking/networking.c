@@ -10,9 +10,8 @@
  *   - https://github.com/tonyp7/esp32-wifi-manager/blob/master/src/wifi_manager.c
  */
 
-/* The components header files (forward declaration) */
-#include "include/networking.h"  // public header
-#include "networking_p.h"  // private header
+/* The components header file */
+#include "include/networking.h"
 
 /* C-standard for string operations */
 #include <string.h>
@@ -164,6 +163,19 @@ static esp_netif_t* networking_wifi_ap_netif = NULL;
 static TimerHandle_t networking_wifi_ap_shutdown_timer = NULL;
 
 
+static void wifi_scan_for_networks(void);
+static void networking_wifi_ap_shutdown_callback(TimerHandle_t xTimer);
+static esp_err_t networking_get_wifi_credentials(
+    char* wifi_ssid,
+    char* wifi_password);
+static void networking_wifi_ap_event_handler(
+    void* arg,
+    esp_event_base_t event_base,
+    int32_t event_id,
+    void* event_data);
+static esp_err_t networking_wifi_ap_initialize(void);
+
+
 static void wifi_scan_for_networks(void) {
     // ported example code
     ESP_ERROR_CHECK(esp_netif_init());
@@ -228,7 +240,7 @@ static void networking_wifi_ap_shutdown_callback(TimerHandle_t xTimer) {
     xTimerDelete(xTimer, (TickType_t) 0);
     networking_wifi_ap_shutdown_timer = NULL;
 
-    ESP_LOGI(TAG, "Access Point is shut down!")
+    ESP_LOGI(TAG, "Access Point is shut down!");
 }
 
 static esp_err_t networking_get_wifi_credentials(
