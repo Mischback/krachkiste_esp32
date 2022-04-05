@@ -24,9 +24,12 @@ STAMP_DIR := .make-stamps
 
 STAMP_TOX_UTIL := $(STAMP_DIR)/tox-util
 STAMP_TOX_SPHINX := $(STAMP_DIR)/tox-sphinx
+STAMP_DOXYGEN := $(STAMP_DIR)/doxygen
 
 UTIL_REQUIREMENTS := .python-requirements/util.txt
 DOCUMENTATION_REQUIREMENTS := .python-requirements/documentation.txt
+SOURCE_ALL_FILES := $(shell find src -type f)
+DOXYGEN_CONFIG := docs/source/Doxyfile
 
 # some make settings
 .SILENT :
@@ -83,7 +86,7 @@ util/tree/project :
 
 ## Build the documentation using "Sphinx"
 ## @category Documentation
-sphinx/build/html : $(STAMP_TOX_SPHINX)
+sphinx/build/html : $(STAMP_DOXYGEN) | $(STAMP_TOX_SPHINX)
 	tox -q -e sphinx
 .PHONY : sphinx/build/html
 
@@ -95,9 +98,14 @@ sphinx/serve/html : sphinx/build/html
 
 ## Check documentation's external links
 ## @category Documentation
-sphinx/linkcheck : $(STAMP_TOX_SPHINX)
+sphinx/linkcheck : | $(STAMP_TOX_SPHINX)
 	tox -q -e sphinx -- make linkcheck
 .PHONY : sphinx/linkcheck
+
+$(STAMP_DOXYGEN) : $(SOURCE_ALL_FILES) $(DOXYGEN_CONFIG)
+	$(create_dir)
+	doxygen $(DOXYGEN_CONFIG)
+	touch $@
 
 
 # ### INTERNAL RECIPES
