@@ -3,5 +3,5 @@
 # Please note: several ESP-IDF components are explicitly listed here, though
 # they are included by default, see https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#common-component-requirements
 idf_component_register(SRCS "networking.c"
-                       INCLUDE_DIRS "./include"
+                       INCLUDE_DIRS "."
                        PRIV_REQUIRES "esp_common esp_event esp_netif esp_wifi log nvs_flash")

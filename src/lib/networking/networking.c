@@ -11,7 +11,7 @@
  */
 
 /* The components header file */
-#include "include/networking.h"
+#include "networking.h"
 
 /* C-standard for string operations */
 #include <string.h>
