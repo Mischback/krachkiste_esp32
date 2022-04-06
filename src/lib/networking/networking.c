@@ -195,6 +195,18 @@ static esp_err_t networking_wifi_ap_initialize(void);
 
 
 /* ***** FUNCTIONS ********************************************************* */
+
+/**
+ * Scan for all available wifi networks.
+ *
+ * This was actually the first example code, that was imported to get started
+ * with this component.
+ *
+ * As of now, the function is **not in use**.
+ *
+ * The code is directly fetched from
+ * https://github.com/espressif/esp-idf/tree/master/examples/wifi/scan
+ */
 static void wifi_scan_for_networks(void) {
     // ported example code
     ESP_ERROR_CHECK(esp_netif_init());
