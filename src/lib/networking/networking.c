@@ -54,6 +54,8 @@
  * @todo Make this configurable (pre-build with ``sdkconfig``), consider
  *       ``ESP-IDF``'s ``NVS_KEY_NAME_SIZE``
  *       (https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html#_CPPv48nvs_openPKc15nvs_open_mode_tP12nvs_handle_t)
+ * @todo Move this to header file, because configuration options must be
+ *       considered as part of the public API
  */
 #define PROJECT_NVS_STORAGE_NAMESPACE "krachkiste"
 
@@ -62,6 +64,8 @@
  *
  * @todo Is there a nice way to provide a **dynamic** channel?
  * @todo Make this configurable (pre-build with ``sdkconfig``)!
+ * @todo Move this to header file, because configuration options must be
+ *       considered as part of the public API
  */
 #define NETWORKING_WIFI_AP_CHANNEL 5
 
@@ -73,6 +77,8 @@
  * *120 seconds*.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
+ * @todo Move this to header file, because configuration options must be
+ *       considered as part of the public API
  */
 #define NETWORKING_WIFI_AP_LIFETIME 120000
 
@@ -81,6 +87,8 @@
  * access point.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
+ * @todo Move this to header file, because configuration options must be
+ *       considered as part of the public API
  */
 #define NETWORKING_WIFI_AP_MAX_CONNS 3
 
@@ -92,6 +100,8 @@
  * handle this.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
+ * @todo Move this to header file, because configuration options must be
+ *       considered as part of the public API
  */
 #define NETWORKING_WIFI_AP_PSK "foobar"
 
@@ -99,6 +109,8 @@
  * The actual SSID of the project-specific access point.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
+ * @todo Move this to header file, because configuration options must be
+ *       considered as part of the public API
  */
 #define NETWORKING_WIFI_AP_SSID "krachkiste_ap"
 
@@ -119,8 +131,10 @@
  * The component-specific key to access the NVS to set/get the stored SSID.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
+ * @todo Move this to header file, because configuration options must be
+ *       considered as part of the public API
  */
-#define NETWORKING_WIFI_SSID_NVS_KEY "net_ssid"
+#define NETWORKING_WIFI_NVS_KEY_SSID "net_ssid"
 
 /**
  * The maximum length of the ``char`` array to store the pre-shared key
@@ -141,8 +155,10 @@
  * password.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
+ * @todo Move this to header file, because configuration options must be
+ *       considered as part of the public API
  */
-#define NETWORKING_WIFI_PSK_NVS_KEY "net_pass"
+#define NETWORKING_WIFI_NVS_KEY_PSK "net_pass"
 
 
 /**
@@ -277,19 +293,19 @@ static esp_err_t networking_get_wifi_credentials(
     ESP_ERROR_CHECK(
         nvs_get_str(
             storage_handle,
-            NETWORKING_WIFI_SSID_NVS_KEY,
+            NETWORKING_WIFI_NVS_KEY_SSID,
             NULL,
             &required_size));
     err = nvs_get_str(
         storage_handle,
-        NETWORKING_WIFI_SSID_NVS_KEY,
+        NETWORKING_WIFI_NVS_KEY_SSID,
         wifi_ssid,
         &required_size);
     if (err != ESP_OK) {
         ESP_LOGE(
             TAG,
             "Could not read value of %s (%s)",
-            NETWORKING_WIFI_SSID_NVS_KEY,
+            NETWORKING_WIFI_NVS_KEY_SSID,
             esp_err_to_name(err));
         return ESP_FAIL;
     }
@@ -297,19 +313,19 @@ static esp_err_t networking_get_wifi_credentials(
     ESP_ERROR_CHECK(
         nvs_get_str(
             storage_handle,
-            NETWORKING_WIFI_PSK_NVS_KEY,
+            NETWORKING_WIFI_NVS_KEY_PSK,
             NULL,
             &required_size));
     err = nvs_get_str(
         storage_handle,
-        NETWORKING_WIFI_PSK_NVS_KEY,
+        NETWORKING_WIFI_NVS_KEY_PSK,
         wifi_password,
         &required_size);
     if (err != ESP_OK) {
         ESP_LOGE(
             TAG,
             "Could not read value of %s (%s)",
-            NETWORKING_WIFI_PSK_NVS_KEY,
+            NETWORKING_WIFI_NVS_KEY_PSK,
             esp_err_to_name(err));
         return ESP_FAIL;
     }
