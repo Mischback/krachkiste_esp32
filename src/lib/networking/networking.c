@@ -375,6 +375,27 @@ static esp_err_t networking_get_wifi_credentials(
     return ESP_OK;
 }
 
+/**
+ * Handle events while the project-specific access point is running.
+ *
+ * During operation of the access point, several events must be monitored and
+ * might trigger application- or project-specific actions.
+ *
+ * This event handler is registered in ::networking_wifi_ap_initialize. The
+ * handler is attached to the ``default`` event loop, as provided by
+ * ``esp_event`` (the loop is actually created/started in ::app_main).
+ *
+ * During the access point's shutdown (performed by
+ * ::networking_wifi_ap_shutdown_callback), this event handler is unregistered.
+ *
+ * @param arg        Generic arguments.
+ * @param event_base ``esp_event``'s ``EVENT_BASE``. Every event is specified
+ *                   by the ``EVENT_BASE`` and its ``EVENT_ID``.
+ * @param event_id   ``esp_event``'s ``EVENT_ID``. Every event is specified by
+ *                   the ``EVENT_BASE`` and its ``EVENT_ID``.
+ * @param event_data Events might provide a pointer to additional,
+ *                   event-related data.
+ */
 static void networking_wifi_ap_event_handler(
     void* arg,
     esp_event_base_t event_base,
