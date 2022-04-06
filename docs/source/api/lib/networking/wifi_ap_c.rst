@@ -1,10 +1,6 @@
 ###############################################################################
-``networking``
+``wifi_ap.c``
 ###############################################################################
 
-.. toctree::
-
-    networking_h
-    networking_c
-    wifi_ap_h
-    wifi_ap_c
+.. doxygenfile:: src/lib/networking/wifi_ap.c
+    :sections: briefdescription define typedef var func
