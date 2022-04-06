@@ -1,6 +1,8 @@
-######
-Source
-######
+###############################
+Source Code / API documentation
+###############################
 
-.. doxygenfile:: src/lib/networking/networking.c
-    :sections: briefdescription define typedef var func
+.. toctree::
+
+    app/index
+    lib/index
