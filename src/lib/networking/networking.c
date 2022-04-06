@@ -274,6 +274,30 @@ static void networking_wifi_ap_shutdown_callback(TimerHandle_t xTimer) {
     ESP_LOGI(TAG, "Access Point is shut down!");
 }
 
+/**
+ * Retrieve credentials for a WiFi network from the NVS.
+ *
+ * The function opens the non-volatile storage namespace (as specified by
+ * ::PROJECT_NVS_STORAGE_NAMESPACE) and retrieves the WiFi's ``SSID`` from
+ * ::NETWORKING_WIFI_NVS_KEY_SSID and the ``PSK`` from
+ * ::NETWORKING_WIFI_NVS_KEY_PSK.
+ *
+ * @param wifi_ssid     A pointer to a ``char`` array to store the ``SSID``.
+ *                      The ``char`` array has to be defined outside of this
+ *                      function before calling. It is recommended to declare
+ *                      that ``char`` array with length
+ *                      ::NETWORKING_WIFI_SSID_MAX_LEN.
+ * @param wifi_password A pointer to a ``char`` array to store the ``PSK``. The
+ *                      ``char`` array has to be defined outside of this
+ *                      function before calling. It is recommended to declare
+ *                      that ``char`` array with length
+ *                      ::NETWORKING_WIFI_PSK_MAX_LEN.
+ * @return              ``ESP_OK`` (equals ``0``) on success, ``ESP_FAIL``
+ *                      (equals ``-1``) on failure. Every failed access to the
+ *                      NVS will directly return a failure, meaning that the
+ *                      credentials could not be retrieved. Every fail will
+ *                      also cause emitting of a log message of level ``ERROR``.
+ */
 static esp_err_t networking_get_wifi_credentials(
     char* wifi_ssid,
     char* wifi_password) {
