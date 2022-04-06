@@ -60,7 +60,7 @@
 #define PROJECT_NVS_STORAGE_NAMESPACE "krachkiste"
 
 /**
- * The channel to use while providing the project-specific access point.
+ * The channel to be used while providing the project-specific access point.
  *
  * @todo Is there a nice way to provide a **dynamic** channel?
  * @todo Make this configurable (pre-build with ``sdkconfig``)!
@@ -70,8 +70,7 @@
 #define NETWORKING_WIFI_AP_CHANNEL 5
 
 /**
- * The project-specific access point is only started for a pre-determined
- * lifetime.
+ * Timespan to keep the project-specific access point available.
  *
  * The value is specified in milliseconds, default value of ``120000`` are
  * *120 seconds*.
@@ -96,7 +95,7 @@
  * The password to access the project-specific access point.
  *
  * The component ``esp_wifi`` requires the password to be at least 8
- * characters! It fails badly otherwise. ``networking_wifi_ap_initialize`` does
+ * characters! It fails badly otherwise. ::networking_wifi_ap_initialize does
  * handle this.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
@@ -161,6 +160,7 @@
 #define NETWORKING_WIFI_NVS_KEY_PSK "net_pass"
 
 
+/* ***** VARIABLES ********************************************************* */
 /**
  * Set the module-specific ``TAG`` to be used with ESP-IDF's logging library.
  *
@@ -174,11 +174,13 @@ static const char* TAG = "krachkiste.networking";
 static esp_netif_t* networking_wifi_ap_netif = NULL;
 
 /**
- * Reference to the ``timer`` object that is used to shutdown the access point.
+ * Reference to the freeRTOS' ``timer`` object that is used to shutdown the
+ * access point.
  */
 static TimerHandle_t networking_wifi_ap_shutdown_timer = NULL;
 
 
+/* ***** PROTOTYPES ******************************************************** */
 static void wifi_scan_for_networks(void);
 static void networking_wifi_ap_shutdown_callback(TimerHandle_t xTimer);
 static esp_err_t networking_get_wifi_credentials(
@@ -192,6 +194,7 @@ static void networking_wifi_ap_event_handler(
 static esp_err_t networking_wifi_ap_initialize(void);
 
 
+/* ***** FUNCTIONS ********************************************************* */
 static void wifi_scan_for_networks(void) {
     // ported example code
     ESP_ERROR_CHECK(esp_netif_init());
@@ -229,13 +232,13 @@ static void wifi_scan_for_networks(void) {
 /**
  * Shut down the access point and clean up.
  *
+ * This function is a callback to freeRTOS' ``timer`` implementation. The
+ * actual ``TimerHandle_t`` is ::networking_wifi_ap_shutdown_timer,
+ * which is created/initialized in ::networking_wifi_ap_initialize and
+ * started in ::networking_wifi_ap_event_handler.
+ *
  * @param xTimer Reference to the freeRTOS' ``timer`` that triggered this
  *               callback.
- *
- * This function is a callback to freeRTOS' ``timer`` implementation. The
- * actual ``TimerHandle_t`` is ``networking_wifi_ap_shutdown_timer``,
- * which is created/initialized in ``networking_wifi_ap_initialize`` and
- * started in ``networking_wifi_ap_event_handler``.
  */
 static void networking_wifi_ap_shutdown_callback(TimerHandle_t xTimer) {
     ESP_LOGW(TAG, "Access Point is shutting down...");
@@ -391,16 +394,22 @@ static void networking_wifi_ap_event_handler(
 /**
  * Initializes and starts an access point.
  *
- * @return ``ESP_OK`` (= ``0``) on success, non-zero error code on error
- *
  * This function is responsible for the whole setup process of the access
  * point, including its initial configuration, setting up the required network
  * interface (``netif``), registering the event handler
- * ``networking_wifi_ap_event_handler`` and preparing the required timer
+ * ::networking_wifi_ap_event_handler and preparing the required timer
  * to shutdown the access point after a given time.
+ *
+ * If the configured password ::NETWORKING_WIFI_AP_PSK is shorter than ``8``
+ * characters, ``esp_wifi``'s internal functions will fail badly. Because of
+ * this, this function will not apply the password but instead switch the
+ * access point's ``authmode`` to ``WIFI_AUTH_OPEN``, effectivly providing an
+ * open WiFi. A log message of level ``WARN`` will be emitted.
  *
  * The function will provide a log message of level ``INFO`` containing the
  * SSID and - if set - password/PSK of the access point's network.
+ *
+ * @return ``ESP_OK`` (= ``0``) on success, non-zero error code on error
  */
 static esp_err_t networking_wifi_ap_initialize(void) {
     ESP_LOGV(TAG, "Entering networking_wifi_ap_initialize()");
