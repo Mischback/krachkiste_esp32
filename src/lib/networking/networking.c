@@ -3,11 +3,22 @@
 // SPDX-FileType: SOURCE
 
 /**
- * Provide a basic management of the WiFi capabilities of the MCU.
+ * Provide basic management of the networking capabilities of the MCU.
  *
- * Resources:
- *   - https://github.com/espressif/esp-idf/blob/master/examples/wifi/getting_started/softAP/main/softap_example_main.c
+ * This file is the actual implementation of the component. For a detailed
+ * description of the actual usage, including how the component may be reused
+ * in some other codebase, refer to networking.h .
+ *
+ * **Resources:**
+ *   - https://github.com/nkolban/esp32-snippets/tree/master/networking/bootwifi
+ *   - https://github.com/espressif/esp-idf/tree/master/examples/wifi/
  *   - https://github.com/tonyp7/esp32-wifi-manager/blob/master/src/wifi_manager.c
+ *
+ * @file   networking.c
+ * @author Mischback
+ * @bug    Bugs are tracked with the
+ *         [issue tracker](https://github.com/Mischback/krachkiste_esp32/issues)
+ *         at GitHub.
  */
 
 /* The components header file */
@@ -46,6 +57,11 @@
 #include "nvs_flash.h"
 
 
+/**
+ * Determine the maximum number of WiFi networks to be included in a scan.
+ *
+ * This is used by ::wifi_scan_for_networks.
+ */
 #define DEFAULT_SCAN_LIST_SIZE 5
 
 /**
