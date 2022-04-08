@@ -131,8 +131,8 @@ static esp_err_t min_httpd_handler_404(
  * ``HTTPD_DEFAULT_CONFIG``, changes some project-specific settings (see
  * min_httpd.h for available options) and then launches the server.
  *
- * @return esp_err_t ``ESP_OK`` (equals ``0``) on success, ``ESP_FAIL``
- *                   (equals ``-1``) on failure.
+ * @return ``ESP_OK`` (equals ``0``) on success, ``ESP_FAIL`` (equals ``-1``)
+ *         on failure.
  */
 static esp_err_t min_httpd_server_start(void) {
     ESP_LOGV(TAG, "Entering min_httpd_server_start()");
@@ -176,8 +176,8 @@ static esp_err_t min_httpd_server_start(void) {
  *
  * This is just a very thin wrapper around **ESP-IDF**'s ``httpd_stop()``.
  *
- * @return esp_err_t ``ESP_OK`` (equals ``0``) on success, ``ESP_FAIL``
- *                   (equals ``-1``) on failure.
+ * @return ``ESP_OK`` (equals ``0``) on success, ``ESP_FAIL`` (equals ``-1``)
+ *         on failure.
  */
 static esp_err_t min_httpd_server_stop(void) {
     ESP_LOGV(TAG, "Entering min_httpd_server_stop()");
