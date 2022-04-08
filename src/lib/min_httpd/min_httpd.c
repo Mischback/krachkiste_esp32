@@ -154,6 +154,14 @@ static esp_err_t min_httpd_server_start(void) {
             TAG,
             "Server successfully started, listening on %d",
             config.server_port);
+
+        // Register default request handlers
+        httpd_register_err_handler(
+            min_httpd_server,
+            HTTPD_404_NOT_FOUND,
+            min_httpd_handler_404);
+
+        // Return success
         return ESP_OK;
     }
 
