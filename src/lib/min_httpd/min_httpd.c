@@ -59,6 +59,7 @@ static httpd_handle_t min_httpd_server = NULL;
 
 /* ***** PROTOTYPES ******************************************************** */
 static esp_err_t min_httpd_server_start(void);
+static esp_err_t min_httpd_server_stop(void);
 
 
 /* ***** FUNCTIONS ********************************************************* */
@@ -86,6 +87,13 @@ void min_httpd_external_event_handler_stop(
     int32_t event_id,
     void* event_data) {
     ESP_LOGV(TAG, "Entering min_httpd_external_event_handler_stop()");
+
+    if (min_httpd_server) {
+        ESP_LOGD(TAG, "Stopping server...");
+        ESP_ERROR_CHECK_WITHOUT_ABORT(min_httpd_server_stop());
+    } else {
+        ESP_LOGE(TAG, "Server doesn't seem to be running!");
+    }
 }
 
 /**
@@ -125,5 +133,27 @@ static esp_err_t min_httpd_server_start(void) {
     // Return ESP_FAIL (-1) if the server failed to start
     ESP_LOGE(TAG, "Error starting httpd!");
     min_httpd_server = NULL;
+    return ESP_FAIL;
+}
+
+/**
+ * Stop the running HTTP server.
+ *
+ * This is just a very thin wrapper around **ESP-IDF**'s ``httpd_stop()``.
+ *
+ * @return esp_err_t ``ESP_OK`` (equals ``0``) on success, ``ESP_FAIL``
+ *                   (equals ``-1``) on failure.
+ */
+static esp_err_t min_httpd_server_stop(void) {
+    ESP_LOGV(TAG, "Entering min_httpd_server_stop()");
+
+    // Nothing fancy, just stop the server
+    if (httpd_stop(min_httpd_server) == ESP_OK) {
+        ESP_LOGI(TAG, "Server successfully stopped!");
+        min_httpd_server = NULL;
+        return ESP_OK;
+    }
+
+    ESP_LOGE(TAG, "Failed to stop the server!");
     return ESP_FAIL;
 }
