@@ -26,6 +26,9 @@
  */
 #include "esp_event.h"
 
+/* This is EPS-IDF's http server library. */
+#include "esp_http_server.h"
+
 /* This is ESP-IDF's logging library.
  * - ESP_LOGE(TAG, "Error");
  * - ESP_LOGW(TAG, "Warning");
@@ -44,14 +47,25 @@
  */
 static const char* TAG = "krachkiste.httpd";
 
+static httpd_handle_t server = NULL;
+
 
 /* ***** FUNCTIONS ********************************************************* */
 
 // Documentation in header file!
-void httpd_external_event_handler(
+void httpd_external_event_handler_start(
     void* arg,
     esp_event_base_t event_base,
     int32_t event_id,
     void* event_data) {
-    ESP_LOGV(TAG, "Entering httpd_external_event_handler()");
+    ESP_LOGV(TAG, "Entering httpd_external_event_handler_start()");
+}
+
+// Documentation in header file!
+void httpd_external_event_handler_stop(
+    void* arg,
+    esp_event_base_t event_base,
+    int32_t event_id,
+    void* event_data) {
+    ESP_LOGV(TAG, "Entering httpd_external_event_handler_stop()");
 }

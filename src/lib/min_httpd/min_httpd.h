@@ -21,13 +21,16 @@
 #include "esp_event.h"
 
 /**
- * Handle external events and trigger the required actions.
+ * Handle external events that should cause the HTTP server to start.
  *
- * This event handler is meant to deal with events, that are not directly
- * associated with this component, e.g. regarding the availability of network
- * connections, thus, *external events*.
+ * This is a specific handler, that does not actually parse or verify the
+ * event, that triggered its execution.
  *
- * @param arg
+ * This requires the *calling code*, or more specifically, the code that
+ * connects this handler with events, to specifically select the events, that
+ * should *make the HTTP server* **start**.
+ *
+ * @param arg        Generic arguments.
  * @param event_base ``esp_event``'s ``EVENT_BASE``. Every event is specified
  *                   by the ``EVENT_BASE`` and its ``EVENT_ID``.
  * @param event_id   `esp_event``'s ``EVENT_ID``. Every event is specified by
@@ -35,7 +38,31 @@
  * @param event_data Events might provide a pointer to additional,
  *                   event-related data.
  */
-void httpd_external_event_handler(
+void httpd_external_event_handler_start(
+    void* arg,
+    esp_event_base_t event_base,
+    int32_t event_id,
+    void* event_data);
+
+/**
+ * Handle external events that should cause the HTTP server to stop.
+ *
+ * This is a specific handler, that does not actually parse or verify the
+ * event, that triggered its execution.
+ *
+ * This requires the *calling code*, or more specifically, the code that
+ * connects this handler with events, to specifically select the events, that
+ * should *make the HTTP server* **stop**.
+ *
+ * @param arg        Generic arguments.
+ * @param event_base ``esp_event``'s ``EVENT_BASE``. Every event is specified
+ *                   by the ``EVENT_BASE`` and its ``EVENT_ID``.
+ * @param event_id   `esp_event``'s ``EVENT_ID``. Every event is specified by
+ *                   the ``EVENT_BASE`` and its ``EVENT_ID``.
+ * @param event_data Events might provide a pointer to additional,
+ *                   event-related data.
+ */
+void httpd_external_event_handler_stop(
     void* arg,
     esp_event_base_t event_base,
     int32_t event_id,
