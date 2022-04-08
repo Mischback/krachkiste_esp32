@@ -20,6 +20,29 @@
  */
 #include "esp_event.h"
 
+
+/**
+ * The port the server will listen.
+ *
+ * ``80`` is actually the default value as provided by **ESP-IDF**'s
+ * ``HTTPD_DEFAULT_CONFIG()``. But the value may be overridden with a
+ * project-specific value.
+ *
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
+ */
+#define MIN_HTTPD_HTTP_PORT 80
+
+/**
+ * Maximum number of URI handlers for the server.
+ *
+ * ``8`` is actually the default value as provided by **ESP-IDF**'s
+ * ``HTTPD_DEFAULT_CONFIG()``, but it may (and probably must) be overridden
+ * with a project-specific value.
+ *
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
+ */
+#define MIN_HTTPD_MAX_URI_HANDLERS 8
+
 /**
  * Handle external events that should cause the HTTP server to start.
  *
@@ -38,7 +61,7 @@
  * @param event_data Events might provide a pointer to additional,
  *                   event-related data.
  */
-void httpd_external_event_handler_start(
+void min_httpd_external_event_handler_start(
     void* arg,
     esp_event_base_t event_base,
     int32_t event_id,
@@ -62,7 +85,7 @@ void httpd_external_event_handler_start(
  * @param event_data Events might provide a pointer to additional,
  *                   event-related data.
  */
-void httpd_external_event_handler_stop(
+void min_httpd_external_event_handler_stop(
     void* arg,
     esp_event_base_t event_base,
     int32_t event_id,
