@@ -54,7 +54,7 @@
  */
 static const char* TAG = "krachkiste.httpd";
 
-static httpd_handle_t server = NULL;
+static httpd_handle_t min_httpd_server = NULL;
 
 
 /* ***** PROTOTYPES ******************************************************** */
@@ -71,7 +71,7 @@ void min_httpd_external_event_handler_start(
     void* event_data) {
     ESP_LOGV(TAG, "Entering min_httpd_external_event_handler_start()");
 
-    if (server) {
+    if (min_httpd_server) {
         ESP_LOGE(TAG, "Server seems to be already running!");
     } else {
         ESP_LOGD(TAG, "Starting server...");
@@ -88,6 +88,17 @@ void min_httpd_external_event_handler_stop(
     ESP_LOGV(TAG, "Entering min_httpd_external_event_handler_stop()");
 }
 
+/**
+ * Apply configuration values and start the minimal HTTP server.
+ *
+ * This function is in fact just a very thin wrapper around **ESP-IDF**'s
+ * ``httpd_start()``. It creates a default configuration with
+ * ``HTTPD_DEFAULT_CONFIG``, changes some project-specific settings (see
+ * min_httpd.h for available options) and then launches the server.
+ *
+ * @return esp_err_t ``ESP_OK`` (equals ``0``) on success, ``ESP_FAIL``
+ *                   (equals ``-1``) on failure.
+ */
 static esp_err_t min_httpd_server_start(void) {
     ESP_LOGV(TAG, "Entering min_httpd_server_start()");
 
@@ -103,7 +114,7 @@ static esp_err_t min_httpd_server_start(void) {
     ESP_LOGD(TAG, "max_uri_handlers: %d", config.max_uri_handlers);  // 8
 
     // Start the server
-    if (httpd_start(&server, &config) == ESP_OK) {
+    if (httpd_start(&min_httpd_server, &config) == ESP_OK) {
         ESP_LOGI(
             TAG,
             "Server successfully started, listening on %d",
@@ -113,6 +124,6 @@ static esp_err_t min_httpd_server_start(void) {
 
     // Return ESP_FAIL (-1) if the server failed to start
     ESP_LOGE(TAG, "Error starting httpd!");
-    server = NULL;
+    min_httpd_server = NULL;
     return ESP_FAIL;
 }
