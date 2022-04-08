@@ -98,6 +98,12 @@ void app_main(void) {
         &min_httpd_external_event_handler_start,
         NULL,
         NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        WIFI_EVENT,
+        WIFI_EVENT_AP_STOP,
+        &min_httpd_external_event_handler_stop,
+        NULL,
+        NULL));
 
     networking_initialize();
 }
