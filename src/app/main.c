@@ -32,6 +32,9 @@
 /* This is ESP-IDF's library to interface the non-volatile storage (NVS). */
 #include "nvs_flash.h"
 
+/* project-specific minimal httpd implementation. */
+#include "min_httpd.h"
+
 /* Project-specific library to manage wifi connections. */
 #include "networking.h"
 
@@ -87,6 +90,14 @@ void app_main(void) {
         1,
         NULL,
         1);
+
+    // Register event handler for AP mode
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        WIFI_EVENT,
+        WIFI_EVENT_AP_START,
+        &min_httpd_external_event_handler_start,
+        NULL,
+        NULL));
 
     networking_initialize();
 }
