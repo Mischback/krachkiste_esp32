@@ -104,6 +104,26 @@ void min_httpd_external_event_handler_stop(
 }
 
 /**
+ * Provide helpful error message for missing/unavailable resources.
+ *
+ * @param request    The request that causes the execution of the function.
+ * @param error_code The error code that causes the execution of the function.
+ *                   As this function is only attached to ``404 Not Found``
+ *                   errors, this is pretty much set.
+ * @return           Always returns ``ESP_FAIL``, causing the underlying socket
+ *                   to be closed.
+ */
+static esp_err_t min_httpd_handler_404(
+    httpd_req_t* request,
+    httpd_err_code_t error_code) {
+    char* error_message;
+    asprintf(&error_message, "Sorry, '%s' could not be found!", request->uri);
+    httpd_resp_send_err(request, HTTPD_404_NOT_FOUND, error_message);
+    free(error_message);
+    return ESP_FAIL;
+}
+
+/**
  * Apply configuration values and start the minimal HTTP server.
  *
  * This function is in fact just a very thin wrapper around **ESP-IDF**'s
