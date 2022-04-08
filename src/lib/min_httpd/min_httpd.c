@@ -54,6 +54,13 @@
  */
 static const char* TAG = "krachkiste.httpd";
 
+/**
+ * A reference to the running HTTP server.
+ *
+ * ``httpd_handle_t`` is in fact a pointer to the server's data structure as
+ * created by ``httpd_start()``, which is called from this component's
+ * ::min_httpd_server_start.
+ */
 static httpd_handle_t min_httpd_server = NULL;
 
 
