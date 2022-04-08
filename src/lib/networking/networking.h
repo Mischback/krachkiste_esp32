@@ -11,8 +11,6 @@
  * @todo Make this configurable (pre-build with ``sdkconfig``), consider
  *       ``ESP-IDF``'s ``NVS_KEY_NAME_SIZE``
  *       (https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html#_CPPv48nvs_openPKc15nvs_open_mode_tP12nvs_handle_t)
- * @todo Move this to header file, because configuration options must be
- *       considered as part of the public API
  */
 #define PROJECT_NVS_STORAGE_NAMESPACE "krachkiste"
 
@@ -21,8 +19,6 @@
  *
  * @todo Is there a nice way to provide a **dynamic** channel?
  * @todo Make this configurable (pre-build with ``sdkconfig``)!
- * @todo Move this to header file, because configuration options must be
- *       considered as part of the public API
  */
 #define NETWORKING_WIFI_AP_CHANNEL 5
 
@@ -33,8 +29,6 @@
  * *120 seconds*.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
- * @todo Move this to header file, because configuration options must be
- *       considered as part of the public API
  */
 #define NETWORKING_WIFI_AP_LIFETIME 120000
 
@@ -43,8 +37,6 @@
  * access point.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
- * @todo Move this to header file, because configuration options must be
- *       considered as part of the public API
  */
 #define NETWORKING_WIFI_AP_MAX_CONNS 3
 
@@ -56,8 +48,6 @@
  * handle this.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
- * @todo Move this to header file, because configuration options must be
- *       considered as part of the public API
  */
 #define NETWORKING_WIFI_AP_PSK "foobar"
 
@@ -65,8 +55,6 @@
  * The actual SSID of the project-specific access point.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
- * @todo Move this to header file, because configuration options must be
- *       considered as part of the public API
  */
 #define NETWORKING_WIFI_AP_SSID "krachkiste_ap"
 
@@ -74,8 +62,6 @@
  * The component-specific key to access the NVS to set/get the stored SSID.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
- * @todo Move this to header file, because configuration options must be
- *       considered as part of the public API
  */
 #define NETWORKING_WIFI_NVS_KEY_SSID "net_ssid"
 
@@ -84,8 +70,6 @@
  * password.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
- * @todo Move this to header file, because configuration options must be
- *       considered as part of the public API
  */
 #define NETWORKING_WIFI_NVS_KEY_PSK "net_pass"
 
