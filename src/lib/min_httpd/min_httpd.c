@@ -67,6 +67,9 @@ static httpd_handle_t min_httpd_server = NULL;
 /* ***** PROTOTYPES ******************************************************** */
 static esp_err_t min_httpd_server_start(void);
 static esp_err_t min_httpd_server_stop(void);
+static esp_err_t min_httpd_handler_404(
+    httpd_req_t* request,
+    httpd_err_code_t error_code);
 
 
 /* ***** FUNCTIONS ********************************************************* */
