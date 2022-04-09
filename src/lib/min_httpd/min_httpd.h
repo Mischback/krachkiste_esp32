@@ -20,6 +20,11 @@
  */
 #include "esp_event.h"
 
+/* This is ESP-IDF's http server library.
+ * - defines ``httpd_req_t``
+ */
+#include "esp_http_server.h"
+
 
 /**
  * The port the server will listen.
@@ -90,5 +95,15 @@ void min_httpd_external_event_handler_stop(
     esp_event_base_t event_base,
     int32_t event_id,
     void* event_data);
+
+/**
+ * Provide a simple log message.
+ *
+ * Logs the request's *method* and the requested *URI*, using log level
+ * ``INFO``.
+ *
+ * @param request A pointer to the request, that should be logged.
+ */
+void min_httpd_log_message(httpd_req_t* request);
 
 #endif  // SRC_LIB_MIN_HTTPD_MIN_HTTPD_H_

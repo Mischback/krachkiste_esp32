@@ -21,6 +21,9 @@
 /* This files header */
 #include "min_httpd.h"
 
+/* C-standard for string operations */
+#include <string.h>
+
 /* This is ESP-IDF's error handling library.
  * - defines the type ``esp_err_t``
  * - defines the macro ``ESP_ERROR_CHECK``
@@ -33,7 +36,10 @@
  */
 #include "esp_event.h"
 
-/* This is EPS-IDF's http server library. */
+/* This is EPS-IDF's http server library.
+ * This header file also includes "http_parser.h", which provides the function
+ * ``http_method_str``.
+ */
 #include "esp_http_server.h"
 
 /* This is ESP-IDF's logging library.
@@ -152,10 +158,34 @@ static esp_err_t min_httpd_handler_404(
  * @return Always returns ``ESP_OK``.
  */
 static esp_err_t min_httpd_handler_home(httpd_req_t* request) {
-    const char* home_test = "Home (Test)";
-    httpd_resp_send(request, home_test, HTTPD_RESP_USE_STRLEN);
+    min_httpd_log_message(request);
 
-    return ESP_OK;
+    // FIXME(mischback): This is just a temporary test!
+    const char* home_test = "Home (Test)";
+
+    if (httpd_resp_send(request, home_test, HTTPD_RESP_USE_STRLEN) == ESP_OK) {
+        ESP_LOGD(TAG, "  - Responded successfully!");
+        return ESP_OK;
+    } else {
+        ESP_LOGE(TAG, "  - Response failed!");
+        return ESP_FAIL;
+    }
+
+    // This should never be reached, just for safeguarding!
+    // Is this removed from the compiler?
+    return ESP_FAIL;
+}
+
+// Documentation in header file!
+void min_httpd_log_message(httpd_req_t* request) {
+    char* log_message;
+    asprintf(
+        &log_message,
+        "%s - %s",
+        http_method_str(request->method),
+        request->uri);
+    ESP_LOGI(TAG, "%s", log_message);
+    free(log_message);
 }
 
 /**
