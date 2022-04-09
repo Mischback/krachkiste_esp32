@@ -70,6 +70,23 @@ static esp_err_t min_httpd_server_stop(void);
 static esp_err_t min_httpd_handler_404(
     httpd_req_t* request,
     httpd_err_code_t error_code);
+static esp_err_t min_httpd_handler_home(httpd_req_t* request);
+
+
+/* ***** URI DEFINITIONS ***************************************************
+ * (technically, these are ``variables``, but as the handler functions must be
+ *  referenced, these must come after the ``prototypes``)
+ */
+
+/**
+ * URI definition for the *homepage*, which will be served from ``/``.
+ */
+static const httpd_uri_t min_httpd_uri_home = {
+    .uri = "/",
+    .method = HTTP_GET,
+    .handler = min_httpd_handler_home,
+    .user_ctx = NULL
+};
 
 
 /* ***** FUNCTIONS ********************************************************* */
@@ -127,6 +144,21 @@ static esp_err_t min_httpd_handler_404(
 }
 
 /**
+ * The handler for the homepage.
+ *
+ * The matching *URI definition* is ::min_httpd_uri_home.
+ *
+ * @param request The request that should be responded to with this function.
+ * @return Always returns ``ESP_OK``.
+ */
+static esp_err_t min_httpd_handler_home(httpd_req_t* request) {
+    const char* home_test = "Home (Test)";
+    httpd_resp_send(request, home_test, HTTPD_RESP_USE_STRLEN);
+
+    return ESP_OK;
+}
+
+/**
  * Apply configuration values and start the minimal HTTP server.
  *
  * This function is in fact just a very thin wrapper around **ESP-IDF**'s
@@ -163,6 +195,7 @@ static esp_err_t min_httpd_server_start(void) {
             min_httpd_server,
             HTTPD_404_NOT_FOUND,
             min_httpd_handler_404);
+        httpd_register_uri_handler(min_httpd_server, &min_httpd_uri_home);
 
         // Return success
         return ESP_OK;
