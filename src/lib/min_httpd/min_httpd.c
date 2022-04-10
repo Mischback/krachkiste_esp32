@@ -158,32 +158,36 @@ static esp_err_t min_httpd_handler_404(
  * @return Always returns ``ESP_OK``.
  */
 static esp_err_t min_httpd_handler_home(httpd_req_t* request) {
-    min_httpd_log_message(request);
-
     // FIXME(mischback): This is just a temporary test!
     const char* home_test = "Home (Test)";
 
-    if (httpd_resp_send(request, home_test, HTTPD_RESP_USE_STRLEN) == ESP_OK) {
-        ESP_LOGD(TAG, "  - Responded successfully!");
-        return ESP_OK;
-    } else {
-        ESP_LOGE(TAG, "  - Response failed!");
-        return ESP_FAIL;
-    }
+    esp_err_t return_value = httpd_resp_send(
+        request,
+        home_test,
+        HTTPD_RESP_USE_STRLEN);
+    min_httpd_log_message(request, return_value);
 
-    // This should never be reached, just for safeguarding!
-    // Is this removed from the compiler?
-    return ESP_FAIL;
+    return return_value;
 }
 
 // Documentation in header file!
-void min_httpd_log_message(httpd_req_t* request) {
+void min_httpd_log_message(httpd_req_t* request, esp_err_t success) {
     char* log_message;
-    asprintf(
-        &log_message,
-        "%s - %s",
-        http_method_str(request->method),
-        request->uri);
+
+    if (success == ESP_OK) {
+        asprintf(
+            &log_message,
+            "%s '%s' - OK",
+            http_method_str(request->method),
+            request->uri);
+    } else {
+        asprintf(
+            &log_message,
+            "%s '%s' - FAIL",
+            http_method_str(request->method),
+            request->uri);
+    }
+
     ESP_LOGI(TAG, "%s", log_message);
     free(log_message);
 }

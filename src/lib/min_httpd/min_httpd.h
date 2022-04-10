@@ -15,6 +15,11 @@
 #ifndef SRC_LIB_MIN_HTTPD_MIN_HTTPD_H_
 #define SRC_LIB_MIN_HTTPD_MIN_HTTPD_H_
 
+/* This is ESP-IDF's error handling library.
+ * - defines the type ``esp_err_t``
+ */
+#include "esp_err.h"
+
 /* This is ESP-IDF's event library.
  * - defines ``esp_event_base_t``
  */
@@ -102,8 +107,13 @@ void min_httpd_external_event_handler_stop(
  * Logs the request's *method* and the requested *URI*, using log level
  * ``INFO``.
  *
+ * ``success`` indicates, if the ``request`` was processed successfully and
+ * this status is also included in the provided log message.
+ *
  * @param request A pointer to the request, that should be logged.
+ * @param success This flag indicates, if the request could be served
+ *                successfully.
  */
-void min_httpd_log_message(httpd_req_t* request);
+void min_httpd_log_message(httpd_req_t* request, esp_err_t success);
 
 #endif  // SRC_LIB_MIN_HTTPD_MIN_HTTPD_H_
