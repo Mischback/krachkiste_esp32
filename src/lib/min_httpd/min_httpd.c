@@ -158,13 +158,18 @@ static esp_err_t min_httpd_handler_404(
  * @return Always returns ``ESP_OK``.
  */
 static esp_err_t min_httpd_handler_home(httpd_req_t* request) {
-    // FIXME(mischback): This is just a temporary test!
-    const char* home_test = "Home (Test)";
+    // Access the embedded HTML file.
+    // See this component's ``CMakeLists.txt`` for the actual embedding (in
+    // ``idf_component_register()``) and see **ESP-IDF**'s documentation on how
+    // to access it: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#embedding-binary-data
+    extern const uint8_t home_html_start[] asm("_binary_home_html_start");
+    extern const uint8_t home_html_end[]   asm("_binary_home_html_end");
+    const size_t home_html_length = home_html_end - home_html_start;
 
     esp_err_t return_value = httpd_resp_send(
         request,
-        home_test,
-        HTTPD_RESP_USE_STRLEN);
+        (const char*) home_html_start,
+        home_html_length);
     min_httpd_log_message(request, return_value);
 
     return return_value;

@@ -11,4 +11,5 @@ minimizeHTML(home.src.html home.html)
 idf_component_register(SRCS "min_httpd.c" "home.html"
                        INCLUDE_DIRS "."
                        REQUIRES "esp_common esp_http_server"
-                       PRIV_REQUIRES "esp_event")
+                       PRIV_REQUIRES "esp_event"
+                       EMBED_TXTFILES "home.html")
