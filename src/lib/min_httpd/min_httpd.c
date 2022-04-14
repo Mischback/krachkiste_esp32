@@ -76,7 +76,7 @@ static esp_err_t min_httpd_server_stop(void);
 static esp_err_t min_httpd_handler_404(
     httpd_req_t* request,
     httpd_err_code_t error_code);
-    static esp_err_t min_httpd_handler_favicon(httpd_req_t* request);
+static esp_err_t min_httpd_handler_favicon(httpd_req_t* request);
 static esp_err_t min_httpd_handler_home(httpd_req_t* request);
 
 
