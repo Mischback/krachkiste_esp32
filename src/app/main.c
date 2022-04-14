@@ -91,17 +91,28 @@ void app_main(void) {
         NULL,
         1);
 
-    // Register event handler for AP mode
+    // Start ``min_httpd`` as soon as the network becomes ready!
+    // FIXME(mischback) The code only covers WiFi AP mode!
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
         WIFI_EVENT,
         WIFI_EVENT_AP_START,
         &min_httpd_external_event_handler_start,
         NULL,
         NULL));
+    // Stop ``min_httpd`` when the network link goes down!
+    // FIXME(mischback) The code only covers WiFi AP mode!
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
         WIFI_EVENT,
         WIFI_EVENT_AP_STOP,
         &min_httpd_external_event_handler_stop,
+        NULL,
+        NULL));
+    // Register *URI handlers* of ``networking`` component when ``min_httpd``
+    // is ready!
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        MIN_HTTPD_EVENTS,
+        MIN_HTTPD_READY,
+        &networking_web_attach_handlers,
         NULL,
         NULL));
 
