@@ -108,6 +108,8 @@ static const httpd_uri_t min_httpd_uri_favicon = {
 
 /* ***** FUNCTIONS ********************************************************* */
 
+ESP_EVENT_DEFINE_BASE(MIN_HTTPD_EVENTS);
+
 // Documentation in header file!
 void min_httpd_external_event_handler_start(
     void* arg,
@@ -273,6 +275,14 @@ static esp_err_t min_httpd_server_start(void) {
             min_httpd_handler_404);
         httpd_register_uri_handler(min_httpd_server, &min_httpd_uri_home);
         httpd_register_uri_handler(min_httpd_server, &min_httpd_uri_favicon);
+
+        // Emit an event
+        ESP_ERROR_CHECK_WITHOUT_ABORT(esp_event_post(
+            MIN_HTTPD_EVENTS,
+            MIN_HTTPD_READY,
+            &min_httpd_server,
+            sizeof(min_httpd_server),
+            portMAX_DELAY));
 
         // Return success
         return ESP_OK;

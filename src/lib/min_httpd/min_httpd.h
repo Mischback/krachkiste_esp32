@@ -54,6 +54,23 @@
 #define MIN_HTTPD_MAX_URI_HANDLERS 8
 
 /**
+ * Component-specific event base.
+ */
+ESP_EVENT_DECLARE_BASE(MIN_HTTPD_EVENTS);
+
+/**
+ * Component-specific events.
+ *
+ * MIN_HTTPD_READY - Emitted at the end of server's startup routine to indicate
+ *                   to other components that the server is ready to accept
+ *                   further *URI handlers*.
+ */
+enum {
+    MIN_HTTPD_READY
+};
+
+
+/**
  * Handle external events that should cause the HTTP server to start.
  *
  * This is a specific handler, that does not actually parse or verify the
