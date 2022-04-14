@@ -23,7 +23,7 @@ if __name__ == "__main__":
         print("Please specify an INPUT / OUTPUT file!")
         sys.exit(1)
 
-    print("Minimizing HTML source {}".format(input_file))
+    print("Minimizing HTML source '{}'".format(input_file))
 
     # open input_file, read its content
     try:
@@ -66,4 +66,5 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
+    # return "0" = SUCCESS
     sys.exit(0)
