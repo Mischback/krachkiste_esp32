@@ -12,4 +12,5 @@ idf_component_register(SRCS "min_httpd.c" "home.html"
                        INCLUDE_DIRS "."
                        REQUIRES "esp_common esp_http_server"
                        PRIV_REQUIRES "esp_event"
+                       EMBED_FILES "favicon.ico"
                        EMBED_TXTFILES "home.html")

@@ -76,6 +76,7 @@ static esp_err_t min_httpd_server_stop(void);
 static esp_err_t min_httpd_handler_404(
     httpd_req_t* request,
     httpd_err_code_t error_code);
+    static esp_err_t min_httpd_handler_favicon(httpd_req_t* request);
 static esp_err_t min_httpd_handler_home(httpd_req_t* request);
 
 
@@ -91,6 +92,16 @@ static const httpd_uri_t min_httpd_uri_home = {
     .uri = "/",
     .method = HTTP_GET,
     .handler = min_httpd_handler_home,
+    .user_ctx = NULL
+};
+
+/**
+ * URI definition for the *favicon*, which will be served from ``/favicon.ico``.
+ */
+static const httpd_uri_t min_httpd_uri_favicon = {
+    .uri = "/favicon.ico",
+    .method = HTTP_GET,
+    .handler = min_httpd_handler_favicon,
     .user_ctx = NULL
 };
 
@@ -147,6 +158,32 @@ static esp_err_t min_httpd_handler_404(
     httpd_resp_send_err(request, HTTPD_404_NOT_FOUND, error_message);
     free(error_message);
     return ESP_FAIL;
+}
+
+/**
+ * The handler for the favicon.
+ *
+ * The matching *URI definition* is ::min_httpd_uri_favicon.
+ *
+ * @param request The request that should be responded to with this function.
+ * @return Always returns ``ESP_OK``.
+ */
+static esp_err_t min_httpd_handler_favicon(httpd_req_t* request) {
+    // Access the embedded HTML file.
+    // See this component's ``CMakeLists.txt`` for the actual embedding (in
+    // ``idf_component_register()``) and see **ESP-IDF**'s documentation on how
+    // to access it: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#embedding-binary-data
+    extern const uint8_t favicon_ico_start[] asm("_binary_favicon_ico_start");
+    extern const uint8_t favicon_ico_end[]   asm("_binary_favicon_ico_end");
+    const size_t favicon_ico_size = favicon_ico_end - favicon_ico_start;
+
+    esp_err_t return_value = httpd_resp_send(
+        request,
+        (const char*) favicon_ico_start,
+        favicon_ico_size);
+    min_httpd_log_message(request, return_value);
+
+    return return_value;
 }
 
 /**
@@ -235,6 +272,7 @@ static esp_err_t min_httpd_server_start(void) {
             HTTPD_404_NOT_FOUND,
             min_httpd_handler_404);
         httpd_register_uri_handler(min_httpd_server, &min_httpd_uri_home);
+        httpd_register_uri_handler(min_httpd_server, &min_httpd_uri_favicon);
 
         // Return success
         return ESP_OK;
