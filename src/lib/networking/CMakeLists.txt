@@ -11,5 +11,6 @@ minimizeHTML(wifi_config.src.html wifi_config.html)
 idf_component_register(
     SRCS "networking.c" "networking_web.c" "wifi_ap.c" "wifi_config.html"
     INCLUDE_DIRS "."
-    PRIV_REQUIRES "esp_common esp_event esp_netif esp_wifi log nvs_flash"
+    PRIV_REQUIRES "esp_common esp_event esp_http_server esp_netif esp_wifi log nvs_flash"
+    EMBED_TXTFILES "wifi_config.html"
 )
