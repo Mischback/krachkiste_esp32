@@ -18,12 +18,20 @@
 /* This files header */
 #include "networking_web.h"
 
+/* Other headers of the component */
+#include "networking.h"
+
 /* This is ESP-IDF's error handling library.
  * - defines the type ``esp_err_t``
  * - defines the macro ``ESP_ERROR_CHECK``
  * - defines the return values ``ESP_OK`` (0) and ``ESP_FAIL`` (-1)
  */
 #include "esp_err.h"
+
+/* This is ESP-IDF's event library.
+ * - defines ``esp_event_base_t``
+ */
+#include "esp_event.h"
 
 /* This is EPS-IDF's http server library.
  * This header file also includes "http_parser.h", which provides the function
@@ -57,6 +65,21 @@ static const httpd_uri_t networking_web_uri_get_config = {
 
 
 /* ***** FUNCTIONS ********************************************************* */
+
+// Documentation in networking.h
+void networking_web_attach_handlers(
+    void* arg,
+    esp_event_base_t event_base,
+    int32_t event_id,
+    void* event_data) {
+    // Get the server from ``event_data``
+    httpd_handle_t server = *((httpd_handle_t*) event_data);
+
+    // Register this component's *URI handlers* with the server instance.
+    httpd_register_uri_handler(
+        server,
+        &networking_web_uri_get_config);
+}
 
 /**
  * Show the WiFi configuration form.

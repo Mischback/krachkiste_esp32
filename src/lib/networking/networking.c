@@ -28,7 +28,6 @@
 #include <string.h>
 
 /* Other headers of the component */
-#include "networking_web.h"
 #include "wifi_ap.h"
 
 /* The FreeRTOS headers are required for timers */
