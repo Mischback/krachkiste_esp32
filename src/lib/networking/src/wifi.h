@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileType: SOURCE
 
-#ifndef SRC_LIB_NETWORKING_WIFI_H_
-#define SRC_LIB_NETWORKING_WIFI_H_
+#ifndef SRC_LIB_NETWORKING_SRC_WIFI_H_
+#define SRC_LIB_NETWORKING_SRC_WIFI_H_
 
 /* This is ESP-IDF's error handling library.
  * - defines ``esp_err_t``
@@ -32,4 +32,4 @@
  */
 esp_err_t networking_wifi_ap_initialize(void);
 
-#endif  // SRC_LIB_NETWORKING_WIFI_H_
+#endif  // SRC_LIB_NETWORKING_SRC_WIFI_H_
