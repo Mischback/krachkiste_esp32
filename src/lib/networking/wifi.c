@@ -24,7 +24,7 @@
 #include <string.h>
 
 /* Other headers of the component */
-#include "networking.h"
+#include "networking/networking.h"
 
 /* The FreeRTOS headers are required for timers */
 #include "freertos/FreeRTOS.h"

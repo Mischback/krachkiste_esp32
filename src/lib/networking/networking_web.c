@@ -19,7 +19,7 @@
 #include "networking_web.h"
 
 /* Other headers of the component */
-#include "networking.h"
+#include "networking/networking.h"
 
 /* This is ESP-IDF's error handling library.
  * - defines the type ``esp_err_t``

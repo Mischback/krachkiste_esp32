@@ -32,11 +32,11 @@
 /* This is ESP-IDF's library to interface the non-volatile storage (NVS). */
 #include "nvs_flash.h"
 
-/* project-specific minimal httpd implementation. */
+/* Project-specific minimal httpd implementation. */
 #include "min_httpd.h"
 
 /* Project-specific library to manage wifi connections. */
-#include "networking.h"
+#include "networking/networking.h"
 
 /**
  * Set the module-specific ``TAG`` to be used with ESP-IDF's logging library.

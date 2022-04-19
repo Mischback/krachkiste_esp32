@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileType: SOURCE
 
-#ifndef SRC_LIB_NETWORKING_NETWORKING_H_
-#define SRC_LIB_NETWORKING_NETWORKING_H_
+#ifndef SRC_LIB_NETWORKING_INCLUDE_NETWORKING_NETWORKING_H_
+#define SRC_LIB_NETWORKING_INCLUDE_NETWORKING_NETWORKING_H_
 
 /* This is ESP-IDF's event library.
  * - defines ``esp_event_base_t``
@@ -109,4 +109,4 @@ void networking_web_attach_handlers(
     int32_t event_id,
     void* event_data);
 
-#endif  // SRC_LIB_NETWORKING_NETWORKING_H_
+#endif  // SRC_LIB_NETWORKING_INCLUDE_NETWORKING_NETWORKING_H_

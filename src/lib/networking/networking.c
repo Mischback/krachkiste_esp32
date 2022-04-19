@@ -22,7 +22,7 @@
  */
 
 /* This files header */
-#include "networking.h"
+#include "networking/networking.h"
 
 /* C-standard for string operations */
 #include <string.h>
