@@ -12,8 +12,8 @@
  *         at GitHub.
  */
 
-#ifndef SRC_LIB_MIN_HTTPD_MIN_HTTPD_H_
-#define SRC_LIB_MIN_HTTPD_MIN_HTTPD_H_
+#ifndef SRC_LIB_MIN_HTTPD_INCLUDE_MIN_HTTPD_MIN_HTTPD_H_
+#define SRC_LIB_MIN_HTTPD_INCLUDE_MIN_HTTPD_MIN_HTTPD_H_
 
 /* This is ESP-IDF's error handling library.
  * - defines the type ``esp_err_t``
@@ -133,4 +133,4 @@ void min_httpd_external_event_handler_stop(
  */
 void min_httpd_log_message(httpd_req_t* request, esp_err_t success);
 
-#endif  // SRC_LIB_MIN_HTTPD_MIN_HTTPD_H_
+#endif  // SRC_LIB_MIN_HTTPD_INCLUDE_MIN_HTTPD_MIN_HTTPD_H_

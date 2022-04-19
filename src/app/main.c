@@ -33,7 +33,7 @@
 #include "nvs_flash.h"
 
 /* Project-specific minimal httpd implementation. */
-#include "min_httpd.h"
+#include "min_httpd/min_httpd.h"
 
 /* Project-specific library to manage wifi connections. */
 #include "networking/networking.h"

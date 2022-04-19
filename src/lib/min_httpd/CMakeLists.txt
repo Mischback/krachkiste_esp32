@@ -2,7 +2,7 @@
 # minify HTML files of the component
 include(${PROJECT_DIR}/tools/cmake/minimizer.cmake)
 
-minimizeHTML(home.src.html home.html)
+minimizeHTML(src/home.src.html src/home.html)
 
 # Register this as an ESP-IDF component
 # For details on REQUIRES/PRIV_REQUIRES see
@@ -11,10 +11,10 @@ minimizeHTML(home.src.html home.html)
 # they are included by default, see
 # https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#common-component-requirements
 idf_component_register(
-  SRCS "min_httpd.c" "home.html"
-  INCLUDE_DIRS "."
+  SRCS "src/min_httpd.c" "src/home.html"
+  INCLUDE_DIRS "include"
   REQUIRES "esp_common esp_http_server"
   PRIV_REQUIRES "esp_event"
-  EMBED_FILES "favicon.ico"
-  EMBED_TXTFILES "home.html"
+  EMBED_FILES "src/favicon.ico"
+  EMBED_TXTFILES "src/home.html"
 )

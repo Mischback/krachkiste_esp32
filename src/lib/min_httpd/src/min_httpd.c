@@ -18,8 +18,8 @@
  *         at GitHub.
  */
 
-/* This files header */
-#include "min_httpd.h"
+/* This file's header */
+#include "min_httpd/min_httpd.h"
 
 /* C-standard for string operations */
 #include <string.h>
