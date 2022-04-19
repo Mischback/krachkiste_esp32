@@ -5,20 +5,16 @@
 #ifndef SRC_LIB_NETWORKING_INCLUDE_NETWORKING_NETWORKING_H_
 #define SRC_LIB_NETWORKING_INCLUDE_NETWORKING_NETWORKING_H_
 
+/* This is ESP-IDF's error handling library.
+ * - defines ``esp_err_t``
+ */
+#include "esp_err.h"
+
 /* This is ESP-IDF's event library.
  * - defines ``esp_event_base_t``
  */
 #include "esp_event.h"
 
-
-/**
- * The project-specific namespace to access the non-volatile storage.
- *
- * @todo Make this configurable (pre-build with ``sdkconfig``), consider
- *       ``ESP-IDF``'s ``NVS_KEY_NAME_SIZE``
- *       (https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html#_CPPv48nvs_openPKc15nvs_open_mode_tP12nvs_handle_t)
- */
-#define PROJECT_NVS_STORAGE_NAMESPACE "krachkiste"
 
 /**
  * The channel to be used while providing the project-specific access point.
@@ -80,7 +76,7 @@
 #define NETWORKING_WIFI_NVS_KEY_PSK "net_pass"
 
 
-void networking_initialize(void);
+esp_err_t networking_initialize(char* nvs_namespace);
 
 /**
  * Handle the event, that the http server is ready to accept further

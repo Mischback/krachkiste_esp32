@@ -21,7 +21,7 @@
  *         at GitHub.
  */
 
-/* This files header */
+/* This file's header */
 #include "networking/networking.h"
 
 /* C-standard for string operations */
@@ -100,6 +100,7 @@ static const char* TAG = "krachkiste.networking";
 
 /* ***** PROTOTYPES ******************************************************** */
 static esp_err_t networking_get_wifi_credentials(
+    char* nvs_namespace,
     char* wifi_ssid,
     char* wifi_password);
 
@@ -131,6 +132,7 @@ static esp_err_t networking_get_wifi_credentials(
  *                      also cause emitting of a log message of level ``ERROR``.
  */
 static esp_err_t networking_get_wifi_credentials(
+    char* nvs_namespace,
     char* wifi_ssid,
     char* wifi_password) {
     ESP_LOGV(TAG, "Entering networking_get_wifi_credentials()");
@@ -138,7 +140,7 @@ static esp_err_t networking_get_wifi_credentials(
     // Open NVS storage of the given namespace
     nvs_handle_t storage_handle;
     esp_err_t err = nvs_open(
-        PROJECT_NVS_STORAGE_NAMESPACE,
+        nvs_namespace,
         NVS_READONLY,
         &storage_handle);
     if (err != ESP_OK) {
@@ -157,7 +159,7 @@ static esp_err_t networking_get_wifi_credentials(
     ESP_LOGD(
         TAG,
         "NVS handle %s successfully opened.",
-        PROJECT_NVS_STORAGE_NAMESPACE);
+        nvs_namespace);
 
     // Read the SSID and password from NVS
     size_t required_size;
@@ -207,7 +209,7 @@ static esp_err_t networking_get_wifi_credentials(
     return ESP_OK;
 }
 
-void networking_initialize(void) {
+esp_err_t networking_initialize(char* nvs_namespace) {
     // set log-level of our own code to VERBOSE (sdkconfig.defaults sets the
     // default log-level to INFO)
     // FIXME: Final code should not do this, but respect the project's settings
@@ -220,15 +222,15 @@ void networking_initialize(void) {
     // networking-related code.
     ESP_ERROR_CHECK(esp_netif_init());
 
-    // FIXME(mischback): just for debugging during development
-    // ESP_LOGD(TAG, "Address of 'ap_netif': %p", networking_wifi_ap_netif);
-
     // Read WiFi credentials from non-volatile storage (NVS)
     char wifi_ssid[NETWORKING_WIFI_SSID_MAX_LEN];
     char wifi_password[NETWORKING_WIFI_PSK_MAX_LEN];
     memset(&wifi_ssid, 0, NETWORKING_WIFI_SSID_MAX_LEN);
     memset(&wifi_password, 0, NETWORKING_WIFI_PSK_MAX_LEN);
-    esp_err_t err = networking_get_wifi_credentials(wifi_ssid, wifi_password);
+    esp_err_t err = networking_get_wifi_credentials(
+        nvs_namespace,
+        wifi_ssid,
+        wifi_password);
     if (err != ESP_OK) {
         ESP_LOGI(TAG, "Could not read WiFi credentials from NVS");
         ESP_LOGD(TAG, "Trying to start access point now!");
@@ -239,6 +241,5 @@ void networking_initialize(void) {
         ESP_LOGD(TAG, "Password: >%s<", wifi_password);
     }
 
-    // FIXME(mischback): just for debugging during development
-    // ESP_LOGD(TAG, "Address of 'ap_netif': %p", networking_wifi_ap_netif);
+    return ESP_OK;
 }
