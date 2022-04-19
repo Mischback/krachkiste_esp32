@@ -18,7 +18,7 @@
  */
 
 /* This files header */
-#include "wifi_ap.h"
+#include "wifi.h"
 
 /* C-standard for string operations */
 #include <string.h>
