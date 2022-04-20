@@ -59,29 +59,19 @@
 /**
  * The maximum length of the ``char`` array to store SSID.
  *
- * IEEE 802.11 says, that the maximum length of an SSID is 32, so this is set
- * to 33 (to allow for the terminating ``"\0"``).
- *
- * @todo Should this be made configurable by project settings? 33 is in fact
- *       a value derived from IEEE 802.11, so allowing for manual configuration
- *       can *only* be used to minimize the required memory usage. But the
- *       saving would be minimal, probably not worth the effort.
+ * IEEE 802.11 says, that the maximum length of an SSID is 32, which is also
+ * the value provided in **ESP-IDF**'s ``esp_wifi_types.h``.
  */
-#define NETWORKING_WIFI_SSID_MAX_LEN 33
+#define NETWORKING_WIFI_SSID_MAX_LEN 32
 
 /**
  * The maximum length of the ``char`` array to store the pre-shared key
  * for a WiFi connection.
  *
- * IEEE 801.11 says, that the maximum length of an PSK is 64, so this is set
- * to 65 (to allow for the terminating ``"\0"``).
- *
- * @todo Should this be made configurable by project settings? 65 is in fact
- *       a value derived from IEEE 802.11, so allowing for manual configuration
- *       can *only* be used to minimize the required memory usage. But the
- *       saving would be minimal, probably not worth the effort.
+ * IEEE 801.11 says, that the maximum length of an PSK is 64, which is also the
+ * value provided in **ESP-IDF**'s ``esp_wifi_types.h``.
  */
-#define NETWORKING_WIFI_PSK_MAX_LEN 65
+#define NETWORKING_WIFI_PSK_MAX_LEN 64
 
 
 /**
@@ -137,6 +127,11 @@ static uint8_t ap_num_clients = 0;
  */
 static TimerHandle_t ap_shutdown_timer = NULL;
 
+/**
+ * Reference to the ``netif`` object while in ``station`` mode.
+ */
+static esp_netif_t* sta_netif = NULL;
+
 
 /* ***** PROTOTYPES ******************************************************** */
 static esp_err_t ap_launch(void);
@@ -148,6 +143,11 @@ static void ap_wifi_event_handler(
     void* event_data);
 static esp_err_t connect_to_wifi(void);
 static void get_wifi_config_from_nvs(char* nvs_namespace);
+static void sta_wifi_event_handler(
+    void* arg,
+    esp_event_base_t event_base,
+    int32_t event_id,
+    void* event_data);
 
 
 /* ***** FUNCTIONS ********************************************************* */
@@ -373,6 +373,18 @@ static void ap_wifi_event_handler(
     }
 }
 
+/**
+ * Connect to a (stored) WiFi network.
+ *
+ * Basically this function does the setup of the station mode, registers the
+ * event handler ::sta_wifi_event_handler and starts the interface.
+ *
+ * The actual magic of establishing and maintaining the connection and
+ * switching to the local access point (if required) is done in
+ * ::sta_wifi_event_handler.
+ *
+ * @return ``ESP_OK`` (= ``0``) on success, non-zero error code on error
+ */
 static esp_err_t connect_to_wifi(void) {
     ESP_LOGV(TAG, "Entering connect_to_wifi()");
 
@@ -383,7 +395,43 @@ static esp_err_t connect_to_wifi(void) {
         return ap_launch();
     }
 
-    return ESP_FAIL;
+    // Create a network interface for the station mode.
+    sta_netif = esp_netif_create_default_wifi_sta();
+
+    // Setup the configuration for station mode.
+    wifi_config_t sta_config = {
+        .sta = {
+            .scan_method = WIFI_FAST_SCAN,
+            .sort_method = WIFI_CONNECT_AP_BY_SECURITY,
+            .threshold.rssi = NETWORKING_WIFI_STA_THRESHOLD_RSSI,
+            .threshold.authmode = NETWORKING_WIFI_STA_THRESHOLD_AUTH,
+        },
+    };
+    // Inject the SSID / PSK as fetched from the NVS.
+    // ``memcpy`` feels like *force*, but it works.
+    memcpy(
+        sta_config.sta.ssid,
+        project_wifi_config.ssid,
+        strlen(project_wifi_config.ssid));
+    memcpy(
+        sta_config.sta.password,
+        project_wifi_config.psk,
+        strlen(project_wifi_config.psk));
+
+    // Register event handler for station mode.
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        WIFI_EVENT,
+        ESP_EVENT_ANY_ID,
+        &sta_wifi_event_handler,
+        NULL,
+        NULL));
+
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_stop());
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    return ESP_OK;
 }
 
 /**
@@ -489,6 +537,72 @@ static void get_wifi_config_from_nvs(char* nvs_namespace) {
     return;
 }
 
+/**
+ * Handle events while WiFi is in station mode.
+ *
+ * This event handler is registered in ::connect_to_wifi. The handler is
+ * attached to the ``default`` event loop, as provided by ``esp_event`` (the
+ * loop has to be started outside of this component, most likely in the
+ * application's ``app_main()``).
+ *
+ * @param arg        Generic arguments.
+ * @param event_base ``esp_event``'s ``EVENT_BASE``. Every event is specified
+ *                   by the ``EVENT_BASE`` and its ``EVENT_ID``.
+ * @param event_id   ``esp_event``'s ``EVENT_ID``. Every event is specified by
+ *                   the ``EVENT_BASE`` and its ``EVENT_ID``.
+ * @param event_data Events might provide a pointer to additional,
+ *                   event-related data.
+ */
+static void sta_wifi_event_handler(
+    void* arg,
+    esp_event_base_t event_base,
+    int32_t event_id,
+    void* event_data) {
+    ESP_LOGV(TAG, "Entering sta_wifi_event_handler()");
+
+    switch (event_id) {
+        case WIFI_EVENT_STA_START:
+            // This event is emitted after the WiFi is started in station mode.
+            // Simply call ``esp_wifi_connect()`` to actually establish the
+            // OSI layer 2 connection.
+            ESP_LOGD(TAG, "[sta_wifi_event_handler] STA_START");
+            esp_wifi_connect();
+            break;
+        case WIFI_EVENT_STA_CONNECTED:
+            // This event just means, that a connection was established on
+            // OSI layer 2. Generally, layer 3 (IP) is required for any real
+            // networking task, so no action is taken here.
+            ESP_LOGD(TAG, "[sta_wifi_event_handler] STA_CONNECTED");
+            break;
+        case WIFI_EVENT_STA_DISCONNECTED:
+            // This event is generated for very different reasons:
+            // a) The application triggers a shutdown of the connection, by
+            //    calling ``esp_wifi_disconnect()``, ``esp_wifi_stop()`` or
+            //    ``esp_wifi_restart()``.
+            // b) ``esp_wifi_connect()`` failed to establish a connection, i.e.
+            //    because the (stored) network is not reachable or the password
+            //    is rejected.
+            // c) The connection got disrupted, either by the WiFi's access
+            //    point or other external circumstances (most likely zombies).
+            //
+            // Case a) is not covered by this component, as its purpose is to
+            // establish and maintain network connectivity.
+            // Cases b) and c) must be handled here.
+            //
+            // TODO(mischback) Here's the part for some additional logic,
+            //                 implementing a maximum number of retries
+            //                 before the internal access point is launched
+            ESP_LOGD(TAG, "[sta_wifi_event_handler] STA_DISCONNECTED");
+            esp_wifi_connect();
+            break;
+        default:
+            // Any other WIFI_EVENT is just logged here.
+            // TODO(mischback) This should be removed as soon as possible!
+            ESP_LOGV(TAG, "[sta_wifi_event_handler] some WIFI_EVENT");
+            break;
+    }
+}
+
 esp_err_t wifi_initialize(char* nvs_namespace) {
     // Set log-level of our own code to VERBOSE.
     // TODO(mischback) This is just for development purposes and should be
@@ -501,6 +615,11 @@ esp_err_t wifi_initialize(char* nvs_namespace) {
     // This is the entry point of the wifi-related source code. First of all,
     // initialize the module's variables.
     memset(&project_wifi_config, 0x00, sizeof(networking_wifi_config_t));
+
+    // FIXME(mischback) This is just for temporary testing!
+    //                  And no, these are not my actual credentials!
+    // strcpy(project_wifi_config.ssid, "WiFi_SSID");
+    // strcpy(project_wifi_config.psk, "WiFi_PSK");
 
     // Read WiFi credentials from non-volatile storage (NVS).
     // During initialization, the config just has to be read once.

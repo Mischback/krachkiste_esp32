@@ -15,6 +15,11 @@
  */
 #include "esp_event.h"
 
+/* ESP-IDF's wifi library
+ * - defines constants used for NETWORKING_WIFI_STA_THRESHOLD_AUTH
+ */
+#include "esp_wifi.h"
+
 
 /**
  * The channel to be used while providing the project-specific access point.
@@ -75,6 +80,20 @@
  */
 #define NETWORKING_WIFI_NVS_KEY_PSK "net_pass"
 
+/**
+ * Set a minimum required WiFi security while scanning for networks.
+ *
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
+ * @todo Include a dedicated warning about security!
+ */
+#define NETWORKING_WIFI_STA_THRESHOLD_AUTH WIFI_AUTH_WPA_PSK
+
+/**
+ * Set a minimum required WiFi signal strength while scanning for networks.
+ *
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
+ */
+#define NETWORKING_WIFI_STA_THRESHOLD_RSSI -127
 
 esp_err_t networking_initialize(char* nvs_namespace);
 
