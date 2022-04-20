@@ -3,21 +3,21 @@
 // SPDX-FileType: SOURCE
 
 /**
- * Provide the functions related to the project-specific access point.
+ * Provide the functions related to WiFi networking.
  *
  * **Resources:**
  *   - https://github.com/nkolban/esp32-snippets/tree/master/networking/bootwifi
  *   - https://github.com/espressif/esp-idf/tree/master/examples/wifi/
  *   - https://github.com/tonyp7/esp32-wifi-manager/blob/master/src/wifi_manager.c
  *
- * @file   wifi_ap.c
+ * @file   wifi.c
  * @author Mischback
  * @bug    Bugs are tracked with the
  *         [issue tracker](https://github.com/Mischback/krachkiste_esp32/issues)
  *         at GitHub.
  */
 
-/* This files header */
+/* This file's header */
 #include "wifi.h"
 
 /* C-standard for string operations */
@@ -84,6 +84,15 @@
 #define NETWORKING_WIFI_PSK_MAX_LEN 65
 
 
+/**
+ * Custom type to store the WiFi-related configuration.
+ *
+ * This type is used to store the WiFi-configuration of a WiFi network, to
+ * which this component should establish a connection. It is not used to store
+ * the configuration of the internal access point.
+ *
+ * See ::project_wifi_config
+ */
 typedef struct {
     char ssid[NETWORKING_WIFI_SSID_MAX_LEN];
     char psk[NETWORKING_WIFI_PSK_MAX_LEN];
@@ -99,6 +108,12 @@ typedef struct {
  */
 static const char* TAG = "krachkiste.networking";
 
+/**
+ * The configuration to be used while connecting to a WiFi network.
+ *
+ * The variable is initialized with ``0x00`` in ::wifi_initialize and then
+ * populated by ::get_wifi_config_from_nvs.
+ */
 static networking_wifi_config_t project_wifi_config;
 
 /**

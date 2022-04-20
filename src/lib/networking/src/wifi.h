@@ -32,6 +32,23 @@
  */
 esp_err_t networking_wifi_ap_initialize(void);
 
+/**
+ * Initializes the WiFi connectivity of the device.
+ *
+ * This is the components main entry point and external interface. It will take
+ * care of reading and existing WiFi configuration from the non-volatile
+ * storage, establishing and maintaining connection if the specified WiFi
+ * network is available or launching an internal access point to make the
+ * configuration web interface available.
+ *
+ * @param nvs_namespace Namespace to be used to retrieve an existing Wifi
+ *                      configuration. Must be specified by the calling code
+ *                      (it is assumed, that this component is used by some
+ *                      actual application, which manages the NVS namespaces of
+ *                      the project).
+ * @return              ``ESP_OK`` (= ``0``) on success, ``ESP_FAIL`` (= ``-1``)
+ *                      otherwise.
+ */
 esp_err_t wifi_initialize(char* nvs_namespace);
 
 #endif  // SRC_LIB_NETWORKING_SRC_WIFI_H_
