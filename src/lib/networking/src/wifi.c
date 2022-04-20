@@ -53,6 +53,40 @@
 #include "esp_wifi.h"
 
 
+/**
+ * The maximum length of the ``char`` array to store SSID.
+ *
+ * IEEE 802.11 says, that the maximum length of an SSID is 32, so this is set
+ * to 33 (to allow for the terminating ``"\0"``).
+ *
+ * @todo Should this be made configurable by project settings? 33 is in fact
+ *       a value derived from IEEE 802.11, so allowing for manual configuration
+ *       can *only* be used to minimize the required memory usage. But the
+ *       saving would be minimal, probably not worth the effort.
+ */
+#define NETWORKING_WIFI_SSID_MAX_LEN 33
+
+/**
+ * The maximum length of the ``char`` array to store the pre-shared key
+ * for a WiFi connection.
+ *
+ * IEEE 801.11 says, that the maximum length of an PSK is 64, so this is set
+ * to 65 (to allow for the terminating ``"\0"``).
+ *
+ * @todo Should this be made configurable by project settings? 65 is in fact
+ *       a value derived from IEEE 802.11, so allowing for manual configuration
+ *       can *only* be used to minimize the required memory usage. But the
+ *       saving would be minimal, probably not worth the effort.
+ */
+#define NETWORKING_WIFI_PSK_MAX_LEN 65
+
+
+typedef struct {
+    char wifi_ssid[NETWORKING_WIFI_SSID_MAX_LEN];
+    char wifi_password[NETWORKING_WIFI_PSK_MAX_LEN];
+} networking_wifi_config_t;
+
+
 /* ***** VARIABLES ********************************************************* */
 /**
  * Set the module-specific ``TAG`` to be used with ESP-IDF's logging library.
@@ -61,6 +95,8 @@
  * [its API documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html#how-to-use-this-library).
  */
 static const char* TAG = "krachkiste.networking";
+
+static networking_wifi_config_t project_wifi_config;
 
 /**
  * Reference to the ``netif`` object for the access point.
@@ -249,4 +285,21 @@ static void networking_wifi_ap_shutdown_callback(TimerHandle_t xTimer) {
     networking_wifi_ap_shutdown_timer = NULL;
 
     ESP_LOGI(TAG, "Access Point is shut down!");
+}
+
+esp_err_t wifi_initialize(char* nvs_namespace) {
+    ESP_LOGV(TAG, "Entering wifi_initialize()");
+
+    // This is the entry point of the wifi-related source code. First of all,
+    // initialize the module's variables.
+    memset(&project_wifi_config, 0x00, sizeof(networking_wifi_config_t));
+    ESP_LOGD(
+        TAG,
+        "sizeof(networking_wifi_config_t) = %d",
+        sizeof(networking_wifi_config_t));
+
+    // Read WiFi credentials from non-volatile storage (NVS)
+
+
+    return ESP_OK;
 }

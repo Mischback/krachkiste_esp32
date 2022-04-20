@@ -60,34 +60,6 @@
 #include "nvs_flash.h"
 
 
-/**
- * The maximum length of the ``char`` array to store SSID.
- *
- * IEEE 802.11 says, that the maximum length of an SSID is 32, so this is set
- * to 33 (to allow for the terminating ``"\0"``).
- *
- * @todo Should this be made configurable by project settings? 33 is in fact
- *       a value derived from IEEE 802.11, so allowing for manual configuration
- *       can *only* be used to minimize the required memory usage. But the
- *       saving would be minimal, probably not worth the effort.
- */
-#define NETWORKING_WIFI_SSID_MAX_LEN 33
-
-/**
- * The maximum length of the ``char`` array to store the pre-shared key
- * for a WiFi connection.
- *
- * IEEE 801.11 says, that the maximum length of an PSK is 64, so this is set
- * to 65 (to allow for the terminating ``"\0"``).
- *
- * @todo Should this be made configurable by project settings? 65 is in fact
- *       a value derived from IEEE 802.11, so allowing for manual configuration
- *       can *only* be used to minimize the required memory usage. But the
- *       saving would be minimal, probably not worth the effort.
- */
-#define NETWORKING_WIFI_PSK_MAX_LEN 65
-
-
 /* ***** VARIABLES ********************************************************* */
 /**
  * Set the module-specific ``TAG`` to be used with ESP-IDF's logging library.
@@ -222,24 +194,19 @@ esp_err_t networking_initialize(char* nvs_namespace) {
     // networking-related code.
     ESP_ERROR_CHECK(esp_netif_init());
 
-    // Read WiFi credentials from non-volatile storage (NVS)
-    char wifi_ssid[NETWORKING_WIFI_SSID_MAX_LEN];
-    char wifi_password[NETWORKING_WIFI_PSK_MAX_LEN];
-    memset(&wifi_ssid, 0, NETWORKING_WIFI_SSID_MAX_LEN);
-    memset(&wifi_password, 0, NETWORKING_WIFI_PSK_MAX_LEN);
-    esp_err_t err = networking_get_wifi_credentials(
-        nvs_namespace,
-        wifi_ssid,
-        wifi_password);
-    if (err != ESP_OK) {
-        ESP_LOGI(TAG, "Could not read WiFi credentials from NVS");
-        ESP_LOGD(TAG, "Trying to start access point now!");
+    // esp_err_t err = networking_get_wifi_credentials(
+    //     nvs_namespace,
+    //     wifi_ssid,
+    //     wifi_password);
+    // if (err != ESP_OK) {
+    //     ESP_LOGI(TAG, "Could not read WiFi credentials from NVS");
+    //     ESP_LOGD(TAG, "Trying to start access point now!");
 
-        ESP_ERROR_CHECK(networking_wifi_ap_initialize());
-    } else {
-        ESP_LOGD(TAG, "SSID: >%s<", wifi_ssid);
-        ESP_LOGD(TAG, "Password: >%s<", wifi_password);
-    }
+    //     ESP_ERROR_CHECK(networking_wifi_ap_initialize());
+    // } else {
+    //     ESP_LOGD(TAG, "SSID: >%s<", wifi_ssid);
+    //     ESP_LOGD(TAG, "Password: >%s<", wifi_password);
+    // }
 
-    return ESP_OK;
+    return wifi_initialize(nvs_namespace);
 }
