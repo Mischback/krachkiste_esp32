@@ -52,6 +52,9 @@
 /* ESP-IDF's wifi library */
 #include "esp_wifi.h"
 
+/* This is ESP-IDF's library to interface the non-volatile storage (NVS). */
+#include "nvs_flash.h"
+
 
 /**
  * The maximum length of the ``char`` array to store SSID.
@@ -82,8 +85,8 @@
 
 
 typedef struct {
-    char wifi_ssid[NETWORKING_WIFI_SSID_MAX_LEN];
-    char wifi_password[NETWORKING_WIFI_PSK_MAX_LEN];
+    char ssid[NETWORKING_WIFI_SSID_MAX_LEN];
+    char psk[NETWORKING_WIFI_PSK_MAX_LEN];
 } networking_wifi_config_t;
 
 
@@ -111,6 +114,7 @@ static TimerHandle_t networking_wifi_ap_shutdown_timer = NULL;
 
 
 /* ***** PROTOTYPES ******************************************************** */
+static void get_wifi_config_from_nvs(char* nvs_namespace);
 static void networking_wifi_ap_event_handler(
     void* arg,
     esp_event_base_t event_base,
@@ -287,6 +291,109 @@ static void networking_wifi_ap_shutdown_callback(TimerHandle_t xTimer) {
     ESP_LOGI(TAG, "Access Point is shut down!");
 }
 
+/**
+ * Retrieve WiFi configuration from the NVS.
+ *
+ * The function opens the non-volatile storage namespace (as specified by
+ * ``nvs_namespace``) and retrieves the WiFi's ``SSID`` from
+ * ::NETWORKING_WIFI_NVS_KEY_SSID and the *pre-shared key* ``PSK`` from
+ * ::NETWORKING_WIFI_NVS_KEY_PSK.
+ *
+ * The retrieved values are stored in the modules ::project_wifi_config.
+ *
+ * This function does not return anything. If the namespace could not be opened
+ * or one of the specified keys could not be retrieved, the function emits a
+ * log message of level ``ERROR``.
+ *
+ * Please note: During the applications initial startup, these *errors* are to
+ * be expected, as the WiFi is not yet configured.
+ *
+ * @param nvs_namespace Namespace to be opened and used to retrieve the values.
+ */
+static void get_wifi_config_from_nvs(char* nvs_namespace) {
+    // Open NVS storage of the given namespace
+    nvs_handle_t storage_handle;
+    esp_err_t err = nvs_open(
+        nvs_namespace,
+        NVS_READONLY,
+        &storage_handle);
+    ESP_LOGV(TAG, "Entering get_wifi_config_from_nvs()");
+
+    if (err != ESP_OK) {
+        // This might fail for different reasons, e.g. the NVS is not correctly
+        // set up or initialized.
+        // Assuming that the NVS **is** available, this will fail with
+        // ESP_ERR_NVS_NOT_FOUND, which means that there is no namespace of
+        // the name ``nvs_namespace`` (yet).
+        // This might happen during first start of the applications, as there
+        // is no WiFi config yet, so the namespace was never used before.
+        ESP_LOGE(TAG, "Could not open NVS handle (%s)", esp_err_to_name(err));
+        return;
+    }
+
+    // Got a handle to the NVS, now read the required values!
+    ESP_LOGD(
+        TAG,
+        "NVS handle to '%s' successfully opened.",
+        nvs_namespace);
+
+    // Read the SSID and password from NVS.
+    size_t required_size;
+    ESP_ERROR_CHECK(
+        nvs_get_str(
+            storage_handle,
+            NETWORKING_WIFI_NVS_KEY_SSID,
+            NULL,
+            &required_size));
+    err = nvs_get_str(
+        storage_handle,
+        NETWORKING_WIFI_NVS_KEY_SSID,
+        project_wifi_config.ssid,
+        &required_size);
+    if (err != ESP_OK) {
+        ESP_LOGE(
+            TAG,
+            "Could not read value of %s (%s)",
+            NETWORKING_WIFI_NVS_KEY_SSID,
+            esp_err_to_name(err));
+
+        // Close the handle to the NVS and return.
+        nvs_close(storage_handle);
+        return;
+    }
+
+    ESP_ERROR_CHECK(
+        nvs_get_str(
+            storage_handle,
+            NETWORKING_WIFI_NVS_KEY_PSK,
+            NULL,
+            &required_size));
+    err = nvs_get_str(
+        storage_handle,
+        NETWORKING_WIFI_NVS_KEY_PSK,
+        project_wifi_config.psk,
+        &required_size);
+    if (err != ESP_OK) {
+        ESP_LOGE(
+            TAG,
+            "Could not read value of %s (%s)",
+            NETWORKING_WIFI_NVS_KEY_PSK,
+            esp_err_to_name(err));
+
+        // Close the handle to the NVS and return.
+        nvs_close(storage_handle);
+        return;
+    }
+
+
+    // Close the handle to the NVS.
+    nvs_close(storage_handle);
+
+    ESP_LOGD(TAG, "Successfully read WiFi config from NVS");
+
+    return;
+}
+
 esp_err_t wifi_initialize(char* nvs_namespace) {
     ESP_LOGV(TAG, "Entering wifi_initialize()");
 
@@ -298,8 +405,12 @@ esp_err_t wifi_initialize(char* nvs_namespace) {
         "sizeof(networking_wifi_config_t) = %d",
         sizeof(networking_wifi_config_t));
 
-    // Read WiFi credentials from non-volatile storage (NVS)
-
+    // Read WiFi credentials from non-volatile storage (NVS).
+    // During initialization, the config just has to be read once.
+    // At least the SSID field must be a non-empty string, so check this.
+    if (strlen(project_wifi_config.ssid) == 0) {
+        get_wifi_config_from_nvs(nvs_namespace);
+    }
 
     return ESP_OK;
 }
