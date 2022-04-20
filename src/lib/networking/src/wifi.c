@@ -129,7 +129,9 @@ static TimerHandle_t networking_wifi_ap_shutdown_timer = NULL;
 
 
 /* ***** PROTOTYPES ******************************************************** */
+static esp_err_t connect_to_wifi(void);
 static void get_wifi_config_from_nvs(char* nvs_namespace);
+static esp_err_t launch_access_point(void);
 static void networking_wifi_ap_event_handler(
     void* arg,
     esp_event_base_t event_base,
@@ -306,6 +308,15 @@ static void networking_wifi_ap_shutdown_callback(TimerHandle_t xTimer) {
     ESP_LOGI(TAG, "Access Point is shut down!");
 }
 
+static esp_err_t connect_to_wifi(void) {
+    // Just a dummy for now, make the access point work first...
+    return ESP_FAIL;
+}
+
+static esp_err_t launch_access_point(void) {
+    return ESP_FAIL;
+}
+
 /**
  * Retrieve WiFi configuration from the NVS.
  *
@@ -427,5 +438,24 @@ esp_err_t wifi_initialize(char* nvs_namespace) {
         get_wifi_config_from_nvs(nvs_namespace);
     }
 
-    return ESP_OK;
+    wifi_init_config_t init_cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&init_cfg));
+
+    if (connect_to_wifi() == ESP_OK) {
+        ESP_LOGV(
+            TAG,
+            "Successfully connected to WiFi '%s'!",
+            project_wifi_config.ssid);
+        return ESP_OK;
+    }
+
+    if (launch_access_point() == ESP_OK) {
+        ESP_LOGV(TAG, "Successfully launched access point!");
+        return ESP_OK;
+    }
+
+    // Could not connect to (stored) WiFi network and something went wrong
+    // during launch of the internal access point. Clean up and return FAILURE.
+    ESP_ERROR_CHECK(esp_wifi_deinit());
+    return ESP_FAIL;
 }

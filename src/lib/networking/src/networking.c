@@ -84,19 +84,5 @@ esp_err_t networking_initialize(char* nvs_namespace) {
     // networking-related code.
     ESP_ERROR_CHECK(esp_netif_init());
 
-    // esp_err_t err = networking_get_wifi_credentials(
-    //     nvs_namespace,
-    //     wifi_ssid,
-    //     wifi_password);
-    // if (err != ESP_OK) {
-    //     ESP_LOGI(TAG, "Could not read WiFi credentials from NVS");
-    //     ESP_LOGD(TAG, "Trying to start access point now!");
-
-    //     ESP_ERROR_CHECK(networking_wifi_ap_initialize());
-    // } else {
-    //     ESP_LOGD(TAG, "SSID: >%s<", wifi_ssid);
-    //     ESP_LOGD(TAG, "Password: >%s<", wifi_password);
-    // }
-
     return wifi_initialize(nvs_namespace);
 }
