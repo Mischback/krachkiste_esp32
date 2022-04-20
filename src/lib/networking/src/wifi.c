@@ -139,123 +139,21 @@ static TimerHandle_t ap_shutdown_timer = NULL;
 
 
 /* ***** PROTOTYPES ******************************************************** */
-static esp_err_t connect_to_wifi(void);
-static void get_wifi_config_from_nvs(char* nvs_namespace);
 static esp_err_t ap_launch(void);
+static void ap_shutdown(TimerHandle_t xTimer);
 static void ap_wifi_event_handler(
     void* arg,
     esp_event_base_t event_base,
     int32_t event_id,
     void* event_data);
-static void ap_shutdown(TimerHandle_t xTimer);
+static esp_err_t connect_to_wifi(void);
+static void get_wifi_config_from_nvs(char* nvs_namespace);
 
 
 /* ***** FUNCTIONS ********************************************************* */
 
 /**
- * Handle events while the project-specific access point is running.
- *
- * During operation of the access point, several events must be monitored and
- * might trigger application- or project-specific actions.
- *
- * This event handler is registered in ::ap_launch. The handler is attached to
- * the ``default`` event loop, as provided by ``esp_event`` (the loop has to be
- * started outside of this component, most likely in the application's
- * ``app_main()``).
- *
- * During the access point's shutdown (performed by
- * ::ap_shutdown), this event handler is unregistered.
- *
- * @param arg        Generic arguments.
- * @param event_base ``esp_event``'s ``EVENT_BASE``. Every event is specified
- *                   by the ``EVENT_BASE`` and its ``EVENT_ID``.
- * @param event_id   ``esp_event``'s ``EVENT_ID``. Every event is specified by
- *                   the ``EVENT_BASE`` and its ``EVENT_ID``.
- * @param event_data Events might provide a pointer to additional,
- *                   event-related data.
- */
-static void ap_wifi_event_handler(
-    void* arg,
-    esp_event_base_t event_base,
-    int32_t event_id,
-    void* event_data) {
-
-    switch (event_id) {
-        // Please note, that all ``case`` statements have an empty statement
-        // (``{}``) appended to enable the declaration of variables with the
-        // correct scope. See https://stackoverflow.com/a/18496437
-        // However, ``cpplint`` does not like the recommended ``;`` and
-        // recommends an empty block ``{}``.
-        case WIFI_EVENT_AP_START: {}
-            ESP_LOGV(TAG, "WIFI_EVENT_AP_START");
-
-            // Reset the number of connected clients.
-            ap_num_clients = 0;
-
-            // The access point got started: create a timer to shut it down
-            // (eventually).
-            xTimerStart(ap_shutdown_timer, (TickType_t) 0);
-            break;
-        case WIFI_EVENT_AP_STACONNECTED: {}
-            ESP_LOGV(TAG, "WIFI_EVENT_AP_STACONNECTED");
-
-            wifi_event_ap_staconnected_t* connect =
-                (wifi_event_ap_staconnected_t*) event_data;
-            ESP_LOGD(
-                TAG,
-                "[connect] "MACSTR" (%d)",
-                MAC2STR(connect->mac),
-                connect->aid);
-
-            // Increment the number of connected clients.
-            ap_num_clients++;
-
-            // A client connected to the access point, stop the shutdown timer!
-            if (xTimerIsTimerActive(ap_shutdown_timer) == pdTRUE) {
-                xTimerStop(ap_shutdown_timer, (TickType_t) 0);
-                ESP_LOGV(TAG, "ap_shutdown_timer stopped!");
-            }
-            break;
-        case WIFI_EVENT_AP_STADISCONNECTED: {}
-            ESP_LOGV(TAG, "WIFI_EVENT_AP_STADISCONNECTED");
-
-            wifi_event_ap_stadisconnected_t* disconnect =
-                (wifi_event_ap_stadisconnected_t*) event_data;
-            ESP_LOGD(
-                TAG,
-                "[disconnect] "MACSTR" (%d)",
-                MAC2STR(disconnect->mac),
-                disconnect->aid);
-
-            // Decrement the number of connected clients.
-            ap_num_clients--;
-
-            // Check if there are any clients left and re-start the shutdown
-            // timer, if there are no clients!
-            if (ap_num_clients == 0) {
-                if (xTimerIsTimerActive(ap_shutdown_timer) == pdFALSE) {
-                    xTimerStart(ap_shutdown_timer, (TickType_t) 0);
-                    ESP_LOGV(TAG, "ap_shutdown_timer restarted!");
-                } else {
-                    // Probably dead code... Better safe than sorry.
-                    ESP_LOGD(
-                        TAG,
-                        "No more clients, but ap_shutdown_timer running...");
-                }
-            }
-            break;
-        default:
-            break;
-    }
-}
-
-static esp_err_t connect_to_wifi(void) {
-    // Just a dummy for now, make the access point work first...
-    return ESP_FAIL;
-}
-
-/**
- * Initializes and starts an access point.
+ * Initializes and starts a local access point.
  *
  * This function is responsible for the whole setup process of the access
  * point, including its initial configuration, setting up the required network
@@ -379,6 +277,108 @@ static void ap_shutdown(TimerHandle_t xTimer) {
 }
 
 /**
+ * Handle events while the project-specific access point is running.
+ *
+ * During operation of the access point, several events must be monitored and
+ * might trigger application- or project-specific actions.
+ *
+ * This event handler is registered in ::ap_launch. The handler is attached to
+ * the ``default`` event loop, as provided by ``esp_event`` (the loop has to be
+ * started outside of this component, most likely in the application's
+ * ``app_main()``).
+ *
+ * During the access point's shutdown (performed by
+ * ::ap_shutdown), this event handler is unregistered.
+ *
+ * @param arg        Generic arguments.
+ * @param event_base ``esp_event``'s ``EVENT_BASE``. Every event is specified
+ *                   by the ``EVENT_BASE`` and its ``EVENT_ID``.
+ * @param event_id   ``esp_event``'s ``EVENT_ID``. Every event is specified by
+ *                   the ``EVENT_BASE`` and its ``EVENT_ID``.
+ * @param event_data Events might provide a pointer to additional,
+ *                   event-related data.
+ */
+static void ap_wifi_event_handler(
+    void* arg,
+    esp_event_base_t event_base,
+    int32_t event_id,
+    void* event_data) {
+
+    switch (event_id) {
+        // Please note, that all ``case`` statements have an empty statement
+        // (``{}``) appended to enable the declaration of variables with the
+        // correct scope. See https://stackoverflow.com/a/18496437
+        // However, ``cpplint`` does not like the recommended ``;`` and
+        // recommends an empty block ``{}``.
+        case WIFI_EVENT_AP_START: {}
+            ESP_LOGV(TAG, "WIFI_EVENT_AP_START");
+
+            // Reset the number of connected clients.
+            ap_num_clients = 0;
+
+            // The access point got started: create a timer to shut it down
+            // (eventually).
+            xTimerStart(ap_shutdown_timer, (TickType_t) 0);
+            break;
+        case WIFI_EVENT_AP_STACONNECTED: {}
+            ESP_LOGV(TAG, "WIFI_EVENT_AP_STACONNECTED");
+
+            wifi_event_ap_staconnected_t* connect =
+                (wifi_event_ap_staconnected_t*) event_data;
+            ESP_LOGD(
+                TAG,
+                "[connect] "MACSTR" (%d)",
+                MAC2STR(connect->mac),
+                connect->aid);
+
+            // Increment the number of connected clients.
+            ap_num_clients++;
+
+            // A client connected to the access point, stop the shutdown timer!
+            if (xTimerIsTimerActive(ap_shutdown_timer) == pdTRUE) {
+                xTimerStop(ap_shutdown_timer, (TickType_t) 0);
+                ESP_LOGV(TAG, "ap_shutdown_timer stopped!");
+            }
+            break;
+        case WIFI_EVENT_AP_STADISCONNECTED: {}
+            ESP_LOGV(TAG, "WIFI_EVENT_AP_STADISCONNECTED");
+
+            wifi_event_ap_stadisconnected_t* disconnect =
+                (wifi_event_ap_stadisconnected_t*) event_data;
+            ESP_LOGD(
+                TAG,
+                "[disconnect] "MACSTR" (%d)",
+                MAC2STR(disconnect->mac),
+                disconnect->aid);
+
+            // Decrement the number of connected clients.
+            ap_num_clients--;
+
+            // Check if there are any clients left and re-start the shutdown
+            // timer, if there are no clients!
+            if (ap_num_clients == 0) {
+                if (xTimerIsTimerActive(ap_shutdown_timer) == pdFALSE) {
+                    xTimerStart(ap_shutdown_timer, (TickType_t) 0);
+                    ESP_LOGV(TAG, "ap_shutdown_timer restarted!");
+                } else {
+                    // Probably dead code... Better safe than sorry.
+                    ESP_LOGD(
+                        TAG,
+                        "No more clients, but ap_shutdown_timer running...");
+                }
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+static esp_err_t connect_to_wifi(void) {
+    // Just a dummy for now, make the access point work first...
+    return ESP_FAIL;
+}
+
+/**
  * Retrieve WiFi configuration from the NVS.
  *
  * The function opens the non-volatile storage namespace (as specified by
@@ -472,7 +472,6 @@ static void get_wifi_config_from_nvs(char* nvs_namespace) {
         return;
     }
 
-
     // Close the handle to the NVS.
     nvs_close(storage_handle);
 
@@ -482,6 +481,12 @@ static void get_wifi_config_from_nvs(char* nvs_namespace) {
 }
 
 esp_err_t wifi_initialize(char* nvs_namespace) {
+    // Set log-level of our own code to VERBOSE.
+    // TODO(mischback) This is just for development purposes and should be
+    //                 removed as soon as possible. The actual logging should
+    //                 be controlled by ``menuconfig`` / ``sdkconfig``.
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+
     ESP_LOGV(TAG, "Entering wifi_initialize()");
 
     // This is the entry point of the wifi-related source code. First of all,
