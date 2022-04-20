@@ -374,7 +374,15 @@ static void ap_wifi_event_handler(
 }
 
 static esp_err_t connect_to_wifi(void) {
-    // Just a dummy for now, make the access point work first...
+    ESP_LOGV(TAG, "Entering connect_to_wifi()");
+
+    // Check the ``ssid`` of the project-specific WiFi configuration.
+    // If this is an empty string, most likely there was no configuration
+    // stored in the NVS, so the local access point can be started immediatly.
+    if (strlen(project_wifi_config.ssid) == 0) {
+        return ap_launch();
+    }
+
     return ESP_FAIL;
 }
 
@@ -398,13 +406,14 @@ static esp_err_t connect_to_wifi(void) {
  * @param nvs_namespace Namespace to be opened and used to retrieve the values.
  */
 static void get_wifi_config_from_nvs(char* nvs_namespace) {
+    ESP_LOGV(TAG, "Entering get_wifi_config_from_nvs()");
+
     // Open NVS storage of the given namespace
     nvs_handle_t storage_handle;
     esp_err_t err = nvs_open(
         nvs_namespace,
         NVS_READONLY,
         &storage_handle);
-    ESP_LOGV(TAG, "Entering get_wifi_config_from_nvs()");
 
     if (err != ESP_OK) {
         // This might fail for different reasons, e.g. the NVS is not correctly
@@ -492,10 +501,6 @@ esp_err_t wifi_initialize(char* nvs_namespace) {
     // This is the entry point of the wifi-related source code. First of all,
     // initialize the module's variables.
     memset(&project_wifi_config, 0x00, sizeof(networking_wifi_config_t));
-    ESP_LOGD(
-        TAG,
-        "sizeof(networking_wifi_config_t) = %d",
-        sizeof(networking_wifi_config_t));
 
     // Read WiFi credentials from non-volatile storage (NVS).
     // During initialization, the config just has to be read once.
@@ -509,15 +514,6 @@ esp_err_t wifi_initialize(char* nvs_namespace) {
     ESP_ERROR_CHECK(esp_wifi_init(&init_cfg));
 
     if (connect_to_wifi() == ESP_OK) {
-        ESP_LOGV(
-            TAG,
-            "Successfully connected to WiFi '%s'!",
-            project_wifi_config.ssid);
-        return ESP_OK;
-    }
-
-    if (ap_launch() == ESP_OK) {
-        ESP_LOGV(TAG, "Successfully launched access point!");
         return ESP_OK;
     }
 
