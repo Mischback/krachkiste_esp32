@@ -119,13 +119,13 @@ static networking_wifi_config_t project_wifi_config;
 /**
  * Reference to the ``netif`` object for the access point.
  */
-static esp_netif_t* networking_wifi_ap_netif = NULL;
+static esp_netif_t* wifi_ap_netif = NULL;
 
 /**
  * Reference to the freeRTOS' ``timer`` object that is used to shutdown the
  * access point.
  */
-static TimerHandle_t networking_wifi_ap_shutdown_timer = NULL;
+static TimerHandle_t wifi_ap_shutdown_timer = NULL;
 
 
 /* ***** PROTOTYPES ******************************************************** */
@@ -180,7 +180,7 @@ static void networking_wifi_ap_event_handler(
 
             // The access point got started: create a timer to shut it down
             // (eventually).
-            xTimerStart(networking_wifi_ap_shutdown_timer, (TickType_t) 0);
+            xTimerStart(wifi_ap_shutdown_timer, (TickType_t) 0);
             break;
         case WIFI_EVENT_AP_STACONNECTED: {}
             ESP_LOGV(TAG, "WIFI_EVENT_AP_STACONNECTED");
@@ -195,8 +195,8 @@ static void networking_wifi_ap_event_handler(
 
             // A client connected to the access point, stop the shutdown timer!
             if (xTimerIsTimerActive(
-                networking_wifi_ap_shutdown_timer) == pdTRUE) {
-                xTimerStop(networking_wifi_ap_shutdown_timer, (TickType_t) 0);
+                wifi_ap_shutdown_timer) == pdTRUE) {
+                xTimerStop(wifi_ap_shutdown_timer, (TickType_t) 0);
             }
             break;
         case WIFI_EVENT_AP_STADISCONNECTED: {}
@@ -215,28 +215,48 @@ static void networking_wifi_ap_event_handler(
     }
 }
 
-esp_err_t networking_wifi_ap_initialize(void) {
-    ESP_LOGV(TAG, "Entering networking_wifi_ap_initialize()");
+static esp_err_t connect_to_wifi(void) {
+    // Just a dummy for now, make the access point work first...
+    return ESP_FAIL;
+}
 
-    networking_wifi_ap_netif = esp_netif_create_default_wifi_ap();
-    networking_wifi_ap_shutdown_timer = xTimerCreate(
+/**
+ * Initializes and starts an access point.
+ *
+ * This function is responsible for the whole setup process of the access
+ * point, including its initial configuration, setting up the required network
+ * interface (``netif``), registering the event handler
+ * ::networking_wifi_ap_event_handler and preparing the required timer
+ * to shutdown the access point after a given time.
+ *
+ * If the configured password ::NETWORKING_WIFI_AP_PSK is shorter than ``8``
+ * characters, ``esp_wifi``'s internal functions will fail badly. Because of
+ * this, this function will not apply the password but instead switch the
+ * access point's ``authmode`` to ``WIFI_AUTH_OPEN``, effectivly providing an
+ * open WiFi. A log message of level ``WARN`` will be emitted.
+ *
+ * The function will provide a log message of level ``INFO`` containing the
+ * SSID and - if set - password/PSK of the access point's network.
+ *
+ * @return ``ESP_OK`` (= ``0``) on success, non-zero error code on error
+ */
+static esp_err_t launch_access_point(void) {
+    ESP_LOGV(TAG, "Entering launch_access_point()");
+
+    // Create a network interface for the access point.
+    wifi_ap_netif = esp_netif_create_default_wifi_ap();
+
+    wifi_ap_shutdown_timer = xTimerCreate(
         NULL,
         pdMS_TO_TICKS(NETWORKING_WIFI_AP_LIFETIME),
         pdFALSE,
         (void *) 0,
         networking_wifi_ap_shutdown_callback);
 
-    wifi_init_config_t ap_init_cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&ap_init_cfg));
-
-    // Register event handler for AP mode
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        WIFI_EVENT,
-        ESP_EVENT_ANY_ID,
-        &networking_wifi_ap_event_handler,
-        NULL,
-        NULL));
-
+    // Setup the configuration for access point mode.
+    // These values are based off project-specific settings, that may be
+    // changed by ``menuconfig`` / ``sdkconfig`` during building the
+    // application. They can not be changed through the webinterface.
     wifi_config_t ap_config = {
         .ap = {
             .ssid = NETWORKING_WIFI_AP_SSID,
@@ -262,10 +282,26 @@ esp_err_t networking_wifi_ap_initialize(void) {
             "connect to the access point.");
     }
 
+    // Register event handler for AP mode.
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        WIFI_EVENT,
+        ESP_EVENT_ANY_ID,
+        &networking_wifi_ap_event_handler,
+        NULL,
+        NULL));
+
+    // Actually start the access point
+    // a) stop anything WiFi-related (ignoring failures) to make sure, that
+    //    there is a well-defined starting point.
+    // b) set the mode to "access point"
+    // c) apply the access point-specific configuration
+    // d) actuall start the access point
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_stop());
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
+    // TODO(mischback): Should the password really be disclosed?!
     ESP_LOGI(
         TAG,
         "Launched Access Point! SSID: '%s', PSK: '%s'",
@@ -279,8 +315,8 @@ esp_err_t networking_wifi_ap_initialize(void) {
  * Shut down the access point and clean up.
  *
  * This function is a callback to freeRTOS' ``timer`` implementation. The
- * actual ``TimerHandle_t`` is ::networking_wifi_ap_shutdown_timer,
- * which is created/initialized in ::networking_wifi_ap_initialize and
+ * actual ``TimerHandle_t`` is ::wifi_ap_shutdown_timer,
+ * which is created/initialized in ::launch_access_point and
  * started in ::networking_wifi_ap_event_handler.
  *
  * @param xTimer Reference to the freeRTOS' ``timer`` that triggered this
@@ -297,24 +333,15 @@ static void networking_wifi_ap_shutdown_callback(TimerHandle_t xTimer) {
 
     // Stop the access point and remove its netif
     ESP_ERROR_CHECK(esp_wifi_stop());
-    esp_netif_destroy_default_wifi(networking_wifi_ap_netif);
-    networking_wifi_ap_netif = NULL;
+    esp_netif_destroy_default_wifi(wifi_ap_netif);
+    wifi_ap_netif = NULL;
 
     // Stop and remove the timer
     xTimerStop(xTimer, (TickType_t) 0);
     xTimerDelete(xTimer, (TickType_t) 0);
-    networking_wifi_ap_shutdown_timer = NULL;
+    wifi_ap_shutdown_timer = NULL;
 
     ESP_LOGI(TAG, "Access Point is shut down!");
-}
-
-static esp_err_t connect_to_wifi(void) {
-    // Just a dummy for now, make the access point work first...
-    return ESP_FAIL;
-}
-
-static esp_err_t launch_access_point(void) {
-    return ESP_FAIL;
 }
 
 /**
@@ -438,6 +465,7 @@ esp_err_t wifi_initialize(char* nvs_namespace) {
         get_wifi_config_from_nvs(nvs_namespace);
     }
 
+    // Initialize the WiFi.
     wifi_init_config_t init_cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&init_cfg));
 
