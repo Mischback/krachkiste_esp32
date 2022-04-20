@@ -14,11 +14,10 @@
 /**
  * Initializes the WiFi connectivity of the device.
  *
- * This is the components main entry point and external interface. It will take
- * care of reading and existing WiFi configuration from the non-volatile
- * storage, establishing and maintaining connection if the specified WiFi
- * network is available or launching an internal access point to make the
- * configuration web interface available.
+ * The function will take care of reading and existing WiFi configuration from
+ * the non-volatile storage, establishing and maintaining connection if the s
+ * pecified WiFi network is available or launching an internal access point to
+ * make the configuration web interface available.
  *
  * @param nvs_namespace Namespace to be used to retrieve an existing Wifi
  *                      configuration. Must be specified by the calling code
