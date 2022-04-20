@@ -122,6 +122,16 @@ static networking_wifi_config_t project_wifi_config;
 static esp_netif_t* ap_netif = NULL;
 
 /**
+ * Number of connected clients, if in access point mode.
+ *
+ * This number will be modified by ::ap_wifi_event_handler, depending on
+ * connecting / disconnecting clients.
+ *
+ * It is reset to ``0`` everytime the access point is started.
+ */
+static uint8_t ap_num_clients = 0;
+
+/**
  * Reference to the freeRTOS' ``timer`` object that is used to shutdown the
  * access point.
  */
@@ -179,6 +189,9 @@ static void ap_wifi_event_handler(
         case WIFI_EVENT_AP_START: {}
             ESP_LOGV(TAG, "WIFI_EVENT_AP_START");
 
+            // Reset the number of connected clients.
+            ap_num_clients = 0;
+
             // The access point got started: create a timer to shut it down
             // (eventually).
             xTimerStart(ap_shutdown_timer, (TickType_t) 0);
@@ -194,10 +207,13 @@ static void ap_wifi_event_handler(
                 MAC2STR(connect->mac),
                 connect->aid);
 
+            // Increment the number of connected clients.
+            ap_num_clients++;
+
             // A client connected to the access point, stop the shutdown timer!
-            if (xTimerIsTimerActive(
-                ap_shutdown_timer) == pdTRUE) {
+            if (xTimerIsTimerActive(ap_shutdown_timer) == pdTRUE) {
                 xTimerStop(ap_shutdown_timer, (TickType_t) 0);
+                ESP_LOGV(TAG, "ap_shutdown_timer stopped!");
             }
             break;
         case WIFI_EVENT_AP_STADISCONNECTED: {}
@@ -210,6 +226,23 @@ static void ap_wifi_event_handler(
                 "[disconnect] "MACSTR" (%d)",
                 MAC2STR(disconnect->mac),
                 disconnect->aid);
+
+            // Decrement the number of connected clients.
+            ap_num_clients--;
+
+            // Check if there are any clients left and re-start the shutdown
+            // timer, if there are no clients!
+            if (ap_num_clients == 0) {
+                if (xTimerIsTimerActive(ap_shutdown_timer) == pdFALSE) {
+                    xTimerStart(ap_shutdown_timer, (TickType_t) 0);
+                    ESP_LOGV(TAG, "ap_shutdown_timer restarted!");
+                } else {
+                    // Probably dead code... Better safe than sorry.
+                    ESP_LOGD(
+                        TAG,
+                        "No more clients, but ap_shutdown_timer running...");
+                }
+            }
             break;
         default:
             break;
