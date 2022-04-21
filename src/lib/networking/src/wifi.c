@@ -424,6 +424,9 @@ static void get_wifi_config_from_nvs(char* nvs_namespace) {
     return;
 }
 
+/**
+ * Shut down the station mode and clean up.
+ */
 static void sta_shutdown(void) {
     ESP_LOGV(TAG, "Entering sta_shutdown()");
 
@@ -436,12 +439,15 @@ static void sta_shutdown(void) {
 }
 
 /**
- * Handle events while WiFi is in station mode.
+ * Handle all WiFi-related events.
  *
- * This event handler is registered in ::connect_to_wifi. The handler is
+ * This event handler is registered in ::wifi_initialize. The handler is
  * attached to the ``default`` event loop, as provided by ``esp_event`` (the
  * loop has to be started outside of this component, most likely in the
  * application's ``app_main()``).
+ *
+ * The function handles the access point and station mode. The related events
+ * are distinct, so there should not be any interferences.
  *
  * @param arg        Generic arguments.
  * @param event_base ``esp_event``'s ``EVENT_BASE``. Every event is specified
@@ -458,6 +464,10 @@ static void wifi_event_handler(
     void* event_data) {
     ESP_LOGV(TAG, "Entering wifi_event_handler()");
 
+    if (event_base != WIFI_EVENT) {
+        return;
+    }
+
     switch (event_id) {
         // Please note, that some ``case`` statements have an empty statement
         // (``{}``) appended to enable the declaration of variables with the
@@ -465,16 +475,21 @@ static void wifi_event_handler(
         // However, ``cpplint`` does not like the recommended ``;`` and
         // recommends an empty block ``{}``.
         case WIFI_EVENT_AP_START:
+            // This event is emitted when the access point is started.
+            // The timer to shutdown the access point is started.
             ESP_LOGV(TAG, "[wifi_event_handler] WIFI_EVENT_AP_START");
 
             // Reset the number of connected clients.
             ap_num_clients = 0;
 
-            // The access point got started: create a timer to shut it down
+            // The access point got started: start a timer to shut it down
             // (eventually).
             xTimerStart(ap_shutdown_timer, (TickType_t) 0);
             break;
         case WIFI_EVENT_AP_STACONNECTED: {}
+            // This event is emitted when a station connects to the local
+            // access point.
+            // The shutdown timer is stopped.
             ESP_LOGV(TAG, "[wifi_event_handler] WIFI_EVENT_AP_STACONNECTED");
 
             wifi_event_ap_staconnected_t* connect =
@@ -495,6 +510,10 @@ static void wifi_event_handler(
             }
             break;
         case WIFI_EVENT_AP_STADISCONNECTED: {}
+            // This event is emitted when a station disconnects from the local
+            // access point.
+            // If this was the last connected client, restart the shutdown
+            // timer to kill the access point.
             ESP_LOGV(TAG, "[wifi_event_handler] WIFI_EVENT_AP_STADISCONNECTED");
 
             wifi_event_ap_stadisconnected_t* disconnect =
