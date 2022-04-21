@@ -104,7 +104,7 @@ static const char* TAG = "krachkiste.networking";
  * The variable is initialized with ``0x00`` in ::wifi_initialize and then
  * populated by ::get_wifi_config_from_nvs.
  */
-static networking_wifi_config_t project_wifi_config;
+static networking_wifi_config_t* project_wifi_config = NULL;
 
 /**
  * Reference to the ``netif`` object for the access point.
@@ -286,7 +286,7 @@ static esp_err_t connect_to_wifi(void) {
     // Check the ``ssid`` of the project-specific WiFi configuration.
     // If this is an empty string, most likely there was no configuration
     // stored in the NVS, so the local access point can be started immediatly.
-    if (strlen(project_wifi_config.ssid) == 0) {
+    if (strlen(project_wifi_config->ssid) == 0) {
         return ap_launch();
     }
 
@@ -306,12 +306,12 @@ static esp_err_t connect_to_wifi(void) {
     // ``memcpy`` feels like *force*, but it works.
     memcpy(
         sta_config.sta.ssid,
-        project_wifi_config.ssid,
-        strlen(project_wifi_config.ssid));
+        project_wifi_config->ssid,
+        strlen(project_wifi_config->ssid));
     memcpy(
         sta_config.sta.password,
-        project_wifi_config.psk,
-        strlen(project_wifi_config.psk));
+        project_wifi_config->psk,
+        strlen(project_wifi_config->psk));
 
     ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_stop());
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -379,7 +379,7 @@ static void get_wifi_config_from_nvs(char* nvs_namespace) {
     err = nvs_get_str(
         storage_handle,
         NETWORKING_WIFI_NVS_KEY_SSID,
-        project_wifi_config.ssid,
+        project_wifi_config->ssid,
         &required_size);
     if (err != ESP_OK) {
         ESP_LOGE(
@@ -402,7 +402,7 @@ static void get_wifi_config_from_nvs(char* nvs_namespace) {
     err = nvs_get_str(
         storage_handle,
         NETWORKING_WIFI_NVS_KEY_PSK,
-        project_wifi_config.psk,
+        project_wifi_config->psk,
         &required_size);
     if (err != ESP_OK) {
         ESP_LOGE(
@@ -608,17 +608,18 @@ esp_err_t wifi_initialize(char* nvs_namespace) {
 
     // This is the entry point of the wifi-related source code. First of all,
     // initialize the module's variables.
-    memset(&project_wifi_config, 0x00, sizeof(networking_wifi_config_t));
+    project_wifi_config = malloc(sizeof(networking_wifi_config_t));
+    memset(project_wifi_config, 0x00, sizeof(networking_wifi_config_t));
 
     // FIXME(mischback) This is just for temporary testing!
     //                  And no, these are not my actual credentials!
-    // strcpy(project_wifi_config.ssid, "WiFi_SSID");
-    // strcpy(project_wifi_config.psk, "WiFi_PSK");
+    // strcpy(project_wifi_config->ssid, "WiFi_SSID");
+    // strcpy(project_wifi_config->psk, "WiFi_PSK");
 
     // Read WiFi credentials from non-volatile storage (NVS).
     // During initialization, the config just has to be read once.
     // At least the SSID field must be a non-empty string, so check this.
-    if (strlen(project_wifi_config.ssid) == 0) {
+    if (strlen(project_wifi_config->ssid) == 0) {
         get_wifi_config_from_nvs(nvs_namespace);
     }
 
