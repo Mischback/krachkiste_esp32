@@ -81,6 +81,17 @@
 #define NETWORKING_WIFI_NVS_KEY_PSK "net_pass"
 
 /**
+ * Set a maximum number of connection attempts for station mode.
+ *
+ * After this number of (failed) connection attempts, the component should
+ * consider the specified WiFi network as *not available* and launch the local
+ * access point (see ::sta_wifi_event_handler).
+ *
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
+ */
+#define NETWORKING_WIFI_STA_MAX_CONNECTION_ATTEMPTS 3
+
+/**
  * Set a minimum required WiFi security while scanning for networks.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
@@ -94,6 +105,7 @@
  * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
 #define NETWORKING_WIFI_STA_THRESHOLD_RSSI -127
+
 
 esp_err_t networking_initialize(char* nvs_namespace);
 

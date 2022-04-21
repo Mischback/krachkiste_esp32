@@ -132,6 +132,17 @@ static TimerHandle_t ap_shutdown_timer = NULL;
  */
 static esp_netif_t* sta_netif = NULL;
 
+/**
+ * Track the number of connection attempts.
+ *
+ * This number will be modieifd by ::sta_wifi_event_handler, depending on
+ * successful / failed connection attempts.
+ *
+ * See ::NETWORKING_WIFI_STA_MAX_CONNECTION_ATTEMPTS for the maximum of failed
+ * connection attempts.
+ */
+static uint8_t sta_num_reconnects = 0;
+
 
 /* ***** PROTOTYPES ******************************************************** */
 static esp_err_t ap_launch(void);
@@ -143,6 +154,7 @@ static void ap_wifi_event_handler(
     void* event_data);
 static esp_err_t connect_to_wifi(void);
 static void get_wifi_config_from_nvs(char* nvs_namespace);
+static void sta_shutdown(void);
 static void sta_wifi_event_handler(
     void* arg,
     esp_event_base_t event_base,
@@ -218,7 +230,7 @@ static esp_err_t ap_launch(void) {
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
         WIFI_EVENT,
         ESP_EVENT_ANY_ID,
-        &ap_wifi_event_handler,
+        ap_wifi_event_handler,
         NULL,
         NULL));
 
@@ -256,12 +268,6 @@ static esp_err_t ap_launch(void) {
  */
 static void ap_shutdown(TimerHandle_t xTimer) {
     ESP_LOGW(TAG, "Access Point is shutting down...");
-
-    // Unregister the event handler for AP mode
-    ESP_ERROR_CHECK(esp_event_handler_instance_unregister(
-        WIFI_EVENT,
-        ESP_EVENT_ANY_ID,
-        &ap_wifi_event_handler));
 
     // Stop the access point and remove its netif
     ESP_ERROR_CHECK(esp_wifi_stop());
@@ -422,7 +428,7 @@ static esp_err_t connect_to_wifi(void) {
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
         WIFI_EVENT,
         ESP_EVENT_ANY_ID,
-        &sta_wifi_event_handler,
+        sta_wifi_event_handler,
         NULL,
         NULL));
 
@@ -537,6 +543,19 @@ static void get_wifi_config_from_nvs(char* nvs_namespace) {
     return;
 }
 
+static void sta_shutdown(void) {
+    ESP_LOGV(TAG, "Entering sta_shutdown()");
+
+    ESP_LOGW(TAG, "UNREGISTERED sta_wifi_event_handler");
+
+    // Stop the access point and remove its netif.
+    ESP_ERROR_CHECK(esp_wifi_stop());
+    esp_netif_destroy_default_wifi(sta_netif);
+    sta_netif = NULL;
+
+    ESP_LOGI(TAG, "Shut down of station mode WiFi completed!");
+}
+
 /**
  * Handle events while WiFi is in station mode.
  *
@@ -571,8 +590,13 @@ static void sta_wifi_event_handler(
         case WIFI_EVENT_STA_CONNECTED:
             // This event just means, that a connection was established on
             // OSI layer 2. Generally, layer 3 (IP) is required for any real
-            // networking task, so no action is taken here.
+            // networking task.
             ESP_LOGD(TAG, "[sta_wifi_event_handler] STA_CONNECTED");
+
+            // Reset the tracker for failed connection attempts.
+            // TODO(mischback) Does this make sense here? Or should this be
+            //                 done later, i.e. for the IP_EVENT_STA_GOT_IP?
+            sta_num_reconnects = 0;
             break;
         case WIFI_EVENT_STA_DISCONNECTED:
             // This event is generated for very different reasons:
@@ -593,7 +617,16 @@ static void sta_wifi_event_handler(
             //                 implementing a maximum number of retries
             //                 before the internal access point is launched
             ESP_LOGD(TAG, "[sta_wifi_event_handler] STA_DISCONNECTED");
-            esp_wifi_connect();
+
+            sta_num_reconnects++;
+
+            if (sta_num_reconnects <=
+                NETWORKING_WIFI_STA_MAX_CONNECTION_ATTEMPTS) {
+                esp_wifi_connect();
+            } else {
+                sta_shutdown();
+                ap_launch();
+            }
             break;
         default:
             // Any other WIFI_EVENT is just logged here.
