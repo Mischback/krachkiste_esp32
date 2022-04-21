@@ -114,7 +114,7 @@ static esp_netif_t* ap_netif = NULL;
 /**
  * Number of connected clients, if in access point mode.
  *
- * This number will be modified by ::ap_wifi_event_handler, depending on
+ * This number will be modified by ::wifi_event_handler, depending on
  * connecting / disconnecting clients.
  *
  * It is reset to ``0`` everytime the access point is started.
@@ -135,7 +135,7 @@ static esp_netif_t* sta_netif = NULL;
 /**
  * Track the number of connection attempts.
  *
- * This number will be modieifd by ::sta_wifi_event_handler, depending on
+ * This number will be modieifd by ::wifi_event_handler, depending on
  * successful / failed connection attempts.
  *
  * See ::NETWORKING_WIFI_STA_MAX_CONNECTION_ATTEMPTS for the maximum of failed
@@ -147,15 +147,10 @@ static uint8_t sta_num_reconnects = 0;
 /* ***** PROTOTYPES ******************************************************** */
 static esp_err_t ap_launch(void);
 static void ap_shutdown(TimerHandle_t xTimer);
-static void ap_wifi_event_handler(
-    void* arg,
-    esp_event_base_t event_base,
-    int32_t event_id,
-    void* event_data);
 static esp_err_t connect_to_wifi(void);
 static void get_wifi_config_from_nvs(char* nvs_namespace);
 static void sta_shutdown(void);
-static void sta_wifi_event_handler(
+static void wifi_event_handler(
     void* arg,
     esp_event_base_t event_base,
     int32_t event_id,
@@ -169,9 +164,8 @@ static void sta_wifi_event_handler(
  *
  * This function is responsible for the whole setup process of the access
  * point, including its initial configuration, setting up the required network
- * interface (``netif``) ::ap_netif, registering the event handler
- * ::ap_wifi_event_handler and preparing the required timer
- * to shutdown the access point after a given time.
+ * interface (``netif``) ::ap_netif and preparing the required timer to
+ * shutdown the access point after a given time.
  *
  * If the configured password ::NETWORKING_WIFI_AP_PSK is shorter than ``8``
  * characters, ``esp_wifi``'s internal functions will fail badly. Because of
@@ -226,14 +220,6 @@ static esp_err_t ap_launch(void) {
             "connect to the access point.");
     }
 
-    // Register event handler for AP mode.
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        WIFI_EVENT,
-        ESP_EVENT_ANY_ID,
-        ap_wifi_event_handler,
-        NULL,
-        NULL));
-
     // Actually start the access point
     // a) stop anything WiFi-related (ignoring failures) to make sure, that
     //    there is a well-defined starting point.
@@ -261,7 +247,7 @@ static esp_err_t ap_launch(void) {
  * This function is a callback to freeRTOS' ``timer`` implementation. The
  * actual ``TimerHandle_t`` is ::ap_shutdown_timer,
  * which is created/initialized in ::ap_launch and
- * started in ::ap_wifi_event_handler.
+ * started in ::wifi_event_handler.
  *
  * @param xTimer Reference to the freeRTOS' ``timer`` that triggered this
  *               callback.
@@ -283,111 +269,14 @@ static void ap_shutdown(TimerHandle_t xTimer) {
 }
 
 /**
- * Handle events while the project-specific access point is running.
- *
- * During operation of the access point, several events must be monitored and
- * might trigger application- or project-specific actions.
- *
- * This event handler is registered in ::ap_launch. The handler is attached to
- * the ``default`` event loop, as provided by ``esp_event`` (the loop has to be
- * started outside of this component, most likely in the application's
- * ``app_main()``).
- *
- * During the access point's shutdown (performed by
- * ::ap_shutdown), this event handler is unregistered.
- *
- * @param arg        Generic arguments.
- * @param event_base ``esp_event``'s ``EVENT_BASE``. Every event is specified
- *                   by the ``EVENT_BASE`` and its ``EVENT_ID``.
- * @param event_id   ``esp_event``'s ``EVENT_ID``. Every event is specified by
- *                   the ``EVENT_BASE`` and its ``EVENT_ID``.
- * @param event_data Events might provide a pointer to additional,
- *                   event-related data.
- */
-static void ap_wifi_event_handler(
-    void* arg,
-    esp_event_base_t event_base,
-    int32_t event_id,
-    void* event_data) {
-
-    switch (event_id) {
-        // Please note, that all ``case`` statements have an empty statement
-        // (``{}``) appended to enable the declaration of variables with the
-        // correct scope. See https://stackoverflow.com/a/18496437
-        // However, ``cpplint`` does not like the recommended ``;`` and
-        // recommends an empty block ``{}``.
-        case WIFI_EVENT_AP_START: {}
-            ESP_LOGV(TAG, "WIFI_EVENT_AP_START");
-
-            // Reset the number of connected clients.
-            ap_num_clients = 0;
-
-            // The access point got started: create a timer to shut it down
-            // (eventually).
-            xTimerStart(ap_shutdown_timer, (TickType_t) 0);
-            break;
-        case WIFI_EVENT_AP_STACONNECTED: {}
-            ESP_LOGV(TAG, "WIFI_EVENT_AP_STACONNECTED");
-
-            wifi_event_ap_staconnected_t* connect =
-                (wifi_event_ap_staconnected_t*) event_data;
-            ESP_LOGD(
-                TAG,
-                "[connect] "MACSTR" (%d)",
-                MAC2STR(connect->mac),
-                connect->aid);
-
-            // Increment the number of connected clients.
-            ap_num_clients++;
-
-            // A client connected to the access point, stop the shutdown timer!
-            if (xTimerIsTimerActive(ap_shutdown_timer) == pdTRUE) {
-                xTimerStop(ap_shutdown_timer, (TickType_t) 0);
-                ESP_LOGV(TAG, "ap_shutdown_timer stopped!");
-            }
-            break;
-        case WIFI_EVENT_AP_STADISCONNECTED: {}
-            ESP_LOGV(TAG, "WIFI_EVENT_AP_STADISCONNECTED");
-
-            wifi_event_ap_stadisconnected_t* disconnect =
-                (wifi_event_ap_stadisconnected_t*) event_data;
-            ESP_LOGD(
-                TAG,
-                "[disconnect] "MACSTR" (%d)",
-                MAC2STR(disconnect->mac),
-                disconnect->aid);
-
-            // Decrement the number of connected clients.
-            ap_num_clients--;
-
-            // Check if there are any clients left and re-start the shutdown
-            // timer, if there are no clients!
-            if (ap_num_clients == 0) {
-                if (xTimerIsTimerActive(ap_shutdown_timer) == pdFALSE) {
-                    xTimerStart(ap_shutdown_timer, (TickType_t) 0);
-                    ESP_LOGV(TAG, "ap_shutdown_timer restarted!");
-                } else {
-                    // Probably dead code... Better safe than sorry.
-                    ESP_LOGD(
-                        TAG,
-                        "No more clients, but ap_shutdown_timer running...");
-                }
-            }
-            break;
-        default:
-            break;
-    }
-}
-
-/**
  * Connect to a (stored) WiFi network.
  *
- * Basically this function does the setup of the station mode, registers the
- * event handler ::sta_wifi_event_handler and starts the interface.
+ * Basically this function does the setup of the station mode and starts the
+ * interface.
  *
  * The actual magic of establishing and maintaining the connection and
  * switching to the local access point (if required) is done in
- * ::sta_wifi_event_handler.
+ * ::wifi_event_handler.
  *
  * @return ``ESP_OK`` (= ``0``) on success, non-zero error code on error
  */
@@ -423,14 +312,6 @@ static esp_err_t connect_to_wifi(void) {
         sta_config.sta.password,
         project_wifi_config.psk,
         strlen(project_wifi_config.psk));
-
-    // Register event handler for station mode.
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        WIFI_EVENT,
-        ESP_EVENT_ANY_ID,
-        sta_wifi_event_handler,
-        NULL,
-        NULL));
 
     ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_stop());
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -546,8 +427,6 @@ static void get_wifi_config_from_nvs(char* nvs_namespace) {
 static void sta_shutdown(void) {
     ESP_LOGV(TAG, "Entering sta_shutdown()");
 
-    ESP_LOGW(TAG, "UNREGISTERED sta_wifi_event_handler");
-
     // Stop the access point and remove its netif.
     ESP_ERROR_CHECK(esp_wifi_stop());
     esp_netif_destroy_default_wifi(sta_netif);
@@ -572,26 +451,89 @@ static void sta_shutdown(void) {
  * @param event_data Events might provide a pointer to additional,
  *                   event-related data.
  */
-static void sta_wifi_event_handler(
+static void wifi_event_handler(
     void* arg,
     esp_event_base_t event_base,
     int32_t event_id,
     void* event_data) {
-    ESP_LOGV(TAG, "Entering sta_wifi_event_handler()");
+    ESP_LOGV(TAG, "Entering wifi_event_handler()");
 
     switch (event_id) {
+        // Please note, that some ``case`` statements have an empty statement
+        // (``{}``) appended to enable the declaration of variables with the
+        // correct scope. See https://stackoverflow.com/a/18496437
+        // However, ``cpplint`` does not like the recommended ``;`` and
+        // recommends an empty block ``{}``.
+        case WIFI_EVENT_AP_START:
+            ESP_LOGV(TAG, "[wifi_event_handler] WIFI_EVENT_AP_START");
+
+            // Reset the number of connected clients.
+            ap_num_clients = 0;
+
+            // The access point got started: create a timer to shut it down
+            // (eventually).
+            xTimerStart(ap_shutdown_timer, (TickType_t) 0);
+            break;
+        case WIFI_EVENT_AP_STACONNECTED: {}
+            ESP_LOGV(TAG, "[wifi_event_handler] WIFI_EVENT_AP_STACONNECTED");
+
+            wifi_event_ap_staconnected_t* connect =
+                (wifi_event_ap_staconnected_t*) event_data;
+            ESP_LOGD(
+                TAG,
+                "[connect] "MACSTR" (%d)",
+                MAC2STR(connect->mac),
+                connect->aid);
+
+            // Increment the number of connected clients.
+            ap_num_clients++;
+
+            // A client connected to the access point, stop the shutdown timer!
+            if (xTimerIsTimerActive(ap_shutdown_timer) == pdTRUE) {
+                xTimerStop(ap_shutdown_timer, (TickType_t) 0);
+                ESP_LOGV(TAG, "ap_shutdown_timer stopped!");
+            }
+            break;
+        case WIFI_EVENT_AP_STADISCONNECTED: {}
+            ESP_LOGV(TAG, "[wifi_event_handler] WIFI_EVENT_AP_STADISCONNECTED");
+
+            wifi_event_ap_stadisconnected_t* disconnect =
+                (wifi_event_ap_stadisconnected_t*) event_data;
+            ESP_LOGD(
+                TAG,
+                "[disconnect] "MACSTR" (%d)",
+                MAC2STR(disconnect->mac),
+                disconnect->aid);
+
+            // Decrement the number of connected clients.
+            ap_num_clients--;
+
+            // Check if there are any clients left and re-start the shutdown
+            // timer, if there are no clients!
+            if (ap_num_clients == 0) {
+                if (xTimerIsTimerActive(ap_shutdown_timer) == pdFALSE) {
+                    xTimerStart(ap_shutdown_timer, (TickType_t) 0);
+                    ESP_LOGV(TAG, "ap_shutdown_timer restarted!");
+                } else {
+                    // Probably dead code... Better safe than sorry.
+                    ESP_LOGD(
+                        TAG,
+                        "No more clients, but ap_shutdown_timer running...");
+                }
+            }
+            break;
         case WIFI_EVENT_STA_START:
             // This event is emitted after the WiFi is started in station mode.
             // Simply call ``esp_wifi_connect()`` to actually establish the
             // OSI layer 2 connection.
-            ESP_LOGD(TAG, "[sta_wifi_event_handler] STA_START");
+            ESP_LOGD(TAG, "[wifi_event_handler] WIFI_EVENT_STA_START");
             esp_wifi_connect();
             break;
         case WIFI_EVENT_STA_CONNECTED:
             // This event just means, that a connection was established on
             // OSI layer 2. Generally, layer 3 (IP) is required for any real
             // networking task.
-            ESP_LOGD(TAG, "[sta_wifi_event_handler] STA_CONNECTED");
+            ESP_LOGD(TAG, "[wifi_event_handler] STA_CONNECTED");
 
             // Reset the tracker for failed connection attempts.
             // TODO(mischback) Does this make sense here? Or should this be
@@ -616,7 +558,7 @@ static void sta_wifi_event_handler(
             // TODO(mischback) Here's the part for some additional logic,
             //                 implementing a maximum number of retries
             //                 before the internal access point is launched
-            ESP_LOGD(TAG, "[sta_wifi_event_handler] STA_DISCONNECTED");
+            ESP_LOGD(TAG, "[wifi_event_handler] STA_DISCONNECTED");
 
             sta_num_reconnects++;
 
@@ -631,7 +573,7 @@ static void sta_wifi_event_handler(
         default:
             // Any other WIFI_EVENT is just logged here.
             // TODO(mischback) This should be removed as soon as possible!
-            ESP_LOGV(TAG, "[sta_wifi_event_handler] some WIFI_EVENT");
+            ESP_LOGV(TAG, "[wifi_event_handler] some WIFI_EVENT");
             break;
     }
 }
@@ -664,6 +606,14 @@ esp_err_t wifi_initialize(char* nvs_namespace) {
     // Initialize the WiFi.
     wifi_init_config_t init_cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&init_cfg));
+
+    // Register event handler for WiFi events
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        WIFI_EVENT,
+        ESP_EVENT_ANY_ID,
+        wifi_event_handler,
+        NULL,
+        NULL));
 
     if (connect_to_wifi() == ESP_OK) {
         return ESP_OK;

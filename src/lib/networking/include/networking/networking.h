@@ -85,7 +85,7 @@
  *
  * After this number of (failed) connection attempts, the component should
  * consider the specified WiFi network as *not available* and launch the local
- * access point (see ::sta_wifi_event_handler).
+ * access point (see ::wifi_event_handler).
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
