@@ -96,7 +96,7 @@ typedef struct {
  * See
  * [its API documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html#how-to-use-this-library).
  */
-static const char* TAG = "krachkiste.networking";
+static const char* TAG = "networking.wifi";
 
 /**
  * The configuration to be used while connecting to a WiFi network.
