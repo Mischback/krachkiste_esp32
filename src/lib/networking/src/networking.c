@@ -147,7 +147,7 @@ static void networking_task(void* pvParameters) {
     BaseType_t notify_return;
     uint32_t notify_value = 0;
 
-    ESP_LOGD(TAG, "[networking_task()] Entering loop!");
+    ESP_LOGD(TAG, "[networking_task] Entering loop!");
     for (;;) {
         // Block this task until a notification to the task is present.
         // - notification is expected at index
@@ -166,17 +166,49 @@ static void networking_task(void* pvParameters) {
             ULONG_MAX,
             &notify_value,
             portMAX_DELAY);
-        ESP_LOGD(TAG, "[networking_task()] Leaving blocked state!");
+        ESP_LOGD(TAG, "[networking_task] Leaving blocked state!");
 
         if (notify_return == pdPASS) {
-            ESP_LOGD(TAG, "[networking_task()] Got a notification!");
+            ESP_LOGD(TAG, "[networking_task] Got a notification!");
+
+            if ((notify_value &
+                 NETWORKING_NOTIFICATION_COMMAND_DESTROY) != 0) {
+                ESP_LOGI(TAG, "[networking_task] Shutting down networking!");
+                ESP_ERROR_CHECK(networking_destroy());
+            }
 
             if ((notify_value &
                  NETWORKING_NOTIFICATION_COMMAND_WIFI_START) != 0) {
-                wifi_start();
+                if (wifi_start() != ESP_OK) {
+                    ESP_LOGD(TAG, "[networking_task] FAILED: wifi_start");
+                    ESP_ERROR_CHECK_WITHOUT_ABORT(wifi_stop());
+                    // Second try to start WiFi!
+                    xTaskNotifyIndexed(
+                        networking_task_handle,
+                        NETWORKING_NOTIFICATION_TASK_INDEX,
+                        NETWORKING_NOTIFICATION_COMMAND_WIFI_START_RETRY,
+                        eSetBits);
+                }
+            }
+
+            if ((notify_value &
+                 NETWORKING_NOTIFICATION_COMMAND_WIFI_START_RETRY) != 0) {
+                if (wifi_start() != ESP_OK) {
+                    ESP_LOGE(
+                        TAG,
+                        "[networking_task] FAILED: wifi_start failed again!");
+                    ESP_ERROR_CHECK_WITHOUT_ABORT(wifi_stop());
+                    // wifi_start() failed two times, something is terribly
+                    // wrong. Kill networking!
+                    xTaskNotifyIndexed(
+                        networking_task_handle,
+                        NETWORKING_NOTIFICATION_TASK_INDEX,
+                        NETWORKING_NOTIFICATION_COMMAND_DESTROY,
+                        eSetBits);
+                }
             }
         } else {
-            ESP_LOGD(TAG, "[networking_task()] No immediate notification!");
+            ESP_LOGD(TAG, "[networking_task] No immediate notification!");
         }
     }
 

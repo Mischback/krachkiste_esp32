@@ -649,11 +649,24 @@ esp_err_t wifi_initialize(char* nvs_namespace) {
 esp_err_t wifi_start(void) {
     ESP_LOGV(TAG, "[wifi_start] entering function...");
 
+    // Initialize the WiFi.
+    wifi_init_config_t init_cfg = WIFI_INIT_CONFIG_DEFAULT();
+    if (esp_wifi_init(&init_cfg) != ESP_OK) {
+        ESP_LOGE(TAG, "[wifi_start] FAILED: Could not initialize WiFi!");
+        return ESP_FAIL;
+    }
+
     return ESP_OK;
 }
 
 esp_err_t wifi_stop(void) {
     ESP_LOGV(TAG, "[wifi_stop] entering function...");
+
+    // De-initialize WiFi.
+    if (esp_wifi_deinit() != ESP_OK) {
+        ESP_LOGE(TAG, "[wifi_stop] FAILED: Could not de-initialize WiFi!");
+        return ESP_FAIL;
+    }
 
     return ESP_OK;
 }
