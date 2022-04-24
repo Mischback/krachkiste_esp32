@@ -84,6 +84,18 @@ esp_err_t networking_destroy(void) {
     vTaskDelete(networking_task_handle);
     networking_task_handle = NULL;
 
+    // Deinitialize the underlying TCP/IP stack
+    // This operation is currently not supported by **ESP-IDF**, but it is
+    // logically the right thing to do.
+    // As of now, this returns ``ESP_ERR_NOT_SUPPORTED``.
+    if (esp_netif_deinit() != ESP_ERR_NOT_SUPPORTED) {
+        ESP_LOGW(
+            TAG,
+            "[networking_destroy] FAILED: deinitialization of netif returned "
+            "with an unexpected return code!");
+        return ESP_FAIL;
+    }
+
     return ESP_OK;
 }
 
