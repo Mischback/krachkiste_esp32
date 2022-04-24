@@ -19,6 +19,7 @@
  * @bug    Bugs are tracked with the
  *         [issue tracker](https://github.com/Mischback/krachkiste_esp32/issues)
  *         at GitHub.
+ * @todo   Evaluate and clear the included libraries!
  */
 
 /* This file's header */
@@ -32,6 +33,7 @@
 
 /* The FreeRTOS headers are required for timers */
 #include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "freertos/timers.h"
 
 /* This is ESP-IDF's error handling library.
@@ -69,7 +71,26 @@ static const char* TAG = "networking";
 
 /* ***** PROTOTYPES ******************************************************** */
 
+static void networking_task(void* pvParameters);
+
 /* ***** FUNCTIONS ********************************************************* */
+
+static void networking_task(void* pvParameters) {
+    ESP_LOGV(TAG, "Entering networking_task()");
+
+    ESP_LOGD(TAG, "[networking_task()] Entering loop!");
+    for (;;) {
+        // TODO(mischback): get rid of this as soon as possible!
+        ESP_LOGV(TAG, "Inside infinite loop!");
+    }
+
+    // Most likely, this statement will never be reached, because it is placed
+    // after the infinite loop.
+    // However, freeRTOS requires ``task`` functions to *never return*, and
+    // this statement will terminate and remove the task before returning.
+    // It's kind of the common and recommended idiom.
+    vTaskDelete(NULL);
+}
 
 esp_err_t networking_initialize(char* nvs_namespace) {
     // set log-level of our own code to VERBOSE (sdkconfig.defaults sets the
@@ -84,5 +105,8 @@ esp_err_t networking_initialize(char* nvs_namespace) {
     // networking-related code.
     ESP_ERROR_CHECK(esp_netif_init());
 
-    return wifi_initialize(nvs_namespace);
+    xTaskCreate(&networking_task, "networking_task", 4096, NULL, 3, NULL);
+
+    // return wifi_initialize(nvs_namespace);
+    return ESP_OK;
 }

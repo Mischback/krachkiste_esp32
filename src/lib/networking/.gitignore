@@ -7,3 +7,6 @@
 *.html
 # ... but not the actual HTML source files (unminified sources)
 !*.src.html
+
+# Just for reference during re-implementation
+wifi_manager.c
