@@ -29,6 +29,7 @@
 #include <string.h>
 
 /* Other headers of the component */
+#include "networking_internal.h"
 #include "wifi.h"
 
 /* The FreeRTOS headers are required for timers */
@@ -128,17 +129,55 @@ esp_err_t networking_initialize(char* nvs_namespace) {
         ESP_LOGE(TAG, "[networking_initialize] FAILED: Could not create task!");
         return ESP_FAIL;
     }
+
     ESP_LOGI(TAG, "[networking_initialize] Created networking task!");
+
+    // Give the first command to the networking task: Start WiFi networking!
+    xTaskNotifyIndexed(
+        networking_task_handle,
+        NETWORKING_NOTIFICATION_TASK_INDEX,
+        NETWORKING_NOTIFICATION_COMMAND_WIFI_START,
+        eSetBits);
     return ESP_OK;
 }
 
 static void networking_task(void* pvParameters) {
     ESP_LOGV(TAG, "Entering networking_task()");
 
+    BaseType_t notify_return;
+    uint32_t notify_value = 0;
+
     ESP_LOGD(TAG, "[networking_task()] Entering loop!");
     for (;;) {
-        // TODO(mischback): get rid of this as soon as possible!
-        ESP_LOGV(TAG, "Inside infinite loop!");
+        // Block this task until a notification to the task is present.
+        // - notification is expected at index
+        //   ``NETWORKING_NOTIFICATION_TASK_INDEX`` (``0`` for now)
+        // - notification bits are **not** cleared on entry...
+        // - ... but before leaving the handling
+        // - notification will be stored (cpoied) to ``notify_value``
+        // - this block is *as long as possible*, but will eventually unlock
+        //   (needs another safeguard!)
+        // TODO(mischback) This might be used to have periodically status
+        //                 updates to other components (using the event
+        //                 system)
+        notify_return = xTaskNotifyWaitIndexed(
+            NETWORKING_NOTIFICATION_TASK_INDEX,
+            0x00,
+            ULONG_MAX,
+            &notify_value,
+            portMAX_DELAY);
+        ESP_LOGD(TAG, "[networking_task()] Leaving blocked state!");
+
+        if (notify_return == pdPASS) {
+            ESP_LOGD(TAG, "[networking_task()] Got a notification!");
+
+            if ((notify_value &
+                 NETWORKING_NOTIFICATION_COMMAND_WIFI_START) != 0) {
+                wifi_start();
+            }
+        } else {
+            ESP_LOGD(TAG, "[networking_task()] No immediate notification!");
+        }
     }
 
     // Most likely, this statement will never be reached, because it is placed

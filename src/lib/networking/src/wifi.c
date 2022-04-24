@@ -24,7 +24,8 @@
 #include <string.h>
 
 /* Other headers of the component */
-#include "networking/networking.h"
+#include "networking/networking.h"  // component's public header
+#include "networking_internal.h"    // main file's internal header
 
 /* The FreeRTOS headers are required for timers */
 #include "freertos/FreeRTOS.h"
@@ -96,7 +97,7 @@ typedef struct {
  * See
  * [its API documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html#how-to-use-this-library).
  */
-static const char* TAG = "networking.wifi";
+static const char* TAG = "networking";
 
 /**
  * The configuration to be used while connecting to a WiFi network.
@@ -643,4 +644,16 @@ esp_err_t wifi_initialize(char* nvs_namespace) {
     // during launch of the internal access point. Clean up and return FAILURE.
     ESP_ERROR_CHECK(esp_wifi_deinit());
     return ESP_FAIL;
+}
+
+esp_err_t wifi_start(void) {
+    ESP_LOGV(TAG, "[wifi_start] entering function...");
+
+    return ESP_OK;
+}
+
+esp_err_t wifi_stop(void) {
+    ESP_LOGV(TAG, "[wifi_stop] entering function...");
+
+    return ESP_OK;
 }

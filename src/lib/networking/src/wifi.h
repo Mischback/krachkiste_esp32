@@ -29,4 +29,8 @@
  */
 esp_err_t wifi_initialize(char* nvs_namespace);
 
+esp_err_t wifi_start(void);
+
+esp_err_t wifi_stop(void);
+
 #endif  // SRC_LIB_NETWORKING_SRC_WIFI_H_
