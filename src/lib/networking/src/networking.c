@@ -68,12 +68,57 @@
  */
 static const char* TAG = "networking";
 
+static TaskHandle_t networking_task_handle = NULL;
+
 
 /* ***** PROTOTYPES ******************************************************** */
 
 static void networking_task(void* pvParameters);
 
 /* ***** FUNCTIONS ********************************************************* */
+
+esp_err_t networking_destroy(void) {
+    ESP_LOGV(TAG, "[networking_destroy] entering function...");
+
+    // Terminate the dedicated networking task.
+    vTaskDelete(networking_task_handle);
+    networking_task_handle = NULL;
+
+    return ESP_OK;
+}
+
+esp_err_t networking_initialize(char* nvs_namespace) {
+    // set log-level of our own code to VERBOSE (sdkconfig.defaults sets the
+    // default log-level to INFO)
+    // FIXME: Final code should not do this, but respect the project's settings
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+
+    ESP_LOGV(TAG, "[networking_initialize] entering function...");
+
+    // Initialize the underlying TCP/IP stack
+    // This should be done exactly once from application code, so this function
+    // seems like a good enough place, as it is the starting point for all
+    // networking-related code.
+    ESP_ERROR_CHECK(esp_netif_init());
+
+    // Create the actual dedicated task for the networking component.
+    // TODO(mischback) Evaluate and minimize ``usStackDepth``!
+    xTaskCreate(
+        &networking_task,
+        "networking",
+        4096,
+        NULL,
+        3,
+        &networking_task_handle);
+
+    // Determine sucess of task creation and provide return value.
+    if (networking_task_handle == NULL) {
+        ESP_LOGE(TAG, "[networking_initialize] FAILED: Could not create task!");
+        return ESP_FAIL;
+    }
+    ESP_LOGI(TAG, "[networking_initialize] Created networking task!");
+    return ESP_OK;
+}
 
 static void networking_task(void* pvParameters) {
     ESP_LOGV(TAG, "Entering networking_task()");
@@ -89,24 +134,6 @@ static void networking_task(void* pvParameters) {
     // However, freeRTOS requires ``task`` functions to *never return*, and
     // this statement will terminate and remove the task before returning.
     // It's kind of the common and recommended idiom.
+    // ``vTaskDelete(NULL)`` means: *Delete your very own task*.
     vTaskDelete(NULL);
-}
-
-esp_err_t networking_initialize(char* nvs_namespace) {
-    // set log-level of our own code to VERBOSE (sdkconfig.defaults sets the
-    // default log-level to INFO)
-    // FIXME: Final code should not do this, but respect the project's settings
-    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
-    ESP_LOGV(TAG, "Entering networking_initialize()");
-
-    // Initialize the underlying TCP/IP stack
-    // This should be done exactly once from application code, so this function
-    // seems like a good enough place, as it is the starting point for all
-    // networking-related code.
-    ESP_ERROR_CHECK(esp_netif_init());
-
-    xTaskCreate(&networking_task, "networking_task", 4096, NULL, 3, NULL);
-
-    // return wifi_initialize(nvs_namespace);
-    return ESP_OK;
 }

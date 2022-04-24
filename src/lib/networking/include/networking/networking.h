@@ -107,6 +107,8 @@
 #define NETWORKING_WIFI_STA_THRESHOLD_RSSI -127
 
 
+esp_err_t networking_destroy(void);
+
 esp_err_t networking_initialize(char* nvs_namespace);
 
 /**
