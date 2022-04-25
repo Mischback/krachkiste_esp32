@@ -11,6 +11,13 @@
 #include "esp_err.h"
 
 
+#define NETWORKING_WIFI_RET_OK   ESP_OK  // Rely on ESP-IDF's general ``OK``
+#define NETWORKING_WIFI_RET_FAIL ESP_FAIL  // Rely on ESP-IDF's general ``FAIL``
+#define NETWORKING_WIFI_RET_ALREADY_STARTED 0xf001
+#define NETWORKING_WIFI_RET_INIT_FAILED     0xf002
+#define NETWORKING_WIFI_RET_DEINIT_FAILED   0xf003
+
+
 /**
  * Initializes the WiFi connectivity of the device.
  *

@@ -89,6 +89,12 @@ typedef struct {
     char psk[NETWORKING_WIFI_PSK_MAX_LEN];
 } networking_wifi_config_t;
 
+typedef struct {
+    esp_netif_t* wifi_netif;
+    char sta_ssid[NETWORKING_WIFI_SSID_MAX_LEN];
+    char sta_psk[NETWORKING_WIFI_PSK_MAX_LEN];
+} networking_wifi_status_t;
+
 
 /* ***** VARIABLES ********************************************************* */
 /**
@@ -106,6 +112,8 @@ static const char* TAG = "networking";
  * populated by ::get_wifi_config_from_nvs.
  */
 static networking_wifi_config_t* project_wifi_config = NULL;
+
+static networking_wifi_status_t* wifi_status = NULL;
 
 /**
  * Reference to the ``netif`` object for the access point.
@@ -649,24 +657,38 @@ esp_err_t wifi_initialize(char* nvs_namespace) {
 esp_err_t wifi_start(void) {
     ESP_LOGV(TAG, "[wifi_start] entering function...");
 
+    // Check if ``wifi_status`` is already initialized.
+    if (wifi_status != NULL) {
+        ESP_LOGW(TAG, "[wifi_start] wifi_start() was already called!");
+        return NETWORKING_WIFI_RET_ALREADY_STARTED;
+    }
+
+    // Initialize the struct to track the status of the WiFi connection.
+    wifi_status = malloc(sizeof(networking_wifi_status_t));
+    memset(wifi_status, 0x00, sizeof(networking_wifi_status_t));
+
     // Initialize the WiFi.
     wifi_init_config_t init_cfg = WIFI_INIT_CONFIG_DEFAULT();
     if (esp_wifi_init(&init_cfg) != ESP_OK) {
         ESP_LOGE(TAG, "[wifi_start] FAILED: Could not initialize WiFi!");
-        return ESP_FAIL;
+        return NETWORKING_WIFI_RET_INIT_FAILED;
     }
 
-    return ESP_OK;
+    return NETWORKING_WIFI_RET_OK;
 }
 
 esp_err_t wifi_stop(void) {
     ESP_LOGV(TAG, "[wifi_stop] entering function...");
 
+    // Get rid of the struct to track the status of the WiFi connection.
+    free(wifi_status);
+    wifi_status = NULL;
+
     // De-initialize WiFi.
     if (esp_wifi_deinit() != ESP_OK) {
         ESP_LOGE(TAG, "[wifi_stop] FAILED: Could not de-initialize WiFi!");
-        return ESP_FAIL;
+        return NETWORKING_WIFI_RET_DEINIT_FAILED;
     }
 
-    return ESP_OK;
+    return NETWORKING_WIFI_RET_OK;
 }

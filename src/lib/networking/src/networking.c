@@ -146,6 +146,7 @@ static void networking_task(void* pvParameters) {
 
     BaseType_t notify_return;
     uint32_t notify_value = 0;
+    esp_err_t action_return;
     const TickType_t max_block_time = pdMS_TO_TICKS(
         NETWORKING_STATUS_UPDATE_FREQUENCY);
 
@@ -165,7 +166,7 @@ static void networking_task(void* pvParameters) {
             ULONG_MAX,
             &notify_value,
             max_block_time);
-        ESP_LOGD(TAG, "[networking_task] Leaving blocked state!");
+        ESP_LOGV(TAG, "[networking_task] Leaving blocked state!");
 
         if (notify_return == pdPASS) {
             ESP_LOGD(TAG, "[networking_task] Got a notification!");
@@ -184,12 +185,13 @@ static void networking_task(void* pvParameters) {
 
             // COMMAND WIFI_START
             // This command starts the WiFi connection process by calling
-            // ``wifi_start()``. If that function does not return successfully,
-            // a notification to this task is emitted (basically to retry the
-            // ``wifi_start()``, see COMMAND WIFI_START_RETRY below).
+            // ``wifi_start()``. Depending on its return code, further actions
+            // are triggered (see descriptions below).
             if ((notify_value &
                  NETWORKING_NOTIFICATION_COMMAND_WIFI_START) != 0) {
-                if (wifi_start() != ESP_OK) {
+                action_return = wifi_start();
+                // If ``esp_wifi_init()`` failed, try again.
+                if (action_return == NETWORKING_WIFI_RET_INIT_FAILED) {
                     ESP_LOGD(TAG, "[networking_task] FAILED: wifi_start");
                     ESP_ERROR_CHECK_WITHOUT_ABORT(wifi_stop());
                     // Second try to start WiFi!
@@ -199,6 +201,21 @@ static void networking_task(void* pvParameters) {
                         NETWORKING_NOTIFICATION_COMMAND_WIFI_START_RETRY,
                         eSetBits);
                 }
+                // If ``wifi_start()`` several times, emit a warning but don't
+                // take any further actions.
+                else if (action_return == NETWORKING_WIFI_RET_ALREADY_STARTED) {  // linting: expected to fail with [whitespace/line_length] [2], [whitespace/newline] [4], [readability/braces] [5]
+                    ESP_LOGW(
+                        TAG,
+                        "[networking_task] wifi_start() was already called!");
+                    ESP_LOGI(TAG, "You may want to 'restart' wifi instead.");
+                }
+                // If ``wifi_start()`` returns successfully, it's time to
+                // actually connect to a WiFi network.
+                else if (action_return == NETWORKING_WIFI_RET_OK) {  // linting: expected to fail with [whitespace/line_length] [2], [whitespace/newline] [4], [readability/braces] [5]
+                    ESP_LOGD(TAG, "[networking_task] wifi_start(): Success!");
+                    // TODO(mischback) Implement notification
+                    //                 ..._COMMAND_WIFI_CONNECT
+                }
             }
 
             // COMMAND WIFI_START_RETRY
@@ -207,9 +224,12 @@ static void networking_task(void* pvParameters) {
             // that there is a non-recoverable failure and will emit a
             // notification to shut down networking completely (see
             // COMMAND DESTROY above).
+            // THIS IS A VERY SIMPLE IMPLEMENTATION! It relies on the fact,
+            // that this notification is not issued from outside of this
+            // function, specifically from COMMAND WIFI_START.
             if ((notify_value &
                  NETWORKING_NOTIFICATION_COMMAND_WIFI_START_RETRY) != 0) {
-                if (wifi_start() != ESP_OK) {
+                if (wifi_start() != NETWORKING_WIFI_RET_OK) {
                     ESP_LOGE(
                         TAG,
                         "[networking_task] FAILED: wifi_start failed again!");
@@ -227,7 +247,7 @@ static void networking_task(void* pvParameters) {
             // TODO(mischback) This might be used to have periodically status
             //                 updates to other components (using the event
             //                 system)
-            ESP_LOGD(TAG, "[networking_task] No immediate notification!");
+            ESP_LOGD(TAG, "[networking_task] No pending notification!");
         }
     }
 
