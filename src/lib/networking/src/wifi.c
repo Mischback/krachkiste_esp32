@@ -91,6 +91,7 @@ typedef struct {
 
 typedef struct {
     esp_netif_t* wifi_netif;
+    esp_event_handler_instance_t* event_handler;
     char sta_ssid[NETWORKING_WIFI_SSID_MAX_LEN];
     char sta_psk[NETWORKING_WIFI_PSK_MAX_LEN];
 } networking_wifi_status_t;
@@ -159,7 +160,12 @@ static void ap_shutdown(TimerHandle_t xTimer);
 static esp_err_t connect_to_wifi(void);
 static void get_wifi_config_from_nvs(char* nvs_namespace);
 static void sta_shutdown(void);
-static void wifi_event_handler(
+static void wifi_ap_event_handler(
+    void* arg,
+    esp_event_base_t event_base,
+    int32_t event_id,
+    void* event_data);
+static void wifi_sta_event_handler(
     void* arg,
     esp_event_base_t event_base,
     int32_t event_id,
@@ -448,15 +454,7 @@ static void sta_shutdown(void) {
 }
 
 /**
- * Handle all WiFi-related events.
- *
- * This event handler is registered in ::wifi_initialize. The handler is
- * attached to the ``default`` event loop, as provided by ``esp_event`` (the
- * loop has to be started outside of this component, most likely in the
- * application's ``app_main()``).
- *
- * The function handles the access point and station mode. The related events
- * are distinct, so there should not be any interferences.
+ * MUST BE PROVIDED!!!
  *
  * @param arg        Generic arguments.
  * @param event_base ``esp_event``'s ``EVENT_BASE``. Every event is specified
@@ -466,12 +464,12 @@ static void sta_shutdown(void) {
  * @param event_data Events might provide a pointer to additional,
  *                   event-related data.
  */
-static void wifi_event_handler(
+static void wifi_ap_event_handler(
     void* arg,
     esp_event_base_t event_base,
     int32_t event_id,
     void* event_data) {
-    ESP_LOGV(TAG, "Entering wifi_event_handler()");
+    ESP_LOGV(TAG, "Entering wifi_ap_event_handler()");
 
     if (event_base != WIFI_EVENT) {
         return;
@@ -523,7 +521,9 @@ static void wifi_event_handler(
             // access point.
             // If this was the last connected client, restart the shutdown
             // timer to kill the access point.
-            ESP_LOGV(TAG, "[wifi_event_handler] WIFI_EVENT_AP_STADISCONNECTED");
+            ESP_LOGV(
+                TAG,
+                "[wifi_ap_event_handler] WIFI_EVENT_AP_STADISCONNECTED");
 
             wifi_event_ap_stadisconnected_t* disconnect =
                 (wifi_event_ap_stadisconnected_t*) event_data;
@@ -550,23 +550,59 @@ static void wifi_event_handler(
                 }
             }
             break;
+        default:
+            // Any other WIFI_EVENT is just logged here.
+            // TODO(mischback) This should be removed as soon as possible!
+            ESP_LOGV(TAG, "[wifi_ap_event_handler] some WIFI_EVENT");
+            break;
+    }
+}
+
+/**
+ * MUST BE PROVIDED!!!
+ *
+ * @param arg        Generic arguments.
+ * @param event_base ``esp_event``'s ``EVENT_BASE``. Every event is specified
+ *                   by the ``EVENT_BASE`` and its ``EVENT_ID``.
+ * @param event_id   ``esp_event``'s ``EVENT_ID``. Every event is specified by
+ *                   the ``EVENT_BASE`` and its ``EVENT_ID``.
+ * @param event_data Events might provide a pointer to additional,
+ *                   event-related data.
+ */
+static void wifi_sta_event_handler(
+    void* arg,
+    esp_event_base_t event_base,
+    int32_t event_id,
+    void* event_data) {
+    ESP_LOGV(TAG, "Entering wifi_sta_event_handler()");
+
+    if (event_base != WIFI_EVENT) {
+        return;
+    }
+
+    switch (event_id) {
+        // Please note, that some ``case`` statements have an empty statement
+        // (``{}``) appended to enable the declaration of variables with the
+        // correct scope. See https://stackoverflow.com/a/18496437
+        // However, ``cpplint`` does not like the recommended ``;`` and
+        // recommends an empty block ``{}``.
         case WIFI_EVENT_STA_START:
             // This event is emitted after the WiFi is started in station mode.
             // Simply call ``esp_wifi_connect()`` to actually establish the
             // OSI layer 2 connection.
-            ESP_LOGD(TAG, "[wifi_event_handler] WIFI_EVENT_STA_START");
-            esp_wifi_connect();
+            ESP_LOGD(TAG, "[wifi_sta_event_handler] WIFI_EVENT_STA_START");
+            // esp_wifi_connect();
             break;
         case WIFI_EVENT_STA_CONNECTED:
             // This event just means, that a connection was established on
             // OSI layer 2. Generally, layer 3 (IP) is required for any real
             // networking task.
-            ESP_LOGD(TAG, "[wifi_event_handler] STA_CONNECTED");
+            ESP_LOGD(TAG, "[wifi_sta_event_handler] STA_CONNECTED");
 
             // Reset the tracker for failed connection attempts.
             // TODO(mischback) Does this make sense here? Or should this be
             //                 done later, i.e. for the IP_EVENT_STA_GOT_IP?
-            sta_num_reconnects = 0;
+            // sta_num_reconnects = 0;
             break;
         case WIFI_EVENT_STA_DISCONNECTED:
             // This event is generated for very different reasons:
@@ -586,22 +622,22 @@ static void wifi_event_handler(
             // TODO(mischback) Here's the part for some additional logic,
             //                 implementing a maximum number of retries
             //                 before the internal access point is launched
-            ESP_LOGD(TAG, "[wifi_event_handler] STA_DISCONNECTED");
+            ESP_LOGD(TAG, "[wifi_sta_event_handler] STA_DISCONNECTED");
 
-            sta_num_reconnects++;
+            // sta_num_reconnects++;
 
-            if (sta_num_reconnects <=
-                NETWORKING_WIFI_STA_MAX_CONNECTION_ATTEMPTS) {
-                esp_wifi_connect();
-            } else {
-                sta_shutdown();
-                ap_launch();
-            }
+            // if (sta_num_reconnects <=
+            //     NETWORKING_WIFI_STA_MAX_CONNECTION_ATTEMPTS) {
+            //     esp_wifi_connect();
+            // } else {
+            //     sta_shutdown();
+            //     ap_launch();
+            // }
             break;
         default:
             // Any other WIFI_EVENT is just logged here.
             // TODO(mischback) This should be removed as soon as possible!
-            ESP_LOGV(TAG, "[wifi_event_handler] some WIFI_EVENT");
+            ESP_LOGV(TAG, "[wifi_sta_event_handler] some WIFI_EVENT");
             break;
     }
 }
@@ -642,7 +678,17 @@ esp_err_t wifi_sta_initialize(void) {
         strlen(wifi_status->sta_psk));
 
     // Attach event handler
-    // TODO(mischback) Do it!
+    if (esp_event_handler_instance_register(
+        WIFI_EVENT,
+        ESP_EVENT_ANY_ID,
+        wifi_sta_event_handler,
+        NULL,
+        wifi_status->event_handler) != ESP_OK) {
+        ESP_LOGE(
+            TAG,
+            "[wifi_sta_initialize] FAILED: Could not register event handler!");
+        return NETWORKING_WIFI_RET_HANDLER_REGISTRATION_FAILED;
+    }
 
     // Apply WiFi mode.
     if (esp_wifi_set_mode(WIFI_MODE_STA) != ESP_OK) {
@@ -690,12 +736,12 @@ esp_err_t wifi_initialize(char* nvs_namespace) {
     ESP_ERROR_CHECK(esp_wifi_init(&init_cfg));
 
     // Register event handler for WiFi events
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        WIFI_EVENT,
-        ESP_EVENT_ANY_ID,
-        wifi_event_handler,
-        NULL,
-        NULL));
+    // ESP_ERROR_CHECK(esp_event_handler_instance_register(
+    //     WIFI_EVENT,
+    //     ESP_EVENT_ANY_ID,
+    //     wifi_event_handler,
+    //     NULL,
+    //     NULL));
 
     if (connect_to_wifi() == ESP_OK) {
         return ESP_OK;
@@ -722,8 +768,8 @@ esp_err_t wifi_start(char* nvs_namespace) {
 
     // FIXME(mischback) This is just for temporary testing!
     //                  And no, these are not my actual credentials!
-    // strcpy(project_wifi_config->ssid, "WiFi_SSID");
-    // strcpy(project_wifi_config->psk, "WiFi_PSK");
+    // strcpy(wifi_status->sta_ssid, "WiFi_SSID");
+    // strcpy(wifi_status->sta_psk, "WiFi_PSK");
 
     // Read WiFi credentials from non-volatile storage (NVS).
     // During initialization, the config just has to be read once.

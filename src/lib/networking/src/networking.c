@@ -142,7 +142,7 @@ esp_err_t networking_initialize(char* nvs_namespace) {
         networking_task_handle,
         NETWORKING_NOTIFICATION_TASK_INDEX,
         NETWORKING_NOTIFICATION_COMMAND_WIFI_INIT,
-        eSetBits);
+        eSetValueWithOverwrite);
     return ESP_OK;
 }
 
@@ -162,7 +162,7 @@ static void networking_task(void* pvParameters) {
         //   ``NETWORKING_NOTIFICATION_TASK_INDEX`` (``0`` for now)
         // - notification bits are **not** cleared on entry...
         // - ... but before leaving the handling
-        // - notification will be stored (cpoied) to ``notify_value``
+        // - notification will be stored (copied) to ``notify_value``
         // - the maximum duration of the blocked state can be configured by
         //   adjusting NETWORKING_STATUS_UPDATE_FREQUENCY)
         notify_return = xTaskNotifyWaitIndexed(
@@ -174,7 +174,7 @@ static void networking_task(void* pvParameters) {
         ESP_LOGV(TAG, "[networking_task] Leaving blocked state!");
 
         if (notify_return == pdPASS) {
-            ESP_LOGD(TAG, "[networking_task] Got a notification!");
+            ESP_LOGV(TAG, "[networking_task] Got a notification!");
 
             // COMMAND DESTROY
             // This command needs to be given in the following situations:
@@ -182,29 +182,33 @@ static void networking_task(void* pvParameters) {
             //   can not be recovered
             // - the networking component could not establish a network
             //   connection; shutting down the component to free memory
-            if ((notify_value &
-                 NETWORKING_NOTIFICATION_COMMAND_DESTROY) != 0) {
+            if (notify_value == NETWORKING_NOTIFICATION_COMMAND_DESTROY) {
+                ESP_LOGD(TAG, "[networking_task] COMMAND: DESTROY");
+
                 ESP_LOGI(TAG, "[networking_task] Shutting down networking!");
                 ESP_ERROR_CHECK(networking_destroy());
             }
 
-            // COMMAND WIFI_START
+            // COMMAND WIFI_INIT
             // This command starts the WiFi connection process by calling
             // ``wifi_start()``. Depending on its return code, further actions
             // are triggered (see descriptions below).
-            if ((notify_value &
-                 NETWORKING_NOTIFICATION_COMMAND_WIFI_INIT) != 0) {
+            if (notify_value == NETWORKING_NOTIFICATION_COMMAND_WIFI_INIT) {
+                ESP_LOGD(TAG, "[networking_task] COMMAND: WIFI_INIT");
+
                 action_return = wifi_start((char*)pvParameters);
                 // If ``esp_wifi_init()`` failed, try again.
                 if (action_return == NETWORKING_WIFI_RET_INIT_FAILED) {
-                    ESP_LOGD(TAG, "[networking_task] FAILED: wifi_start");
+                    ESP_LOGI(
+                        TAG,
+                        "[networking_task] FAILED: wifi_start. Trying again");
                     ESP_ERROR_CHECK_WITHOUT_ABORT(wifi_stop());
                     // Second try to start WiFi!
                     xTaskNotifyIndexed(
                         networking_task_handle,
                         NETWORKING_NOTIFICATION_TASK_INDEX,
                         NETWORKING_NOTIFICATION_COMMAND_WIFI_INIT_RETRY,
-                        eSetBits);
+                        eSetValueWithOverwrite);
                 }
                 // If ``wifi_start()`` several times, emit a warning but don't
                 // take any further actions.
@@ -223,11 +227,11 @@ static void networking_task(void* pvParameters) {
                         networking_task_handle,
                         NETWORKING_NOTIFICATION_TASK_INDEX,
                         NETWORKING_NOTIFICATION_COMMAND_WIFI_STA_INIT,
-                        eSetBits);
+                        eSetValueWithOverwrite);
                 }
             }
 
-            // COMMAND WIFI_START_RETRY
+            // COMMAND WIFI_INIT_RETRY
             // If the first call to ``wifi_start()`` failed, retry.
             // If this call fails too, the networking component will assume,
             // that there is a non-recoverable failure and will emit a
@@ -236,8 +240,10 @@ static void networking_task(void* pvParameters) {
             // THIS IS A VERY SIMPLE IMPLEMENTATION! It relies on the fact,
             // that this notification is not issued from outside of this
             // function, specifically from COMMAND WIFI_START.
-            if ((notify_value &
-                 NETWORKING_NOTIFICATION_COMMAND_WIFI_INIT_RETRY) != 0) {
+            if (notify_value ==
+                NETWORKING_NOTIFICATION_COMMAND_WIFI_INIT_RETRY) {
+                ESP_LOGD(TAG, "[networking_task] COMMAND: WIFI_INIT_RETRY");
+
                 if (wifi_start((char*)pvParameters) != NETWORKING_WIFI_RET_OK) {
                     ESP_LOGE(
                         TAG,
@@ -249,7 +255,7 @@ static void networking_task(void* pvParameters) {
                         networking_task_handle,
                         NETWORKING_NOTIFICATION_TASK_INDEX,
                         NETWORKING_NOTIFICATION_COMMAND_DESTROY,
-                        eSetBits);
+                        eSetValueWithOverwrite);
                 } else {
                     ESP_LOGD(TAG, "[networking_task] wifi_start(): Success!");
                     // Successfully started WiFi, now initialize station mode.
@@ -257,16 +263,16 @@ static void networking_task(void* pvParameters) {
                         networking_task_handle,
                         NETWORKING_NOTIFICATION_TASK_INDEX,
                         NETWORKING_NOTIFICATION_COMMAND_WIFI_STA_INIT,
-                        eSetBits);
+                        eSetValueWithOverwrite);
                 }
             }
 
             // COMMAND WIFI_STA_INIT
             // The component is in a state, where WiFi is ready. Now initialize
             // the station mode.
-            if ((notify_value &
-                 NETWORKING_NOTIFICATION_COMMAND_WIFI_STA_INIT) != 0) {
-                ESP_LOGV(TAG, "[networking_task] COMMAND WIFI_STA_INIT");
+            if (notify_value == NETWORKING_NOTIFICATION_COMMAND_WIFI_STA_INIT) {
+                ESP_LOGD(TAG, "[networking_task] COMMAND: WIFI_STA_INIT");
+
                 action_return = wifi_sta_initialize();
 
                 // ``wifi_sta_initialize()`` checks for credentials. If there
@@ -278,7 +284,7 @@ static void networking_task(void* pvParameters) {
                         networking_task_handle,
                         NETWORKING_NOTIFICATION_TASK_INDEX,
                         NETWORKING_NOTIFICATION_COMMAND_WIFI_AP_INIT,
-                        eSetBits);
+                        eSetValueWithOverwrite);
                 }
                 // Initialization is completed, ready to go!
                 else if (action_return == NETWORKING_WIFI_RET_OK) {  // linting: expected to fail with [whitespace/line_length] [2], [whitespace/newline] [4], [readability/braces] [5]
@@ -286,17 +292,21 @@ static void networking_task(void* pvParameters) {
                         networking_task_handle,
                         NETWORKING_NOTIFICATION_TASK_INDEX,
                         NETWORKING_NOTIFICATION_COMMAND_WIFI_START,
-                        eSetBits);
+                        eSetValueWithOverwrite);
                 }
                 // At this point, some error condition is reached, that
                 // basically means, that a call of **ESP-IDF**'s code failed.
                 // This is **not recoverable**!
                 else {  // linting: expected to fail with [whitespace/line_length] [2], [whitespace/newline] [4], [readability/braces] [5]
+                    ESP_LOGE(
+                        TAG,
+                        "[networking_task] wifi_sta_initialize returned '%d'",
+                        action_return);
                     xTaskNotifyIndexed(
                         networking_task_handle,
                         NETWORKING_NOTIFICATION_TASK_INDEX,
                         NETWORKING_NOTIFICATION_COMMAND_DESTROY,
-                        eSetBits);
+                        eSetValueWithOverwrite);
                 }
             }
 
