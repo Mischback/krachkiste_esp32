@@ -141,7 +141,7 @@ esp_err_t networking_initialize(char* nvs_namespace) {
     xTaskNotifyIndexed(
         networking_task_handle,
         NETWORKING_NOTIFICATION_TASK_INDEX,
-        NETWORKING_NOTIFICATION_COMMAND_WIFI_START,
+        NETWORKING_NOTIFICATION_COMMAND_WIFI_INIT,
         eSetBits);
     return ESP_OK;
 }
@@ -193,7 +193,7 @@ static void networking_task(void* pvParameters) {
             // ``wifi_start()``. Depending on its return code, further actions
             // are triggered (see descriptions below).
             if ((notify_value &
-                 NETWORKING_NOTIFICATION_COMMAND_WIFI_START) != 0) {
+                 NETWORKING_NOTIFICATION_COMMAND_WIFI_INIT) != 0) {
                 action_return = wifi_start((char*)pvParameters);
                 // If ``esp_wifi_init()`` failed, try again.
                 if (action_return == NETWORKING_WIFI_RET_INIT_FAILED) {
@@ -203,7 +203,7 @@ static void networking_task(void* pvParameters) {
                     xTaskNotifyIndexed(
                         networking_task_handle,
                         NETWORKING_NOTIFICATION_TASK_INDEX,
-                        NETWORKING_NOTIFICATION_COMMAND_WIFI_START_RETRY,
+                        NETWORKING_NOTIFICATION_COMMAND_WIFI_INIT_RETRY,
                         eSetBits);
                 }
                 // If ``wifi_start()`` several times, emit a warning but don't
@@ -218,8 +218,12 @@ static void networking_task(void* pvParameters) {
                 // actually connect to a WiFi network.
                 else if (action_return == NETWORKING_WIFI_RET_OK) {  // linting: expected to fail with [whitespace/line_length] [2], [whitespace/newline] [4], [readability/braces] [5]
                     ESP_LOGD(TAG, "[networking_task] wifi_start(): Success!");
-                    // TODO(mischback) Implement notification
-                    //                 ..._COMMAND_WIFI_CONNECT
+                    // Successfully started WiFi, now initialize station mode.
+                    xTaskNotifyIndexed(
+                        networking_task_handle,
+                        NETWORKING_NOTIFICATION_TASK_INDEX,
+                        NETWORKING_NOTIFICATION_COMMAND_WIFI_STA_INIT,
+                        eSetBits);
                 }
             }
 
@@ -233,7 +237,7 @@ static void networking_task(void* pvParameters) {
             // that this notification is not issued from outside of this
             // function, specifically from COMMAND WIFI_START.
             if ((notify_value &
-                 NETWORKING_NOTIFICATION_COMMAND_WIFI_START_RETRY) != 0) {
+                 NETWORKING_NOTIFICATION_COMMAND_WIFI_INIT_RETRY) != 0) {
                 if (wifi_start((char*)pvParameters) != NETWORKING_WIFI_RET_OK) {
                     ESP_LOGE(
                         TAG,
@@ -246,8 +250,56 @@ static void networking_task(void* pvParameters) {
                         NETWORKING_NOTIFICATION_TASK_INDEX,
                         NETWORKING_NOTIFICATION_COMMAND_DESTROY,
                         eSetBits);
+                } else {
+                    ESP_LOGD(TAG, "[networking_task] wifi_start(): Success!");
+                    // Successfully started WiFi, now initialize station mode.
+                    xTaskNotifyIndexed(
+                        networking_task_handle,
+                        NETWORKING_NOTIFICATION_TASK_INDEX,
+                        NETWORKING_NOTIFICATION_COMMAND_WIFI_STA_INIT,
+                        eSetBits);
                 }
             }
+
+            // COMMAND WIFI_STA_INIT
+            // The component is in a state, where WiFi is ready. Now initialize
+            // the station mode.
+            if ((notify_value &
+                 NETWORKING_NOTIFICATION_COMMAND_WIFI_STA_INIT) != 0) {
+                ESP_LOGV(TAG, "[networking_task] COMMAND WIFI_STA_INIT");
+                action_return = wifi_sta_initialize();
+
+                // ``wifi_sta_initialize()`` checks for credentials. If there
+                // are no credentials, it exits as soon as possible with this
+                // specific return value.
+                // The component may now directly start the access point mode.
+                if (action_return == NETWORKING_WIFI_RET_CONFIG_UNAVAILABLE) {
+                    xTaskNotifyIndexed(
+                        networking_task_handle,
+                        NETWORKING_NOTIFICATION_TASK_INDEX,
+                        NETWORKING_NOTIFICATION_COMMAND_WIFI_AP_INIT,
+                        eSetBits);
+                }
+                // Initialization is completed, ready to go!
+                else if (action_return == NETWORKING_WIFI_RET_OK) {  // linting: expected to fail with [whitespace/line_length] [2], [whitespace/newline] [4], [readability/braces] [5]
+                    xTaskNotifyIndexed(
+                        networking_task_handle,
+                        NETWORKING_NOTIFICATION_TASK_INDEX,
+                        NETWORKING_NOTIFICATION_COMMAND_WIFI_START,
+                        eSetBits);
+                }
+                // At this point, some error condition is reached, that
+                // basically means, that a call of **ESP-IDF**'s code failed.
+                // This is **not recoverable**!
+                else {  // linting: expected to fail with [whitespace/line_length] [2], [whitespace/newline] [4], [readability/braces] [5]
+                    xTaskNotifyIndexed(
+                        networking_task_handle,
+                        NETWORKING_NOTIFICATION_TASK_INDEX,
+                        NETWORKING_NOTIFICATION_COMMAND_DESTROY,
+                        eSetBits);
+                }
+            }
+
         } else {
             // TODO(mischback) This might be used to have periodically status
             //                 updates to other components (using the event

@@ -606,6 +606,59 @@ static void wifi_event_handler(
     }
 }
 
+esp_err_t wifi_sta_initialize(void) {
+    ESP_LOGV(TAG, "Entering wifi_sta_initialize()");
+
+    // Check, if SSID / PSK are provided in wifi_status
+    if (strlen(wifi_status->sta_ssid) == 0) {
+        return NETWORKING_WIFI_RET_CONFIG_UNAVAILABLE;
+    }
+
+    // Create the network interface for the station mode.
+    wifi_status->wifi_netif = esp_netif_create_default_wifi_sta();
+    if (wifi_status->wifi_netif == NULL) {
+        ESP_LOGE(TAG, "[wifi_sta_initialize] FAILED: Could not create netif!");
+        return NETWORKING_WIFI_RET_NETIF_FAILED;
+    }
+
+    // Setup the configuration for station mode.
+    wifi_config_t sta_config = {
+        .sta = {
+            .scan_method = WIFI_FAST_SCAN,
+            .sort_method = WIFI_CONNECT_AP_BY_SECURITY,
+            .threshold.rssi = NETWORKING_WIFI_STA_THRESHOLD_RSSI,
+            .threshold.authmode = NETWORKING_WIFI_STA_THRESHOLD_AUTH,
+        },
+    };
+    // Inject the SSID / PSK as fetched from the NVS.
+    // ``memcpy`` feels like *force*, but it works.
+    memcpy(
+        sta_config.sta.ssid,
+        wifi_status->sta_ssid,
+        strlen(wifi_status->sta_ssid));
+    memcpy(
+        sta_config.sta.password,
+        wifi_status->sta_psk,
+        strlen(wifi_status->sta_psk));
+
+    // Attach event handler
+    // TODO(mischback) Do it!
+
+    // Apply WiFi mode.
+    if (esp_wifi_set_mode(WIFI_MODE_STA) != ESP_OK) {
+        ESP_LOGE(TAG, "[wifi_sta_initialize] FAILED: Could not set wifi mode!");
+        return NETWORKING_WIFI_RET_SET_MODE_FAILED;
+    }
+
+    // Apply WiFi config.
+    if (esp_wifi_set_config(WIFI_IF_STA, &sta_config) != ESP_OK) {
+        ESP_LOGE(TAG, "[wifi_sta_initialize] FAILED: Could not set config!");
+        return NETWORKING_WIFI_RET_SET_CONFIG_FAILED;
+    }
+
+    return NETWORKING_WIFI_RET_OK;
+}
+
 esp_err_t wifi_initialize(char* nvs_namespace) {
     // Set log-level of our own code to VERBOSE.
     // TODO(mischback) This is just for development purposes and should be
