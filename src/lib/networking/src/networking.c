@@ -115,12 +115,17 @@ esp_err_t networking_initialize(char* nvs_namespace) {
     ESP_ERROR_CHECK(esp_netif_init());
 
     // Create the actual dedicated task for the networking component.
+    // As of now, the only external value which has to been passed to the
+    // ``networking_task()`` function is the name of the nvs_namespace, thus,
+    // the ``void *`` ``pvParameters`` is re-used and cast accordingly.
+    // If there is further need of parameters, a struct has to be specified to
+    // pass all parameters down to the task.
     // TODO(mischback) Evaluate and minimize ``usStackDepth``!
     xTaskCreate(
         &networking_task,
         "networking",
         4096,
-        NULL,
+        nvs_namespace,
         3,
         &networking_task_handle);
 
@@ -189,7 +194,7 @@ static void networking_task(void* pvParameters) {
             // are triggered (see descriptions below).
             if ((notify_value &
                  NETWORKING_NOTIFICATION_COMMAND_WIFI_START) != 0) {
-                action_return = wifi_start();
+                action_return = wifi_start((char*)pvParameters);
                 // If ``esp_wifi_init()`` failed, try again.
                 if (action_return == NETWORKING_WIFI_RET_INIT_FAILED) {
                     ESP_LOGD(TAG, "[networking_task] FAILED: wifi_start");
@@ -229,7 +234,7 @@ static void networking_task(void* pvParameters) {
             // function, specifically from COMMAND WIFI_START.
             if ((notify_value &
                  NETWORKING_NOTIFICATION_COMMAND_WIFI_START_RETRY) != 0) {
-                if (wifi_start() != NETWORKING_WIFI_RET_OK) {
+                if (wifi_start((char*)pvParameters) != NETWORKING_WIFI_RET_OK) {
                     ESP_LOGE(
                         TAG,
                         "[networking_task] FAILED: wifi_start failed again!");

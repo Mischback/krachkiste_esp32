@@ -36,7 +36,7 @@
  */
 esp_err_t wifi_initialize(char* nvs_namespace);
 
-esp_err_t wifi_start(void);
+esp_err_t wifi_start(char* nvs_namespace);
 
 esp_err_t wifi_stop(void);
 

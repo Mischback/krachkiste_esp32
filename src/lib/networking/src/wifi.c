@@ -338,7 +338,7 @@ static esp_err_t connect_to_wifi(void) {
  * ::NETWORKING_WIFI_NVS_KEY_SSID and the *pre-shared key* ``PSK`` from
  * ::NETWORKING_WIFI_NVS_KEY_PSK.
  *
- * The retrieved values are stored in the modules ::project_wifi_config.
+ * The retrieved values are stored in the modules ::wifi_status.
  *
  * This function does not return anything. If the namespace could not be opened
  * or one of the specified keys could not be retrieved, the function emits a
@@ -388,7 +388,7 @@ static void get_wifi_config_from_nvs(char* nvs_namespace) {
     err = nvs_get_str(
         storage_handle,
         NETWORKING_WIFI_NVS_KEY_SSID,
-        project_wifi_config->ssid,
+        wifi_status->sta_ssid,
         &required_size);
     if (err != ESP_OK) {
         ESP_LOGE(
@@ -411,7 +411,7 @@ static void get_wifi_config_from_nvs(char* nvs_namespace) {
     err = nvs_get_str(
         storage_handle,
         NETWORKING_WIFI_NVS_KEY_PSK,
-        project_wifi_config->psk,
+        wifi_status->sta_psk,
         &required_size);
     if (err != ESP_OK) {
         ESP_LOGE(
@@ -654,7 +654,7 @@ esp_err_t wifi_initialize(char* nvs_namespace) {
     return ESP_FAIL;
 }
 
-esp_err_t wifi_start(void) {
+esp_err_t wifi_start(char* nvs_namespace) {
     ESP_LOGV(TAG, "[wifi_start] entering function...");
 
     // Check if ``wifi_status`` is already initialized.
@@ -666,6 +666,18 @@ esp_err_t wifi_start(void) {
     // Initialize the struct to track the status of the WiFi connection.
     wifi_status = malloc(sizeof(networking_wifi_status_t));
     memset(wifi_status, 0x00, sizeof(networking_wifi_status_t));
+
+    // FIXME(mischback) This is just for temporary testing!
+    //                  And no, these are not my actual credentials!
+    // strcpy(project_wifi_config->ssid, "WiFi_SSID");
+    // strcpy(project_wifi_config->psk, "WiFi_PSK");
+
+    // Read WiFi credentials from non-volatile storage (NVS).
+    // During initialization, the config just has to be read once.
+    // At least the SSID field must be a non-empty string, so check this.
+    if (strlen(wifi_status->sta_ssid) == 0) {
+        get_wifi_config_from_nvs(nvs_namespace);
+    }
 
     // Initialize the WiFi.
     wifi_init_config_t init_cfg = WIFI_INIT_CONFIG_DEFAULT();
