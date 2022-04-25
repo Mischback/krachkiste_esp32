@@ -60,6 +60,15 @@
 #include "esp_wifi.h"
 
 
+typedef struct {
+    TaskHandle_t networking_task_handle;
+    esp_netif_t* networking_netif;
+    esp_event_handler_instance_t* event_handler;
+    char sta_ssid[NETWORKING_WIFI_SSID_MAX_LEN];
+    char sta_psk[NETWORKING_WIFI_PSK_MAX_LEN];
+} networking_status_t;
+
+
 /* ***** VARIABLES ********************************************************* */
 /**
  * Set the module-specific ``TAG`` to be used with ESP-IDF's logging library.
@@ -69,7 +78,7 @@
  */
 static const char* TAG = "networking";
 
-static TaskHandle_t networking_task_handle = NULL;
+static networking_status_t* networking_status = NULL;
 
 
 /* ***** PROTOTYPES ******************************************************** */
@@ -82,8 +91,12 @@ esp_err_t networking_destroy(void) {
     ESP_LOGV(TAG, "[networking_destroy] entering function...");
 
     // Terminate the dedicated networking task.
-    vTaskDelete(networking_task_handle);
-    networking_task_handle = NULL;
+    vTaskDelete(networking_status->networking_task_handle);
+    networking_status->networking_task_handle = NULL;
+
+    // Get rid of the struct to track the status of the WiFi connection.
+    free(networking_status);
+    networking_status = NULL;
 
     // Deinitialize the underlying TCP/IP stack
     // This operation is currently not supported by **ESP-IDF**, but it is
@@ -127,19 +140,25 @@ esp_err_t networking_initialize(char* nvs_namespace) {
         4096,
         nvs_namespace,
         3,
-        &networking_task_handle);
+        &networking_status->networking_task_handle);
 
     // Determine sucess of task creation and provide return value.
-    if (networking_task_handle == NULL) {
+    if (networking_status->networking_task_handle == NULL) {
         ESP_LOGE(TAG, "[networking_initialize] FAILED: Could not create task!");
         return ESP_FAIL;
     }
 
     ESP_LOGI(TAG, "[networking_initialize] Created networking task!");
 
+    // Initialize the struct to track the status of the WiFi connection.
+    // Everything critical is done by now, so this is pretty much the last thing
+    // to do. Population of this memory is donw in ``networking_task()``.
+    networking_status = malloc(sizeof(networking_status_t));
+    memset(networking_status, 0x00, sizeof(networking_status_t));
+
     // Give the first command to the networking task: Start WiFi networking!
     xTaskNotifyIndexed(
-        networking_task_handle,
+        networking_status->networking_task_handle,
         NETWORKING_NOTIFICATION_TASK_INDEX,
         NETWORKING_NOTIFICATION_COMMAND_WIFI_INIT,
         eSetValueWithOverwrite);
@@ -205,7 +224,7 @@ static void networking_task(void* pvParameters) {
                     ESP_ERROR_CHECK_WITHOUT_ABORT(wifi_stop());
                     // Second try to start WiFi!
                     xTaskNotifyIndexed(
-                        networking_task_handle,
+                        networking_status->networking_task_handle,
                         NETWORKING_NOTIFICATION_TASK_INDEX,
                         NETWORKING_NOTIFICATION_COMMAND_WIFI_INIT_RETRY,
                         eSetValueWithOverwrite);
@@ -224,7 +243,7 @@ static void networking_task(void* pvParameters) {
                     ESP_LOGD(TAG, "[networking_task] wifi_start(): Success!");
                     // Successfully started WiFi, now initialize station mode.
                     xTaskNotifyIndexed(
-                        networking_task_handle,
+                        networking_status->networking_task_handle,
                         NETWORKING_NOTIFICATION_TASK_INDEX,
                         NETWORKING_NOTIFICATION_COMMAND_WIFI_STA_INIT,
                         eSetValueWithOverwrite);
@@ -252,7 +271,7 @@ static void networking_task(void* pvParameters) {
                     // wifi_start() failed two times, something is terribly
                     // wrong. Kill networking!
                     xTaskNotifyIndexed(
-                        networking_task_handle,
+                        networking_status->networking_task_handle,
                         NETWORKING_NOTIFICATION_TASK_INDEX,
                         NETWORKING_NOTIFICATION_COMMAND_DESTROY,
                         eSetValueWithOverwrite);
@@ -260,7 +279,7 @@ static void networking_task(void* pvParameters) {
                     ESP_LOGD(TAG, "[networking_task] wifi_start(): Success!");
                     // Successfully started WiFi, now initialize station mode.
                     xTaskNotifyIndexed(
-                        networking_task_handle,
+                        networking_status->networking_task_handle,
                         NETWORKING_NOTIFICATION_TASK_INDEX,
                         NETWORKING_NOTIFICATION_COMMAND_WIFI_STA_INIT,
                         eSetValueWithOverwrite);
@@ -281,7 +300,7 @@ static void networking_task(void* pvParameters) {
                 // The component may now directly start the access point mode.
                 if (action_return == NETWORKING_WIFI_RET_CONFIG_UNAVAILABLE) {
                     xTaskNotifyIndexed(
-                        networking_task_handle,
+                        networking_status->networking_task_handle,
                         NETWORKING_NOTIFICATION_TASK_INDEX,
                         NETWORKING_NOTIFICATION_COMMAND_WIFI_AP_INIT,
                         eSetValueWithOverwrite);
@@ -289,7 +308,7 @@ static void networking_task(void* pvParameters) {
                 // Initialization is completed, ready to go!
                 else if (action_return == NETWORKING_WIFI_RET_OK) {  // linting: expected to fail with [whitespace/line_length] [2], [whitespace/newline] [4], [readability/braces] [5]
                     xTaskNotifyIndexed(
-                        networking_task_handle,
+                        networking_status->networking_task_handle,
                         NETWORKING_NOTIFICATION_TASK_INDEX,
                         NETWORKING_NOTIFICATION_COMMAND_WIFI_START,
                         eSetValueWithOverwrite);
@@ -303,7 +322,7 @@ static void networking_task(void* pvParameters) {
                         "[networking_task] wifi_sta_initialize returned '%d'",
                         action_return);
                     xTaskNotifyIndexed(
-                        networking_task_handle,
+                        networking_status->networking_task_handle,
                         NETWORKING_NOTIFICATION_TASK_INDEX,
                         NETWORKING_NOTIFICATION_COMMAND_DESTROY,
                         eSetValueWithOverwrite);

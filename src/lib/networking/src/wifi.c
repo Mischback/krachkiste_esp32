@@ -89,13 +89,6 @@ typedef struct {
     char psk[NETWORKING_WIFI_PSK_MAX_LEN];
 } networking_wifi_config_t;
 
-typedef struct {
-    esp_netif_t* wifi_netif;
-    esp_event_handler_instance_t* event_handler;
-    char sta_ssid[NETWORKING_WIFI_SSID_MAX_LEN];
-    char sta_psk[NETWORKING_WIFI_PSK_MAX_LEN];
-} networking_wifi_status_t;
-
 
 /* ***** VARIABLES ********************************************************* */
 /**
@@ -113,8 +106,6 @@ static const char* TAG = "networking";
  * populated by ::get_wifi_config_from_nvs.
  */
 static networking_wifi_config_t* project_wifi_config = NULL;
-
-static networking_wifi_status_t* wifi_status = NULL;
 
 /**
  * Reference to the ``netif`` object for the access point.
@@ -756,21 +747,13 @@ esp_err_t wifi_initialize(char* nvs_namespace) {
 esp_err_t wifi_start(char* nvs_namespace) {
     ESP_LOGV(TAG, "[wifi_start] entering function...");
 
-    // Check if ``wifi_status`` is already initialized.
-    if (wifi_status != NULL) {
-        ESP_LOGW(TAG, "[wifi_start] wifi_start() was already called!");
-        return NETWORKING_WIFI_RET_ALREADY_STARTED;
-    }
-
-    // Initialize the struct to track the status of the WiFi connection.
-    wifi_status = malloc(sizeof(networking_wifi_status_t));
-    memset(wifi_status, 0x00, sizeof(networking_wifi_status_t));
-
+    // TODO(mischback) Move to networking.c and adjust to networking_status
     // FIXME(mischback) This is just for temporary testing!
     //                  And no, these are not my actual credentials!
     // strcpy(wifi_status->sta_ssid, "WiFi_SSID");
     // strcpy(wifi_status->sta_psk, "WiFi_PSK");
 
+    // TODO(mischback) Move to networking.c and adjust to get_networking_config
     // Read WiFi credentials from non-volatile storage (NVS).
     // During initialization, the config just has to be read once.
     // At least the SSID field must be a non-empty string, so check this.
@@ -790,10 +773,6 @@ esp_err_t wifi_start(char* nvs_namespace) {
 
 esp_err_t wifi_stop(void) {
     ESP_LOGV(TAG, "[wifi_stop] entering function...");
-
-    // Get rid of the struct to track the status of the WiFi connection.
-    free(wifi_status);
-    wifi_status = NULL;
 
     // De-initialize WiFi.
     if (esp_wifi_deinit() != ESP_OK) {
