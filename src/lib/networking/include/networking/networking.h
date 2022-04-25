@@ -22,10 +22,23 @@
 
 
 /**
+ * Controls the frequency of status updates of the networking task.
+ *
+ * The current implementation does apply this value in ``networking_task``'s
+ * implementation to determine the maximum timespan the infinite loop will
+ * remain in its blocked state.
+ *
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
+ * @todo The documentation of this probably contains to much implementation
+ *       details for the public header file.
+ */
+#define NETWORKING_STATUS_UPDATE_FREQUENCY 5000
+
+/**
  * The channel to be used while providing the project-specific access point.
  *
  * @todo Is there a nice way to provide a **dynamic** channel?
- * @todo Make this configurable (pre-build with ``sdkconfig``)!
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
 #define NETWORKING_WIFI_AP_CHANNEL 5
 

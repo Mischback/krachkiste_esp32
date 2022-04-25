@@ -146,6 +146,8 @@ static void networking_task(void* pvParameters) {
 
     BaseType_t notify_return;
     uint32_t notify_value = 0;
+    const TickType_t max_block_time = pdMS_TO_TICKS(
+        NETWORKING_STATUS_UPDATE_FREQUENCY);
 
     ESP_LOGD(TAG, "[networking_task] Entering loop!");
     for (;;) {
@@ -155,28 +157,36 @@ static void networking_task(void* pvParameters) {
         // - notification bits are **not** cleared on entry...
         // - ... but before leaving the handling
         // - notification will be stored (cpoied) to ``notify_value``
-        // - this block is *as long as possible*, but will eventually unlock
-        //   (needs another safeguard!)
-        // TODO(mischback) This might be used to have periodically status
-        //                 updates to other components (using the event
-        //                 system)
+        // - the maximum duration of the blocked state can be configured by
+        //   adjusting NETWORKING_STATUS_UPDATE_FREQUENCY)
         notify_return = xTaskNotifyWaitIndexed(
             NETWORKING_NOTIFICATION_TASK_INDEX,
             0x00,
             ULONG_MAX,
             &notify_value,
-            portMAX_DELAY);
+            max_block_time);
         ESP_LOGD(TAG, "[networking_task] Leaving blocked state!");
 
         if (notify_return == pdPASS) {
             ESP_LOGD(TAG, "[networking_task] Got a notification!");
 
+            // COMMAND DESTROY
+            // This command needs to be given in the following situations:
+            // - the networking component had some internal failure, which
+            //   can not be recovered
+            // - the networking component could not establish a network
+            //   connection; shutting down the component to free memory
             if ((notify_value &
                  NETWORKING_NOTIFICATION_COMMAND_DESTROY) != 0) {
                 ESP_LOGI(TAG, "[networking_task] Shutting down networking!");
                 ESP_ERROR_CHECK(networking_destroy());
             }
 
+            // COMMAND WIFI_START
+            // This command starts the WiFi connection process by calling
+            // ``wifi_start()``. If that function does not return successfully,
+            // a notification to this task is emitted (basically to retry the
+            // ``wifi_start()``, see COMMAND WIFI_START_RETRY below).
             if ((notify_value &
                  NETWORKING_NOTIFICATION_COMMAND_WIFI_START) != 0) {
                 if (wifi_start() != ESP_OK) {
@@ -191,6 +201,12 @@ static void networking_task(void* pvParameters) {
                 }
             }
 
+            // COMMAND WIFI_START_RETRY
+            // If the first call to ``wifi_start()`` failed, retry.
+            // If this call fails too, the networking component will assume,
+            // that there is a non-recoverable failure and will emit a
+            // notification to shut down networking completely (see
+            // COMMAND DESTROY above).
             if ((notify_value &
                  NETWORKING_NOTIFICATION_COMMAND_WIFI_START_RETRY) != 0) {
                 if (wifi_start() != ESP_OK) {
@@ -208,6 +224,9 @@ static void networking_task(void* pvParameters) {
                 }
             }
         } else {
+            // TODO(mischback) This might be used to have periodically status
+            //                 updates to other components (using the event
+            //                 system)
             ESP_LOGD(TAG, "[networking_task] No immediate notification!");
         }
     }
