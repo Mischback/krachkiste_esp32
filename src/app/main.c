@@ -124,6 +124,4 @@ void app_main(void) {
         &networking_web_attach_handlers,
         NULL,
         NULL));
-
-    networking_initialize(PROJECT_NVS_STORAGE_NAMESPACE);
 }
