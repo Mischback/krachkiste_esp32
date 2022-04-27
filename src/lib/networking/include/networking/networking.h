@@ -5,4 +5,19 @@
 #ifndef SRC_LIB_NETWORKING_INCLUDE_NETWORKING_NETWORKING_H_
 #define SRC_LIB_NETWORKING_INCLUDE_NETWORKING_NETWORKING_H_
 
+/* This is ESP-IDF's error handling library.
+ * - defines ``esp_err_t``
+ */
+#include "esp_err.h"
+
+/**
+ * Initialize the ``networking`` component to establish and maintain network
+ * connectivity.
+ *
+ * @param nvs_namespace
+ * @return esp_err_t
+ * @todo Complete the documentation!
+ */
+esp_err_t networking_init(char* nvs_namespace);
+
 #endif  // SRC_LIB_NETWORKING_INCLUDE_NETWORKING_NETWORKING_H_

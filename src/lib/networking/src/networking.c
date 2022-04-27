@@ -21,5 +21,23 @@
  *         at GitHub.
  */
 
+/* ***** INCLUDES ********************************************************** */
+
 /* This file's header */
 #include "networking/networking.h"
+
+/* This is ESP-IDF's error handling library.
+ * - defines the **type** ``esp_err_t``
+ * - defines common return values (``ESP_OK``, ``ESP_FAIL``)
+ */
+#include "esp_err.h"
+
+/* ***** DEFINES *********************************************************** */
+/* ***** TYPES ************************************************************* */
+/* ***** VARIABLES ********************************************************* */
+/* ***** PROTOTYPES ******************************************************** */
+/* ***** FUNCTIONS ********************************************************* */
+
+esp_err_t networking_init(char* nvs_namespace) {
+    return ESP_OK;
+}
