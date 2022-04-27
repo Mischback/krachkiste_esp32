@@ -154,3 +154,18 @@ esp_err_t networking_init(char* nvs_namespace) {
 
     return ESP_OK;
 }
+
+esp_err_t networking_deinit(void) {
+    ESP_LOGV(TAG, "networking_deinit()");
+
+    if (state == NULL) {
+        ESP_LOGE(TAG, "No state information available!");
+        return ESP_FAIL;
+    }
+
+    /* Free internal state memory. */
+    free(state);
+    state = NULL;
+
+    return ESP_OK;
+}

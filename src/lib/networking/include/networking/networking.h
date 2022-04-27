@@ -20,4 +20,12 @@
  */
 esp_err_t networking_init(char* nvs_namespace);
 
+/**
+ * Deinitialize the ``networking`` component.
+ *
+ * @return esp_err_t
+ * @todo Complete the documentation!
+ */
+esp_err_t networking_deinit(void);
+
 #endif  // SRC_LIB_NETWORKING_INCLUDE_NETWORKING_NETWORKING_H_
