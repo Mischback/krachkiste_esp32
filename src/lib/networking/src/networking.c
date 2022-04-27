@@ -32,6 +32,26 @@
  */
 #include "esp_err.h"
 
+/* This is ESP-IDF's logging library.
+ * - ESP_LOGE(TAG, "Error");
+ * - ESP_LOGW(TAG, "Warning");
+ * - ESP_LOGI(TAG, "Info");
+ * - ESP_LOGD(TAG, "Debug");
+ * - ESP_LOGV(TAG, "Verbose");
+ */
+#include "esp_log.h"
+
+/* ESP-IDF's network abstraction layer */
+#include "esp_netif.h"
+
+/* FreeRTOS headers.
+ * - the ``FreeRTOS.h`` is required
+ * - ``task.h`` for task management
+ */
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+
 /* ***** DEFINES *********************************************************** */
 /* ***** TYPES ************************************************************* */
 
@@ -75,10 +95,62 @@ typedef enum {
     NETWORKING_STATUS_UP,
 } networking_status;
 
+/**
+ * A component-specific struct to keep track of the internal state.
+ */
+struct networking_state {
+    networking_medium   medium;
+    networking_mode     mode;
+    networking_status   status;
+    esp_netif_t         *interface;
+    TaskHandle_t        task;
+    esp_event_handler_t *ip_event_handler;
+    esp_event_handler_t *wifi_event_handler;
+};
+
+
 /* ***** VARIABLES ********************************************************* */
+
+/**
+ * Set the module-specific ``TAG`` to be used with ESP-IDF's logging library.
+ *
+ * See
+ * [its API documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html#how-to-use-this-library).
+ */
+static const char* TAG = "networking";
+
+/**
+ * Track the internal state of the component.
+ */
+static struct networking_state *state = NULL;
+
+
 /* ***** PROTOTYPES ******************************************************** */
 /* ***** FUNCTIONS ********************************************************* */
 
 esp_err_t networking_init(char* nvs_namespace) {
+    // Set log-level of our own code to VERBOSE
+    // FIXME: Final code should not do this, but respect the project's settings
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+
+    ESP_LOGV(TAG, "networking_init()");
+
+    /* Check if this a recurrent call to the function. */
+    if (state != NULL) {
+        ESP_LOGE(TAG, "Internal state already initialized!");
+        return ESP_FAIL;
+    }
+
+    /* Initialize internal state information */
+    state = calloc(1, sizeof(struct networking_state));
+    state->medium = NETWORKING_MEDIUM_UNSPECIFIED;
+    state->mode = NETWORKING_MODE_NOT_APPLICABLE;
+    state->status = NETWORKING_STATUS_DOWN;
+
+    ESP_LOGI(TAG, "Successfully initialized networking component.");
+    ESP_LOGD(TAG, "state->medium... %d", state->medium);
+    ESP_LOGD(TAG, "state->mode..... %d", state->mode);
+    ESP_LOGD(TAG, "state->status... %d", state->status);
+
     return ESP_OK;
 }
