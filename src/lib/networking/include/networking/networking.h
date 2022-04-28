@@ -20,21 +20,19 @@
 #define NETWORKING_TASK_PRIORITY 10
 
 /**
- * Initialize the ``networking`` component to establish and maintain network
- * connectivity.
+ * The component's entry point.
+ *
+ * This function is meant to be called from the actual application and will take
+ * care of setting up the network, depending on configuration values.
+ *
+ * Internally, the component will launch a dedicated task, which is meant to
+ * establish and maintain network connectivity or provide a fallback, providing
+ * an access point to keep the configuration web interface accessible.
  *
  * @param nvs_namespace
  * @return esp_err_t
  * @todo Complete the documentation!
  */
-esp_err_t networking_init(char* nvs_namespace);
-
-/**
- * Deinitialize the ``networking`` component.
- *
- * @return esp_err_t
- * @todo Complete the documentation!
- */
-esp_err_t networking_deinit(void);
+esp_err_t networking_start(char* nvs_namespace);
 
 #endif  // SRC_LIB_NETWORKING_INCLUDE_NETWORKING_NETWORKING_H_

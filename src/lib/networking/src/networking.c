@@ -127,6 +127,12 @@ static struct networking_state *state = NULL;
 
 
 /* ***** PROTOTYPES ******************************************************** */
+
+static void networking(void *task_parameters);
+static esp_err_t networking_deinit(void);
+static esp_err_t networking_init(char* nvs_namespace);
+
+
 /* ***** FUNCTIONS ********************************************************* */
 
 static void networking(void *task_parameters) {
@@ -141,7 +147,7 @@ static void networking(void *task_parameters) {
     vTaskDelete(NULL);
 }
 
-esp_err_t networking_init(char* nvs_namespace) {
+static esp_err_t networking_init(char* nvs_namespace) {
     // Set log-level of our own code to VERBOSE
     // FIXME: Final code should not do this, but respect the project's settings
     esp_log_level_set(TAG, ESP_LOG_VERBOSE);
@@ -220,7 +226,7 @@ esp_err_t networking_init(char* nvs_namespace) {
     return ESP_OK;
 }
 
-esp_err_t networking_deinit(void) {
+static esp_err_t networking_deinit(void) {
     ESP_LOGV(TAG, "networking_deinit()");
 
     if (state == NULL) {
@@ -255,6 +261,17 @@ esp_err_t networking_deinit(void) {
         ESP_LOGW(
             TAG,
             "'esp_netif_deinit' returned with an unexpected return code");
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t networking_start(char* nvs_namespace) {
+    ESP_LOGV(TAG, "networking_start()");
+
+    if (networking_init(nvs_namespace) != ESP_OK) {
+        networking_deinit();
+        return ESP_FAIL;
     }
 
     return ESP_OK;

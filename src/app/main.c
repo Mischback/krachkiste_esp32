@@ -125,5 +125,5 @@ void app_main(void) {
     //     NULL,
     //     NULL));
 
-    networking_init(PROJECT_NVS_STORAGE_NAMESPACE);
+    networking_start(PROJECT_NVS_STORAGE_NAMESPACE);
 }
