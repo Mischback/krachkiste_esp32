@@ -11,6 +11,15 @@
 #include "esp_err.h"
 
 /**
+ * The **freeRTOS**-specific priority for the component's task.
+ *
+ * @todo Determine a sane (default) value for this! Evaluate other (built-in)
+ *       task priorities.
+ * @todo Should this be make configurable by ``sdkconfig``?
+ */
+#define NETWORKING_TASK_PRIORITY 10
+
+/**
  * Initialize the ``networking`` component to establish and maintain network
  * connectivity.
  *
