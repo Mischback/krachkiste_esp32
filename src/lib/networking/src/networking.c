@@ -228,9 +228,34 @@ esp_err_t networking_deinit(void) {
         return ESP_FAIL;
     }
 
+    /* Unregister the IP_EVENT event handler. */
+    // TODO(mischback) Actually unregister the event handler
+    // if (esp_event_handler_instance_unregister(
+    //     IP_EVENT,
+    //     ESP_EVENT_ANY_ID,
+    //     state->ip_event_handler) != ESP_OK) {
+    //     ESP_LOGE(TAG, "Could not unregister IP_EVENT event handler!");
+    //     ESP_LOGW(TAG, "Continuing with de-initialization...");
+    // }
+
+    /* Stop and remove the dedicated networking task */
+    if (state->task != NULL)
+        vTaskDelete(state->task);
+
     /* Free internal state memory. */
     free(state);
     state = NULL;
+
+    /* De-initialize the network stack.
+     * This is actually not supported by **ESP-IDF**, but included here for
+     * completeness and to be fully compatible, *if* **ESP-IDF** include this
+     * in a future release.
+     */
+    if (esp_netif_deinit() != ESP_ERR_NOT_SUPPORTED) {
+        ESP_LOGW(
+            TAG,
+            "'esp_netif_deinit' returned with an unexpected return code");
+    }
 
     return ESP_OK;
 }
