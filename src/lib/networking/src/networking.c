@@ -33,6 +33,9 @@
  */
 #include "esp_err.h"
 
+/* This is ESP-IDF's event library. */
+#include "esp_event.h"
+
 /* This is ESP-IDF's logging library.
  * - ESP_LOGE(TAG, "Error");
  * - ESP_LOGW(TAG, "Warning");
@@ -44,6 +47,13 @@
 
 /* ESP-IDF's network abstraction layer */
 #include "esp_netif.h"
+
+/* ESP-IDF's wifi library.
+ * The header has to be included here, because the component uses one single
+ * event handler function (::networking_event_handler), thus, the specific
+ * WiFi-related events must be known.
+ */
+#include "esp_wifi.h"
 
 /* FreeRTOS headers.
  * - the ``FreeRTOS.h`` is required
@@ -105,8 +115,8 @@ struct networking_state {
     networking_status   status;
     esp_netif_t         *interface;
     TaskHandle_t        task;
-    esp_event_handler_t *ip_event_handler;
-    esp_event_handler_t *wifi_event_handler;
+    esp_event_handler_t ip_event_handler;
+    esp_event_handler_t wifi_event_handler;
 };
 
 
@@ -129,6 +139,11 @@ static struct networking_state *state = NULL;
 /* ***** PROTOTYPES ******************************************************** */
 
 static void networking(void *task_parameters);
+static void networking_event_handler(
+    void* arg,
+    esp_event_base_t event_base,
+    int32_t event_id,
+    void* event_data);
 static esp_err_t networking_deinit(void);
 static esp_err_t networking_init(char* nvs_namespace);
 
@@ -145,6 +160,99 @@ static void networking(void *task_parameters) {
      * functions.
      */
     vTaskDelete(NULL);
+}
+
+static void networking_event_handler(
+    void* arg,
+    esp_event_base_t event_base,
+    int32_t event_id,
+    void* event_data) {
+    ESP_LOGV(TAG, "networking_event_handler()");
+
+    if (event_base == WIFI_EVENT) {
+        /* All WIFI_EVENT event_ids
+         * See [ESP-IDF documentation link]
+         */
+        switch (event_id) {
+        case WIFI_EVENT_WIFI_READY:
+            ESP_LOGV(TAG, "WIFI_EVENT_WIFI_READY");
+            break;
+        case WIFI_EVENT_SCAN_DONE:
+            ESP_LOGV(TAG, "WIFI_EVENT_SCAN_DONE");
+            break;
+        case WIFI_EVENT_STA_START:
+            ESP_LOGV(TAG, "WIFI_EVENT_STA_START");
+            break;
+        case WIFI_EVENT_STA_STOP:
+            ESP_LOGV(TAG, "WIFI_EVENT_STA_STOP");
+            break;
+        case WIFI_EVENT_STA_CONNECTED:
+            ESP_LOGV(TAG, "WIFI_EVENT_STA_CONNECTED");
+            break;
+        case WIFI_EVENT_STA_DISCONNECTED:
+            ESP_LOGV(TAG, "WIFI_EVENT_STA_DISCONNECTED");
+            break;
+        case WIFI_EVENT_STA_AUTHMODE_CHANGE:
+            ESP_LOGV(TAG, "WIFI_EVENT_STA_AUTHMODE_CHANGED");
+            break;
+        case WIFI_EVENT_STA_WPS_ER_SUCCESS:
+            ESP_LOGV(TAG, "WIFI_EVENT_WPS_ER_SUCCESS");
+            break;
+        case WIFI_EVENT_STA_WPS_ER_FAILED:
+            ESP_LOGV(TAG, "WIFI_EVENT_WPS_ER_FAILED");
+            break;
+        case WIFI_EVENT_STA_WPS_ER_TIMEOUT:
+            ESP_LOGV(TAG, "WIFI_EVENT_WPS_ER_TIMEOUT");
+            break;
+        case WIFI_EVENT_STA_WPS_ER_PIN:
+            ESP_LOGV(TAG, "WIFI_EVENT_WPS_ER_PIN");
+            break;
+        case WIFI_EVENT_AP_START:
+            ESP_LOGV(TAG, "WIFI_EVENT_AP_START");
+            break;
+        case WIFI_EVENT_AP_STOP:
+            ESP_LOGV(TAG, "WIFI_EVENT_AP_STOP");
+            break;
+        case WIFI_EVENT_AP_STACONNECTED:
+            ESP_LOGV(TAG, "WIFI_EVENT_AP_STACONNECTED");
+            break;
+        case WIFI_EVENT_AP_STADISCONNECTED:
+            ESP_LOGV(TAG, "WIFI_EVENT_AP_STADISCONNECTED");
+            break;
+        case WIFI_EVENT_AP_PROBEREQRECVED:
+            ESP_LOGV(TAG, "WIFI_EVENT_AP_PROBEREQRECVED");
+            break;
+        default:
+            ESP_LOGW(TAG, "Got unhandled WIFI_EVENT: '%d'", event_id);
+            break;
+        }
+    }
+
+    if (event_base == IP_EVENT) {
+        switch (event_id) {
+        case IP_EVENT_STA_GOT_IP:
+            ESP_LOGV(TAG, "IP_EVENT_STA_GOT_IP");
+            break;
+        case IP_EVENT_STA_LOST_IP:
+            ESP_LOGV(TAG, "IP_EVENT_STA_LOST_IP");
+            break;
+        case IP_EVENT_AP_STAIPASSIGNED:
+            ESP_LOGV(TAG, "IP_EVENT_AP_STAIPASSIGNED");
+            break;
+        case IP_EVENT_GOT_IP6:
+            ESP_LOGV(TAG, "IP_EVENT_GOT_IP6");
+            break;
+        case IP_EVENT_ETH_GOT_IP:
+            ESP_LOGV(TAG, "IP_EVENT_ETH_GOT_IP");
+            break;
+        case IP_EVENT_ETH_LOST_IP:
+            ESP_LOGV(TAG, "IP_EVENT_ETH_LOST_IP");
+            break;
+        default:
+            ESP_LOGW(TAG, "Got unhandled IP_EVENT: '%d'", event_id);
+            break;
+        }
+    }
 }
 
 static esp_err_t networking_init(char* nvs_namespace) {
@@ -185,17 +293,20 @@ static esp_err_t networking_init(char* nvs_namespace) {
      * be registered at this point. The handlers for medium-specific events
      * are registered in the respective module.
      */
-    // TODO(mischback) Actually register the event handler as soon as it is
-    //                 implemented!
-    // esp_ret = esp_event_handler_instance_register();
-    // if (esp_ret != ESP_OK) {
-    //     ESP_LOGE(TAG, "Could not attach IP_EVENT event handler!");
-    //     ESP_LOGD(
-    //         TAG,
-    //         "'esp_event_handler_instance_register()' returned %d",
-    //         esp_ret);
-    //     return ESP_FAIL;
-    // }
+    esp_ret = esp_event_handler_instance_register(
+        IP_EVENT,
+        ESP_EVENT_ANY_ID,
+        networking_event_handler,
+        NULL,
+        (void **)&(state->ip_event_handler));
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Could not attach IP_EVENT event handler!");
+        ESP_LOGD(
+            TAG,
+            "'esp_event_handler_instance_register()' returned %d",
+            esp_ret);
+        return ESP_FAIL;
+    }
 
     /* Create the actual dedicated task for the component. */
     // TODO(mischback) Determine a usable ``usStackDepth``!
@@ -219,9 +330,10 @@ static esp_err_t networking_init(char* nvs_namespace) {
     }
 
     ESP_LOGI(TAG, "Successfully initialized networking component.");
-    ESP_LOGD(TAG, "state->medium... %d", state->medium);
-    ESP_LOGD(TAG, "state->mode..... %d", state->mode);
-    ESP_LOGD(TAG, "state->status... %d", state->status);
+    ESP_LOGD(TAG, "state->medium............. %d", state->medium);
+    ESP_LOGD(TAG, "state->mode............... %d", state->mode);
+    ESP_LOGD(TAG, "state->status............. %d", state->status);
+    ESP_LOGD(TAG, "state->ip_event_handler... %p", state->ip_event_handler);
 
     return ESP_OK;
 }
@@ -235,14 +347,13 @@ static esp_err_t networking_deinit(void) {
     }
 
     /* Unregister the IP_EVENT event handler. */
-    // TODO(mischback) Actually unregister the event handler
-    // if (esp_event_handler_instance_unregister(
-    //     IP_EVENT,
-    //     ESP_EVENT_ANY_ID,
-    //     state->ip_event_handler) != ESP_OK) {
-    //     ESP_LOGE(TAG, "Could not unregister IP_EVENT event handler!");
-    //     ESP_LOGW(TAG, "Continuing with de-initialization...");
-    // }
+    if (esp_event_handler_instance_unregister(
+        IP_EVENT,
+        ESP_EVENT_ANY_ID,
+        state->ip_event_handler) != ESP_OK) {
+        ESP_LOGE(TAG, "Could not unregister IP_EVENT event handler!");
+        ESP_LOGW(TAG, "Continuing with de-initialization...");
+    }
 
     /* Stop and remove the dedicated networking task */
     if (state->task != NULL)
