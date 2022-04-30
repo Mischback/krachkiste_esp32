@@ -79,11 +79,6 @@ struct networking_state {
     esp_event_handler_t wifi_event_handler;
 };
 
-/**
- * Track the internal state of the component.
- */
-struct networking_state *networking_state = NULL;
-
 
 /**
  * This method is used as interface to the dedicated networking task.

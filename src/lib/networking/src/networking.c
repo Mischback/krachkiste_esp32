@@ -29,6 +29,7 @@
 
 /* Other headers of the component. */
 #include "networking_internal.h"
+#include "wifi.h"
 
 /* This is ESP-IDF's error handling library.
  * - defines the **type** ``esp_err_t``
@@ -93,6 +94,11 @@
  */
 static const char* TAG = "networking";
 
+/**
+ * Track the internal state of the component.
+ */
+static struct networking_state *networking_state = NULL;
+
 
 /* ***** PROTOTYPES ******************************************************** */
 
@@ -130,6 +136,12 @@ static void networking(void *task_parameters) {
         /* Notification or monitoring? */
         if (notify_result == pdPASS) {
             switch (notify_value) {
+            case NETWORKING_NOTIFICATION_CMD_WIFI_START:
+                ESP_LOGD(TAG, "CMD: WIFI_START");
+                if (wifi_start() != ESP_OK) {
+                    ESP_LOGE(TAG, "Could not start WiFi!");
+                }
+                break;
             default:
                 ESP_LOGW(TAG, "Got unhandled notification: %d", notify_value);
                 break;
