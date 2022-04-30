@@ -27,6 +27,9 @@
 /* This file's header */
 #include "networking/networking.h"
 
+/* Other headers of the component. */
+#include "networking_internal.h"
+
 /* This is ESP-IDF's error handling library.
  * - defines the **type** ``esp_err_t``
  * - defines common return values (``ESP_OK``, ``ESP_FAIL``)
@@ -64,6 +67,20 @@
 
 
 /* ***** DEFINES *********************************************************** */
+
+/**
+ * The index to be used by ``xTaskNotifyWaitIndex``.
+ *
+ * **freeRTOS** does support tasks with with multiple *notifications*, however,
+ * **ESP-IDF** limits this to just one, which is placed at index ``0`` (multiple
+ * notification values are supported starting at 10.4.0).
+ *
+ * The component however uses the generic versions of ``xTaskNotifyWait()`` and
+ * ``xTaskNotify()``, so this constant ensures, that the notifications will be
+ * send to the right *receiver*.
+ */
+#define NETWORKING_TASK_NOTIFICATION_INDEX 0
+
 /* ***** TYPES ************************************************************* */
 
 /**
@@ -153,6 +170,37 @@ static esp_err_t networking_init(char* nvs_namespace);
 static void networking(void *task_parameters) {
     ESP_LOGV(TAG, "networking()");
     ESP_LOGV(TAG, "This is the actual task function!");
+
+    // TODO(mischback) Make this configurable by ``sdkconfig``!
+    const TickType_t mon_freq = pdMS_TO_TICKS(5000);  // 5 sec
+    BaseType_t notify_result;
+    uint32_t notify_value = 0;
+
+    ESP_LOGV(TAG, "networking(): Entering infinite loop...");
+    for (;;) {
+        /* Block until notification or ``mon_freq`` reached. */
+        notify_result = xTaskNotifyWaitIndexed(
+            NETWORKING_TASK_NOTIFICATION_INDEX,
+            pdFALSE,
+            ULONG_MAX,
+            &notify_value,
+            mon_freq);
+
+        /* Notification or monitoring? */
+        if (notify_result == pdPASS) {
+            switch (notify_value) {
+            default:
+                ESP_LOGW(TAG, "Got unhandled notification: %d", notify_value);
+                break;
+            }
+        } else {
+            // TODO(mischback) The component should kind of *publish* relevant
+            //                 informations of its internal state using
+            //                 **EPS-IDF**'s event system. This will be the
+            //                 place to actually emit the *event*.
+            ESP_LOGV(TAG, "'mon_freq' reached...");
+        }
+    }
 
     /* This should probably not be reached!
      * ``freeRTOS`` requires the task functions *to never return*. Instead,
@@ -324,7 +372,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
             4096,
             NULL,
             NETWORKING_TASK_PRIORITY,
-            state->task) != pdPASS) {
+            &(state->task)) != pdPASS) {
         ESP_LOGE(TAG, "Could not create task!");
         return ESP_FAIL;
     }
@@ -333,7 +381,11 @@ static esp_err_t networking_init(char* nvs_namespace) {
     ESP_LOGD(TAG, "state->medium............. %d", state->medium);
     ESP_LOGD(TAG, "state->mode............... %d", state->mode);
     ESP_LOGD(TAG, "state->status............. %d", state->status);
+    ESP_LOGD(TAG, "state->task............... %p", state->task);
     ESP_LOGD(TAG, "state->ip_event_handler... %p", state->ip_event_handler);
+
+    /* Place the first command for the dedicated networking task. */
+    networking_notify(NETWORKING_NOTIFICATION_CMD_WIFI_START);
 
     return ESP_OK;
 }
@@ -375,6 +427,16 @@ static esp_err_t networking_deinit(void) {
     }
 
     return ESP_OK;
+}
+
+void networking_notify(uint32_t notification) {
+    ESP_LOGV(TAG, "networking_notify()");
+
+    xTaskNotifyIndexed(
+        state->task,
+        NETWORKING_TASK_NOTIFICATION_INDEX,
+        notification,
+        eSetValueWithOverwrite);
 }
 
 esp_err_t networking_start(char* nvs_namespace) {
