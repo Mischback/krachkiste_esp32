@@ -589,7 +589,24 @@ static esp_err_t wifi_init(char *nvs_namespace) {
     }
     state->medium = NETWORKING_MEDIUM_WIRELESS;
 
-    /* Register the component's event handler for WIFI_EVENT. */
+    /* Register WIFI_EVENT event handler.
+     * These events are required for any *mode*, so the handler can already
+     * be registered at this point.
+     */
+    esp_ret = esp_event_handler_instance_register(
+        WIFI_EVENT,
+        ESP_EVENT_ANY_ID,
+        networking_event_handler,
+        NULL,
+        (void **)&(state->wifi_event_handler));
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Could not attach WIFI_EVENT event handler!");
+        ESP_LOGD(
+            TAG,
+            "'esp_event_handler_instance_register()' returned %d",
+            esp_ret);
+        return ESP_FAIL;
+    }
 
     /* Read WiFi configuration from non-volatile storage (NVS).
      * If the config can not be read, directly start in access point mode. If
@@ -614,6 +631,15 @@ static esp_err_t wifi_deinit(void) {
     ESP_LOGV(TAG, "wifi_deinit()");
 
     esp_err_t esp_ret;
+
+    /* Unregister the WIFI_EVENT event handler. */
+    if (esp_event_handler_instance_unregister(
+        WIFI_EVENT,
+        ESP_EVENT_ANY_ID,
+        state->wifi_event_handler) != ESP_OK) {
+        ESP_LOGE(TAG, "Could not unregister WIFI_EVENT event handler!");
+        ESP_LOGW(TAG, "Continuing with de-initialization...");
+    }
 
     esp_ret = esp_wifi_deinit();
     if (esp_ret != ESP_OK) {
