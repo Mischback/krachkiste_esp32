@@ -513,7 +513,7 @@ static esp_err_t wifi_init(char *nvs_namespace) {
     ESP_LOGV(TAG, "wifi_init()");
 
     /* Initialization has only be performed once */
-    if (networking_state_get_mode() != NETWORKING_MODE_NOT_APPLICABLE) {
+    if (state->mode != NETWORKING_MODE_NOT_APPLICABLE) {
         return ESP_OK;
     }
 
@@ -527,7 +527,7 @@ static esp_err_t wifi_init(char *nvs_namespace) {
         ESP_LOGD(TAG, "'esp_wifi_init()' returned %d", esp_ret);
         return ESP_FAIL;
     }
-    networking_state_set_medium(NETWORKING_MEDIUM_WIRELESS);
+    state->medium = NETWORKING_MEDIUM_WIRELESS;
 
     /* Register the component's event handler for WIFI_EVENT. */
 
@@ -560,7 +560,7 @@ static esp_err_t wifi_deinit(void) {
         ESP_LOGE(TAG, "Deinitialization of WiFi failed!");
         ESP_LOGD(TAG, "'esp_wifi_deinit() returned %d", esp_ret);
     }
-    networking_state_set_medium(NETWORKING_MEDIUM_UNSPECIFIED);
+    state->medium = NETWORKING_MEDIUM_UNSPECIFIED;
 
     return ESP_OK;
 }
@@ -594,28 +594,4 @@ static esp_err_t wifi_start(char *nvs_namespace) {
     }
 
     return ESP_OK;
-}
-
-networking_medium networking_state_get_medium(void) {
-    return state->medium;
-}
-
-void networking_state_set_medium(networking_medium medium) {
-    state->medium = medium;
-}
-
-networking_mode networking_state_get_mode(void) {
-    return state->mode;
-}
-
-void networking_state_set_mode(networking_mode mode) {
-    state->mode = mode;
-}
-
-networking_status networking_state_get_status(void) {
-    return state->status;
-}
-
-void networking_state_set_status(networking_status status) {
-    state->status = status;
 }
