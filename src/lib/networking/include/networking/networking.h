@@ -10,6 +10,12 @@
  */
 #include "esp_err.h"
 
+/* ESP-IDF's wifi library
+ * - defines constants used for NETWORKING_WIFI_STA_THRESHOLD_AUTH
+ */
+#include "esp_wifi.h"
+
+
 /**
  * The **freeRTOS**-specific priority for the component's task.
  *
@@ -52,6 +58,22 @@
  * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
 #define NETWORKING_WIFI_AP_SSID "krachkiste_ap"
+
+/**
+ * Set a minimum required WiFi security while scanning for networks.
+ *
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
+ * @todo Include a dedicated warning about security!
+ */
+#define NETWORKING_WIFI_STA_THRESHOLD_AUTH WIFI_AUTH_WPA_PSK
+
+/**
+ * Set a minimum required WiFi signal strength while scanning for networks.
+ *
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
+ */
+#define NETWORKING_WIFI_STA_THRESHOLD_RSSI -127
+
 
 /**
  * The component's entry point.

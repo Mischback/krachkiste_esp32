@@ -214,7 +214,7 @@ static esp_err_t wifi_init(char *nvs_namespace);
 static esp_err_t wifi_deinit(void);
 static esp_err_t wifi_ap_init(void);
 static esp_err_t wifi_ap_deinit(void);
-static esp_err_t wifi_sta_init(void);
+static esp_err_t wifi_sta_init(char *sta_ssid, char *sta_psk);
 static esp_err_t wifi_sta_deinit(void);
 
 
@@ -624,7 +624,10 @@ static esp_err_t wifi_init(char *nvs_namespace) {
         return wifi_ap_init();
     }
 
-    return wifi_sta_init();
+    ESP_LOGD(TAG, "Retrieved SSID.. %s", nvs_sta_ssid);
+    ESP_LOGD(TAG, "Retrieved PSK... %s", nvs_sta_psk);
+
+    return wifi_sta_init(nvs_sta_ssid, nvs_sta_psk);
 }
 
 static esp_err_t wifi_deinit(void) {
@@ -700,7 +703,7 @@ static esp_err_t wifi_ap_init(void) {
 
     esp_err_t esp_ret;
 
-    /* */
+    /* Apply configuration and start WiFi interface in access point mode. */
     esp_ret = esp_wifi_set_mode(WIFI_MODE_AP);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not set wifi mode to AP!");
@@ -749,13 +752,88 @@ static esp_err_t wifi_ap_deinit(void) {
     return ESP_OK;
 }
 
-static esp_err_t wifi_sta_init(void) {
+static esp_err_t wifi_sta_init(char *sta_ssid, char *sta_psk) {
     ESP_LOGV(TAG, "wifi_sta_init()");
+
+    /* Create a network interface for Access Point mode. */
+    state->interface = esp_netif_create_default_wifi_sta();
+    if (state->interface == NULL) {
+        ESP_LOGE(TAG, "Could not create network interface for station mode!");
+        return ESP_FAIL;
+    }
+
+    /* Setup the configuration for station mode.
+     * Some of the settings may be configured by ``menuconfig`` / ``sdkconfig``,
+     * the ``SSID`` and ``PSK`` are read from the non-volatile storage (NVS) and
+     * passed into this function.
+     */
+    wifi_config_t sta_config = {
+        .sta = {
+            .scan_method = WIFI_FAST_SCAN,
+            .sort_method = WIFI_CONNECT_AP_BY_SECURITY,
+            .threshold.rssi = NETWORKING_WIFI_STA_THRESHOLD_RSSI,
+            .threshold.authmode = NETWORKING_WIFI_STA_THRESHOLD_AUTH,
+        },
+    };
+    // Inject the SSID / PSK as fetched from the NVS.
+    // ``memcpy`` feels like *force*, but it works.
+    memcpy(
+        sta_config.sta.ssid,
+        sta_ssid,
+        strlen(sta_ssid));
+    memcpy(
+        sta_config.sta.password,
+        sta_psk,
+        strlen(sta_psk));
+
+    esp_err_t esp_ret;
+
+    /* Apply configuration and start WiFi interface in station mode .*/
+    esp_ret = esp_wifi_set_mode(WIFI_MODE_STA);
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Could not set wifi mode to STA!");
+        ESP_LOGD(TAG, "'esp_wifi_set_mode() returned %d", esp_ret);
+        return ESP_FAIL;
+    }
+    state->mode = NETWORKING_MODE_WIFI_STA;
+
+    esp_ret = esp_wifi_set_config(WIFI_IF_AP, &sta_config);
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Could not set wifi config for station mode!");
+        ESP_LOGD(TAG, "'esp_wifi_set_config()' returned %d", esp_ret);
+        return ESP_FAIL;
+    }
+    esp_ret = esp_wifi_start();
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Could not start wifi in station mode!");
+        ESP_LOGD(TAG, "'esp_wifi_start()' returned %d", esp_ret);
+        return ESP_FAIL;
+    }
+
     return ESP_OK;
 }
 
 static esp_err_t wifi_sta_deinit(void) {
     ESP_LOGV(TAG, "wifi_sta_deinit()");
+
+    if (state->mode == NETWORKING_MODE_NOT_APPLICABLE) {
+        ESP_LOGE(TAG, "WiFi is not initialized!");
+        ESP_LOGD(TAG, "Current WiFi mode is %d", state->mode);
+        ESP_LOGW(TAG, "Continuing with de-initialization...");
+    }
+
+    esp_err_t esp_ret = esp_wifi_stop();
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Could not stop WiFi (station mode)!");
+        ESP_LOGD(TAG, "'esp_wifi_stop()' returned %d", esp_ret);
+        ESP_LOGW(TAG, "Continuing with de-initialization...");
+    }
+
+    esp_netif_destroy_default_wifi(state->interface);
+    state->interface = NULL;
+
+    state->mode = NETWORKING_MODE_NOT_APPLICABLE;
+
     return ESP_OK;
 }
 
