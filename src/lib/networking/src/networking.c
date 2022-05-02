@@ -641,6 +641,12 @@ static esp_err_t wifi_deinit(void) {
         ESP_LOGW(TAG, "Continuing with de-initialization...");
     }
 
+    if (state->mode == NETWORKING_MODE_WIFI_AP)
+        wifi_ap_deinit();
+
+    if (state->mode == NETWORKING_MODE_WIFI_STA)
+        wifi_sta_deinit();
+
     esp_ret = esp_wifi_deinit();
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Deinitialization of WiFi failed!");
@@ -703,7 +709,7 @@ static esp_err_t wifi_ap_init(void) {
     }
     state->mode = NETWORKING_MODE_WIFI_AP;
 
-    esp_ret = esp_wifi_set_config(WIFI_IP_AP, &ap_config);
+    esp_ret = esp_wifi_set_config(WIFI_IF_AP, &ap_config);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not set wifi config for AP!");
         ESP_LOGD(TAG, "'esp_wifi_set_config()' returned %d", esp_ret);
@@ -721,6 +727,25 @@ static esp_err_t wifi_ap_init(void) {
 
 static esp_err_t wifi_ap_deinit(void) {
     ESP_LOGV(TAG, "wifi_ap_deinit()");
+
+    if (state->mode == NETWORKING_MODE_NOT_APPLICABLE) {
+        ESP_LOGE(TAG, "WiFi is not initialized!");
+        ESP_LOGD(TAG, "Current WiFi mode is %d", state->mode);
+        ESP_LOGW(TAG, "Continuing with de-initialization...");
+    }
+
+    esp_err_t esp_ret = esp_wifi_stop();
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Could not stop WiFi (AP mode)!");
+        ESP_LOGD(TAG, "'esp_wifi_stop()' returned %d", esp_ret);
+        ESP_LOGW(TAG, "Continuing with de-initialization...");
+    }
+
+    esp_netif_destroy_default_wifi(state->interface);
+    state->interface = NULL;
+
+    state->mode = NETWORKING_MODE_NOT_APPLICABLE;
+
     return ESP_OK;
 }
 
