@@ -27,6 +27,7 @@
 /* This file's header */
 #include "networking/networking.h"
 
+/* C's standard libraries. */
 #include <string.h>
 
 /* This is ESP-IDF's error handling library.
@@ -508,7 +509,6 @@ esp_err_t networking_start(char* nvs_namespace) {
 
     return ESP_OK;
 }
-
 
 static esp_err_t get_wifi_config_from_nvs(
     char *nvs_namespace,
