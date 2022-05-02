@@ -43,6 +43,9 @@
  */
 #include "esp_log.h"
 
+/* ESP-IDF's wifi library. */
+#include "esp_wifi.h"
+
 /* This is ESP-IDF's library to interface the non-volatile storage (NVS). */
 #include "nvs_flash.h"
 
@@ -171,6 +174,24 @@ static esp_err_t wifi_init(char *nvs_namespace) {
         return ESP_OK;
     }
 
+    esp_err_t esp_ret;
+
+    /* Initialize the WiFi networking stack. */
+    wifi_init_config_t init_cfg = WIFI_INIT_CONFIG_DEFAULT();
+    esp_ret = esp_wifi_init(&init_cfg);
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Could not initialize WiFi!");
+        ESP_LOGD(TAG, "'esp_wifi_init()' returned %d", esp_ret);
+        return ESP_FAIL;
+    }
+    networking_state_set_medium(NETWORKING_MEDIUM_WIRELESS);
+
+    /* Register the component's event handler for WIFI_EVENT. */
+
+    /* Read WiFi configuration from non-volatile storage (NVS).
+     * If the config can not be read, directly start in access point mode. If
+     * there is a config, try station mode first.
+     */
     char nvs_sta_ssid[NETWORKING_WIFI_SSID_MAX_LEN];
     char nvs_sta_psk[NETWORKING_WIFI_PSK_MAX_LEN];
     memset(nvs_sta_ssid, 0x00, NETWORKING_WIFI_SSID_MAX_LEN);
@@ -188,6 +209,16 @@ static esp_err_t wifi_init(char *nvs_namespace) {
 
 static esp_err_t wifi_deinit(void) {
     ESP_LOGV(TAG, "wifi_deinit()");
+
+    esp_err_t esp_ret;
+
+    esp_ret = esp_wifi_deinit();
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Deinitialization of WiFi failed!");
+        ESP_LOGD(TAG, "'esp_wifi_deinit() returned %d", esp_ret);
+    }
+    networking_state_set_medium(NETWORKING_MEDIUM_UNSPECIFIED);
+
     return ESP_OK;
 }
 
