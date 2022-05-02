@@ -653,6 +653,69 @@ static esp_err_t wifi_deinit(void) {
 
 static esp_err_t wifi_ap_init(void) {
     ESP_LOGV(TAG, "wifi_ap_init()");
+
+    /* Create a network interface for Access Point mode. */
+    state->interface = esp_netif_create_default_wifi_ap();
+    if (state->interface == NULL) {
+        ESP_LOGE(TAG, "Could not create network interface for AP!");
+        return ESP_FAIL;
+    }
+
+    /* Setup the configuration for access point mode.
+     * These values are based off project-specific settings, that may be
+     * changed by ``menuconfig`` / ``sdkconfig`` during building the
+     * application. They can not be changed through the webinterface.
+     */
+    wifi_config_t ap_config = {
+        .ap = {
+            .ssid = NETWORKING_WIFI_AP_SSID,
+            .ssid_len = strlen(NETWORKING_WIFI_AP_SSID),
+            .channel = NETWORKING_WIFI_AP_CHANNEL,
+            .password = NETWORKING_WIFI_AP_PSK,
+            .max_connection = NETWORKING_WIFI_AP_MAX_CONNS,
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK,
+        },
+    };
+    /* esp_wifi requires PSKs to be at least 8 characters. Just switch to
+     * an **open** WiFi, if the provided PSK has less than 8 characters.
+     * TODO(mischback): Verify how that minimal password length is set. Is this
+     *                  an ``#define`` that may be picked up in our code or is
+     *                  it really hardcoded in the esp_wifi library/component?
+     */
+    if (strlen(NETWORKING_WIFI_AP_PSK) <= 8) {
+        ap_config.ap.authmode = WIFI_AUTH_OPEN;
+        memset(ap_config.ap.password, 0, sizeof(ap_config.ap.password));
+        ESP_LOGW(
+            TAG,
+            "The provided PSK for the access point has less than 8 characters, "
+            "switching to an open WiFi. No password will be required to "
+            "connect to the access point.");
+    }
+
+    esp_err_t esp_ret;
+
+    /* */
+    esp_ret = esp_wifi_set_mode(WIFI_MODE_AP);
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Could not set wifi mode to AP!");
+        ESP_LOGD(TAG, "'esp_wifi_set_mode() returned %d", esp_ret);
+        return ESP_FAIL;
+    }
+    state->mode = NETWORKING_MODE_WIFI_AP;
+
+    esp_ret = esp_wifi_set_config(WIFI_IP_AP, &ap_config);
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Could not set wifi config for AP!");
+        ESP_LOGD(TAG, "'esp_wifi_set_config()' returned %d", esp_ret);
+        return ESP_FAIL;
+    }
+    esp_ret = esp_wifi_start();
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Could not start wifi in AP mode!");
+        ESP_LOGD(TAG, "'esp_wifi_start()' returned %d", esp_ret);
+        return ESP_FAIL;
+    }
+
     return ESP_OK;
 }
 
