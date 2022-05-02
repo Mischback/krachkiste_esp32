@@ -138,7 +138,7 @@ static void networking(void *task_parameters) {
             switch (notify_value) {
             case NETWORKING_NOTIFICATION_CMD_WIFI_START:
                 ESP_LOGD(TAG, "CMD: WIFI_START");
-                if (wifi_start() != ESP_OK) {
+                if (wifi_start("krachkiste") != ESP_OK) {
                     ESP_LOGE(TAG, "Could not start WiFi!");
                 }
                 break;

@@ -12,6 +12,6 @@
 #include "esp_err.h"
 
 
-esp_err_t wifi_start(void);
+esp_err_t wifi_start(char *nvs_namespace);
 
 #endif  // SRC_LIB_NETWORKING_SRC_WIFI_H_

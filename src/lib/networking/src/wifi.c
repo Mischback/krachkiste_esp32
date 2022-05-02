@@ -22,6 +22,9 @@
 /* This file's header */
 #include "wifi.h"
 
+/* C standard libraries */
+#include <string.h>
+
 /* Other headers of the component. */
 #include "networking_internal.h"
 
@@ -40,6 +43,40 @@
  */
 #include "esp_log.h"
 
+/* This is ESP-IDF's library to interface the non-volatile storage (NVS). */
+#include "nvs_flash.h"
+
+
+/* ***** DEFINES *********************************************************** */
+
+/**
+ * The component-specific key to access the NVS to set/get the stored SSID.
+ */
+#define NETWORKING_WIFI_NVS_SSID "net_ssid"
+
+/**
+ * The component-specific key to access the NVS to set/get the stored WiFi
+ * password.
+ */
+#define NETWORKING_WIFI_NVS_PSK "net_psk"
+
+/**
+ * The maximum length of the ``char`` array to store SSID.
+ *
+ * IEEE 802.11 says, that the maximum length of an SSID is 32, which is also
+ * the value provided in **ESP-IDF**'s ``esp_wifi_types.h``.
+ */
+#define NETWORKING_WIFI_SSID_MAX_LEN 32
+
+/**
+ * The maximum length of the ``char`` array to store the pre-shared key
+ * for a WiFi connection.
+ *
+ * IEEE 801.11 says, that the maximum length of an PSK is 64, which is also the
+ * value provided in **ESP-IDF**'s ``esp_wifi_types.h``.
+ */
+#define NETWORKING_WIFI_PSK_MAX_LEN 64
+
 
 /* ***** VARIABLES ********************************************************* */
 
@@ -54,20 +91,130 @@ static const char* TAG = "networking";
 
 /* ***** PROTOTYPES ******************************************************** */
 
+static esp_err_t get_wifi_config_from_nvs(
+    char *nvs_namespace,
+    char *ssid,
+    char *psk);
+static esp_err_t wifi_init(char *nvs_namespace);
+static esp_err_t wifi_deinit(void);
+static esp_err_t wifi_ap_init(void);
+static esp_err_t wifi_ap_deinit(void);
+static esp_err_t wifi_sta_init(void);
+static esp_err_t wifi_sta_deinit(void);
+
 /* ***** FUNCTIONS ********************************************************* */
 
-static esp_err_t wifi_init(void) {
+static esp_err_t get_wifi_config_from_nvs(
+    char *nvs_namespace,
+    char *ssid,
+    char *psk) {
+    ESP_LOGV(TAG, "get_wifi_config_from_nvs()");
+
+    /* Open NVS storage handle. */
+    nvs_handle_t nvs_handle;
+    esp_err_t err = nvs_open(nvs_namespace, NVS_READONLY, &nvs_handle);
+
+    if (err != ESP_OK) {
+        /* This might fail for different reasons, e.g. the NVS is not correctly
+         * set up or initialized.
+         * Assuming that the NVS **is** available, this will fail with
+         * ESP_ERR_NVS_NOT_FOUND, which means that there is no namespace of
+         * the name ``nvs_namespace`` (yet).
+         * This might happen during first start of the applications, as there
+         * is no WiFi config yet, so the namespace was never used before.
+         */
+        ESP_LOGE(TAG, "Could not open NVS handle (%s)", esp_err_to_name(err));
+        return ESP_FAIL;
+    }
+    ESP_LOGD(TAG, "Handle '%s' successfully opened!", nvs_namespace);
+
+    size_t req_size;
+    err = nvs_get_str(nvs_handle, NETWORKING_WIFI_NVS_SSID, NULL, &req_size);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Could not determine size for SSID!");
+        return ESP_FAIL;
+    }
+    err = nvs_get_str(nvs_handle, NETWORKING_WIFI_NVS_SSID, ssid, &req_size);
+    if (err != ESP_OK) {
+        ESP_LOGE(
+            TAG,
+            "Could not read value of %s (%s)",
+            NETWORKING_WIFI_NVS_SSID,
+            esp_err_to_name(err));
+        return ESP_FAIL;
+    }
+
+    err = nvs_get_str(nvs_handle, NETWORKING_WIFI_NVS_PSK, NULL, &req_size);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Could not determine size for PSK!");
+        return ESP_FAIL;
+    }
+    err = nvs_get_str(nvs_handle, NETWORKING_WIFI_NVS_PSK, psk, &req_size);
+    if (err != ESP_OK) {
+        ESP_LOGE(
+            TAG,
+            "Could not read value of %s (%s)",
+            NETWORKING_WIFI_NVS_PSK,
+            esp_err_to_name(err));
+        return ESP_FAIL;
+    }
+
+
     return ESP_OK;
+}
+
+static esp_err_t wifi_init(char *nvs_namespace) {
+    ESP_LOGV(TAG, "wifi_init()");
+
+    /* Initialization has only be performed once */
+    if (networking_state_get_mode() != NETWORKING_MODE_NOT_APPLICABLE) {
+        return ESP_OK;
+    }
+
+    char nvs_sta_ssid[NETWORKING_WIFI_SSID_MAX_LEN];
+    char nvs_sta_psk[NETWORKING_WIFI_PSK_MAX_LEN];
+    memset(nvs_sta_ssid, 0x00, NETWORKING_WIFI_SSID_MAX_LEN);
+    memset(nvs_sta_psk, 0x00, NETWORKING_WIFI_PSK_MAX_LEN);
+
+    if (get_wifi_config_from_nvs(
+        nvs_namespace,
+        nvs_sta_ssid,
+        nvs_sta_psk) != ESP_OK) {
+        return wifi_ap_init();
+    }
+
+    return wifi_sta_init();
 }
 
 static esp_err_t wifi_deinit(void) {
+    ESP_LOGV(TAG, "wifi_deinit()");
     return ESP_OK;
 }
 
-esp_err_t wifi_start(void) {
+static esp_err_t wifi_ap_init(void) {
+    ESP_LOGV(TAG, "wifi_ap_init()");
+    return ESP_OK;
+}
+
+static esp_err_t wifi_ap_deinit(void) {
+    ESP_LOGV(TAG, "wifi_ap_deinit()");
+    return ESP_OK;
+}
+
+static esp_err_t wifi_sta_init(void) {
+    ESP_LOGV(TAG, "wifi_sta_init()");
+    return ESP_OK;
+}
+
+static esp_err_t wifi_sta_deinit(void) {
+    ESP_LOGV(TAG, "wifi_sta_deinit()");
+    return ESP_OK;
+}
+
+esp_err_t wifi_start(char *nvs_namespace) {
     ESP_LOGV(TAG, "wifi_start()");
 
-    if (wifi_init() != ESP_OK) {
+    if (wifi_init(nvs_namespace) != ESP_OK) {
         wifi_deinit();
         return ESP_FAIL;
     }
