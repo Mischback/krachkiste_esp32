@@ -29,9 +29,6 @@
 
 #include <string.h>
 
-/* Other headers of the component. */
-#include "networking_internal.h"
-
 /* This is ESP-IDF's error handling library.
  * - defines the **type** ``esp_err_t``
  * - defines common return values (``ESP_OK``, ``ESP_FAIL``)
@@ -202,6 +199,7 @@ static esp_err_t get_wifi_config_from_nvs(
     char *psk);
 
 static void networking(void *task_parameters);
+static void networking_notify(uint32_t notification);
 static void networking_event_handler(
     void* arg,
     esp_event_base_t event_base,
@@ -490,7 +488,7 @@ static esp_err_t networking_deinit(void) {
     return ESP_OK;
 }
 
-void networking_notify(uint32_t notification) {
+static void networking_notify(uint32_t notification) {
     ESP_LOGV(TAG, "networking_notify()");
 
     xTaskNotifyIndexed(
