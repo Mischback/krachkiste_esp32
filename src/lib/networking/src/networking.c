@@ -24,7 +24,7 @@
 
 /* ***** INCLUDES ********************************************************** */
 
-/* This file's header */
+/* This file's header. */
 #include "networking/networking.h"
 
 /* C's standard libraries. */
@@ -48,7 +48,7 @@
  */
 #include "esp_log.h"
 
-/* ESP-IDF's network abstraction layer */
+/* ESP-IDF's network abstraction layer. */
 #include "esp_netif.h"
 
 /* ESP-IDF's wifi library.
@@ -129,7 +129,7 @@ typedef enum {
  * wireless connection (``NETWORKING_MEDIUM_WIRELESS``) when the component is
  * actually up and running.
  *
- * This is actually tracked in the component's ::state.
+ * This is tracked in the component's ::state.
  */
 typedef enum {
     NETWORKING_MEDIUM_UNSPECIFIED,
@@ -143,6 +143,8 @@ typedef enum {
  * This is only applicable for ``NETWORKING_MEDIUM_WIRELESS`` and will be set
  * to ``NETWORKING_MODE_NOT_APPLICABLE`` on initialization or if the medium
  * is set to ``NETWORKING_MEDIUM_ETHERNET``.
+ *
+ * This is tracked in the component's ::state.
  */
 typedef enum {
     NETWORKING_MODE_NOT_APPLICABLE,
@@ -155,6 +157,8 @@ typedef enum {
  *
  * The connection status must be evaluated in the context of its ``medium`` -
  * and in case of a wireless connection - its ``mode``.
+ *
+ * This is tracked in the component's ::state.
  */
 typedef enum {
     NETWORKING_STATUS_DOWN,
@@ -164,6 +168,11 @@ typedef enum {
 
 /**
  * A component-specific struct to keep track of the internal state.
+ *
+ * It contains several fields that track the component's internal state aswell
+ * as fields to keep track of the actual *interface*
+ * (``esp_netif_t *interface``), the dedicated networking *task*
+ * (``TaskHandle_t task``) and the required event handler instances.
  */
 struct networking_state {
     networking_medium   medium;
@@ -221,15 +230,13 @@ static esp_err_t wifi_sta_deinit(void);
 /* ***** FUNCTIONS ********************************************************* */
 
 static void networking(void *task_parameters) {
-    ESP_LOGV(TAG, "networking()");
-    ESP_LOGV(TAG, "This is the actual task function!");
+    ESP_LOGV(TAG, "networking() [the actual task function]");
 
-    // TODO(mischback) Make this configurable by ``sdkconfig``!
-    const TickType_t mon_freq = pdMS_TO_TICKS(5000);  // 5 sec
+    const TickType_t mon_freq = pdMS_TO_TICKS(
+        NETWORKING_TASK_MONITOR_FREQUENCY);
     BaseType_t notify_result;
     uint32_t notify_value = 0;
 
-    ESP_LOGV(TAG, "networking(): Entering infinite loop...");
     for (;;) {
         /* Block until notification or ``mon_freq`` reached. */
         notify_result = xTaskNotifyWaitIndexed(
@@ -269,6 +276,29 @@ static void networking(void *task_parameters) {
     vTaskDelete(NULL);
 }
 
+/**
+ * Handle ``IP_EVENT`` and ``WIFI_EVENT`` occurences.
+ *
+ * @param arg
+ * @param event_base The base of the actual event. The handler *can handle*
+ *                   occurences of ``IP_EVENT`` and ``WIFI_EVENT``.
+ * @param event_id   The actual event, as specified by its ``base`` and its
+ *                   ``id``.
+ * @param event_data
+ *
+ * @todo Complete this documentation block!
+ * @todo The current implementation defines ``case`` statements for all events,
+ *       that *might* happen. Probably many of them are not acutally required
+ *       for the component to work. All ``case`` statements do provide a log
+ *       message of level ``VERBOSE``.
+ *       a) Can this code be kept without impacting the build size? Or in other
+ *          words: Will these statements be *optimized away* if the minimum
+ *          log level is greater than ``VERBOSE``?
+ *       b) For actual *events in use* by the component, switch to log level
+ *          ``DEBUG``.
+ * @todo When ``ethernet`` networking is implemented, the related events must
+ *       be included here!
+ */
 static void networking_event_handler(
     void* arg,
     esp_event_base_t event_base,
@@ -362,6 +392,24 @@ static void networking_event_handler(
     }
 }
 
+/**
+ * Initialize the component.
+ *
+ * Initialization process includes initialization of **ESP-IDF**'s networking
+ * stack (``esp_netif``), registering of ::networking_event_handler for
+ * ``IP_EVENT`` occurences and allocating and initializing the internal ::state
+ * variable.
+ *
+ * This function is also responsible for the creation of the component's
+ * internal ``task``, which will handle all further actions of the component
+ * (see ::networking).
+ *
+ * @param nvs_namespace The name of the namespace to be used to retrieve
+ *                      non-volatile configuration options from.
+ * @return esp_err_t    ``ESP_OK`` on success, ``ESP_FAIL`` on failure; see the
+ *                      provided log messages (of level ``ERROR`` and ``DEBUG``)
+ *                      for the actual reason of failure.
+ */
 static esp_err_t networking_init(char* nvs_namespace) {
     // Set log-level of our own code to VERBOSE
     // FIXME: Final code should not do this, but respect the project's settings
@@ -450,6 +498,20 @@ static esp_err_t networking_init(char* nvs_namespace) {
     return ESP_OK;
 }
 
+/**
+ * De-initialize the component.
+ *
+ * Basically this function destroys all of the component's setup, reversing
+ * anything done by ::networking_init .
+ *
+ * This includes unregistering the ::networking_event_handler for ``IP_EVENT``
+ * occurences, deleting the internal task, freeing memory and actually
+ * deinitializing **ESP-IDF**'s networking stack (though this is - as of now -
+ * a no-op).
+ *
+ * @return esp_err_t ``ESP_OK`` on success, ``ESP_FAIL`` if there is no
+ *                   internal ::state
+ */
 static esp_err_t networking_deinit(void) {
     ESP_LOGV(TAG, "networking_deinit()");
 
@@ -489,6 +551,19 @@ static esp_err_t networking_deinit(void) {
     return ESP_OK;
 }
 
+/**
+ * Send a notification to the component's internal ``task``.
+ *
+ * Technically, this sends a notification to the task as specified by
+ * ::networking , unblocking the task and triggering some action.
+ *
+ * The function sends a notification on the index specified by
+ * ``NETWORKING_TASK_NOTIFICATION_INDEX`` with ``eAction`` set to
+ * ``eSetValueWithOverwrite``, meaning: if the task was already notified, that
+ * notification will be overwritten.
+ *
+ * @param notification
+ */
 static void networking_notify(uint32_t notification) {
     ESP_LOGV(TAG, "networking_notify()");
 
@@ -510,6 +585,28 @@ esp_err_t networking_start(char* nvs_namespace) {
     return ESP_OK;
 }
 
+/**
+ * Retrieve SSID and PSK for station mode from non-volatile storage.
+ *
+ * @param nvs_namespace The NVS namespace to read values from.
+ * @param ssid          A pointer to a *big enough* ``char`` array to store
+ *                      the read value to (*big enough* =
+ *                      ::NETWORKING_WIFI_SSID_MAX_LEN )
+ * @param psk           A pointer to a *big enough* ``char`` array to store
+ *                      thr read value to (*big enough* =
+ *                      ::NETWORKING_WIFI_PSK_MAX_LEN )
+ * @return esp_err_t    ``ESP_OK`` on success, ``ESP_FAIL`` on failure; see the
+ *                      provided log messages (of level ``ERROR`` and ``DEBUG``)
+ *                      for the actual reason of failure.
+ *
+ * @todo Needs validation/testing. ``ssid`` and ``psk`` should be ``char**``?
+ * @todo This should be refactored!
+ *       - provide a generic function to open nvs, e.g.
+ *         ``static nvs_handle_t get_nvs_handle(char *nvs_namespace)``
+ *       - provide a generic function to read a string from nvs, e.g.
+ *         ``static char* get_nvs_string(nvs_handle_t handle, char *key)``
+ *       - the prototype of this function may be left untouched!
+ */
 static esp_err_t get_wifi_config_from_nvs(
     char *nvs_namespace,
     char *ssid,
@@ -565,10 +662,36 @@ static esp_err_t get_wifi_config_from_nvs(
         return ESP_FAIL;
     }
 
-
     return ESP_OK;
 }
 
+/**
+ * WiFi-specific initialization.
+ *
+ * Perform the required steps to use the controller's WiFi interface. This
+ * includes the initialization of the WiFi interface, registering of
+ * ::networking_event_handler for ``WIFI_EVENT`` occurences and reading an
+ * optionally available configuration (for station mode) from the non-volatile
+ * storage.
+ *
+ * The actual, *mode-specific* initialization is done in ::wifi_sta_init and
+ * ::wifi_ap_init, depending on the availability of credentials for station
+ * mode.
+ *
+ * This function will set ``state->medium`` to ``NETWORKING_MEDIUM_WIRELESS``
+ * (``state->mode`` will be set in the specific initialization function).
+ *
+ * @param nvs_namespace The NVS namespace to read values from.
+ * @return esp_err_t    ``ESP_OK`` on success, ``ESP_FAIL`` on failure; This
+ *                      function may return ``ESP_FAIL`` by itsself or by the
+ *                      specific initialization functions ::wifi_sta_init and
+ *                      ::wifi_ap_init, see the provided log messages (of
+ *                      level ``ERROR`` and ``DEBUG``) for the actual reason
+ *                      of failure. **This function does return** ``ESP_OK``
+ *                      in case that ``state->mode`` **is not**
+ *                      ``NETWORKING_MODE_APPLICABLE``, because it assumes,
+ *                      that there has been a previous call to ``wifi_init``.
+ */
 static esp_err_t wifi_init(char *nvs_namespace) {
     ESP_LOGV(TAG, "wifi_init()");
 
@@ -630,6 +753,20 @@ static esp_err_t wifi_init(char *nvs_namespace) {
     return wifi_sta_init(nvs_sta_ssid, nvs_sta_psk);
 }
 
+/**
+ * WiFi-specific deinitialization.
+ *
+ * Clean up for WiFi-related stuff, including deinitialization of the
+ * ``netif``, unregistering ::networking_event_handler from ``WIFI_EVENT``
+ * and resetting ``state->medium`` to ``NETWORKING_MEDIUM_UNSPECIFIED``.
+ *
+ * The function calls ::wifi_sta_deinit or ::wifi_ap_deinit, depending on the
+ * value of ``state->mode``.
+ *
+ * @return esp_err_t This function always returns ``ESP_OK``, all potentially
+ *                   failing calls are catched and silenced, though log
+ *                   messages of level ``ERROR`` and ``DEBUG`` are emitted.
+ */
 static esp_err_t wifi_deinit(void) {
     ESP_LOGV(TAG, "wifi_deinit()");
 
@@ -660,10 +797,25 @@ static esp_err_t wifi_deinit(void) {
     return ESP_OK;
 }
 
+/**
+ * Initialize the WiFi for access point mode.
+ *
+ * Basically this creates the access point-specific configuration, applies it
+ * to **ESP-IDF**'s wifi module and starts the wifi.
+ *
+ * It sets ``state->mode`` to ``NETWORKING_MODE_WIFI_AP`` and provides a
+ * reference to the ``netif`` in ``state->interface``.
+ *
+ * @return esp_err_t ``ESP_OK`` on success, ``ESP_FAIL`` on failure.
+ *                   On ``ESP_OK`` the calling code may assume that the access
+ *                   point is successfully started. Subsequent actions are
+ *                   triggered by ::networking_event_handler and performed by
+ *                   ::networking .
+ */
 static esp_err_t wifi_ap_init(void) {
     ESP_LOGV(TAG, "wifi_ap_init()");
 
-    /* Create a network interface for Access Point mode. */
+    /* Create a network interface for access point mode. */
     state->interface = esp_netif_create_default_wifi_ap();
     if (state->interface == NULL) {
         ESP_LOGE(TAG, "Could not create network interface for AP!");
@@ -728,6 +880,22 @@ static esp_err_t wifi_ap_init(void) {
     return ESP_OK;
 }
 
+/**
+ * Deinitialize WiFi (access point mode).
+ *
+ * Stops the access point and destroys the ``netif``.
+ *
+ * This function is meant to be called by ::wifi_deinit and performs only the
+ * specific deinitialization steps of *access point mode*, e.g. it does **not**
+ * unregister ::networking_event_handler from ``WIFI_EVENT``.
+ *
+ * The function sets ``state->mode`` to ``NETWORKING_MODE_NOT_APPLICABLE`` and
+ * ``state->interface`` to ``NULL``.
+ *
+ * @return esp_err_t This function always returns ``ESP_OK``, all potentially
+ *                   failing calls are catched and silenced, though log
+ *                   messages of level ``ERROR`` and ``DEBUG`` are emitted.
+ */
 static esp_err_t wifi_ap_deinit(void) {
     ESP_LOGV(TAG, "wifi_ap_deinit()");
 
@@ -752,6 +920,23 @@ static esp_err_t wifi_ap_deinit(void) {
     return ESP_OK;
 }
 
+/**
+ * Initialize the WiFi for station mode.
+ *
+ * Basically this creates the station-specific configuration, applies it to
+ * **ESP-IDF**'s wifi module and starts the wifi.
+ *
+ * It sets ``state->mode`` to ``NETWORKING_MODE_WIFI_STA`` and provides a
+ * reference to the ``netif`` in ``state->interface``.
+ *
+ * @param sta_ssid   The SSID of the WiFi network to connect to.
+ * @param sta_psk    The pre-shared key (PSK) of the WiFi network to connect to.
+ * @return esp_err_t ``ESP_OK`` on success, ``ESP_FAIL`` on failure.
+ *                   On ``ESP_OK`` the calling code may assume that the access
+ *                   point is successfully started. Subsequent actions are
+ *                   triggered by ::networking_event_handler and performed by
+ *                   ::networking .
+ */
 static esp_err_t wifi_sta_init(char *sta_ssid, char *sta_psk) {
     ESP_LOGV(TAG, "wifi_sta_init()");
 
@@ -813,6 +998,22 @@ static esp_err_t wifi_sta_init(char *sta_ssid, char *sta_psk) {
     return ESP_OK;
 }
 
+/**
+ * Deinitialize WiFi (station mode).
+ *
+ * Disconnects from the WiFi and destroys the ``netif``.
+ *
+ * This function is meant to be called by ::wifi_deinit and performs only the
+ * specific deinitialization steps of *station mode*, e.g. it does **not**
+ * unregister ::networking_event_handler from ``WIFI_EVENT``.
+ *
+ * The function sets ``state->mode`` to ``NETWORKING_MODE_NOT_APPLICABLE`` and
+ * ``state->interface`` to ``NULL``.
+ *
+ * @return esp_err_t This function always returns ``ESP_OK``, all potentially
+ *                   failing calls are catched and silenced, though log
+ *                   messages of level ``ERROR`` and ``DEBUG`` are emitted.
+ */
 static esp_err_t wifi_sta_deinit(void) {
     ESP_LOGV(TAG, "wifi_sta_deinit()");
 
@@ -837,6 +1038,16 @@ static esp_err_t wifi_sta_deinit(void) {
     return ESP_OK;
 }
 
+/**
+ * Starts a WiFi connection.
+ *
+ * This either connects to a given WiFi network, if credentials are available
+ * in the given ``nvs_namespace`` and the specified network is reachable, or
+ * launches the local access point.
+ *
+ * @param nvs_namespace The NVS namespace to read values from.
+ * @return esp_err_t    ``ESP_OK`` on success, ``ESP_FAIL`` on failure.
+ */
 static esp_err_t wifi_start(char *nvs_namespace) {
     ESP_LOGV(TAG, "wifi_start()");
 

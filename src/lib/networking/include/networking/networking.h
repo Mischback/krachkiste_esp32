@@ -26,6 +26,15 @@
 #define NETWORKING_TASK_PRIORITY 10
 
 /**
+ * The networking task will automatically provide status information to other
+ * components with this frequency.
+ *
+ * @todo Determine a sane (default) value for this! Currently: 5 seconds.
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
+ */
+#define NETWORKING_TASK_MONITOR_FREQUENCY 5000
+
+/**
  * The channel to be used while providing the project-specific access point.
  *
  * @todo Is there a nice way to provide a **dynamic** channel?
