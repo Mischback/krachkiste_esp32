@@ -231,6 +231,7 @@ static esp_err_t wifi_sta_deinit(void);
 
 static void networking(void *task_parameters) {
     ESP_LOGV(TAG, "networking() [the actual task function]");
+    ESP_LOGD(TAG, "task_parameters: %s", (char *)task_parameters);
 
     const TickType_t mon_freq = pdMS_TO_TICKS(
         NETWORKING_TASK_MONITOR_FREQUENCY);
@@ -251,7 +252,7 @@ static void networking(void *task_parameters) {
             switch (notify_value) {
             case NETWORKING_NOTIFICATION_CMD_WIFI_START:
                 ESP_LOGD(TAG, "CMD: WIFI_START");
-                if (wifi_start("krachkiste") != ESP_OK) {
+                if (wifi_start((char *)task_parameters) != ESP_OK) {
                     ESP_LOGE(TAG, "Could not start WiFi!");
                 }
                 break;
@@ -482,7 +483,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
             networking,
             "networking",
             4096,
-            NULL,
+            nvs_namespace,
             NETWORKING_TASK_PRIORITY,
             &(state->task)) != pdPASS) {
         ESP_LOGE(TAG, "Could not create task!");
