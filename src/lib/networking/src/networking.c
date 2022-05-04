@@ -740,17 +740,30 @@ static esp_err_t wifi_init(char *nvs_namespace) {
     memset(nvs_sta_ssid, 0x00, NETWORKING_WIFI_SSID_MAX_LEN);
     memset(nvs_sta_psk, 0x00, NETWORKING_WIFI_PSK_MAX_LEN);
 
-    if (get_wifi_config_from_nvs(
+    esp_ret = get_wifi_config_from_nvs(
         nvs_namespace,
         nvs_sta_ssid,
-        nvs_sta_psk) != ESP_OK) {
+        nvs_sta_psk);
+    if (esp_ret != ESP_OK) {
+        ESP_LOGI(TAG, "Could not read credentials, starting access point!");
         return wifi_ap_init();
     }
 
     ESP_LOGD(TAG, "Retrieved SSID.. %s", nvs_sta_ssid);
     ESP_LOGD(TAG, "Retrieved PSK... %s", nvs_sta_psk);
 
-    return wifi_sta_init(nvs_sta_ssid, nvs_sta_psk);
+    esp_ret = wifi_sta_init(nvs_sta_ssid, nvs_sta_pks);
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Could not start WiFi station mode!");
+        ESP_LOGI(TAG, "Starting access point!");
+        wifi_sta_deinit();
+        return wifi_ap_init();
+    }
+
+    /* At this point, the WiFi is started in station mode. All further
+     * actions will be triggered by ::networking_event_handler
+     */
+    return ESP_OK;
 }
 
 /**
