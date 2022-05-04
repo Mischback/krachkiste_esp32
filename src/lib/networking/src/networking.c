@@ -433,8 +433,12 @@ static esp_err_t networking_init(char* nvs_namespace) {
     esp_ret = esp_netif_init();
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not initialize network stack!");
-        ESP_LOGD(TAG, "'esp_netif_init()' returned %d", esp_ret);
-        return ESP_FAIL;
+        ESP_LOGD(
+            TAG,
+            "'esp_netif_init()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
     }
 
     /* Initialize internal state information */
@@ -458,9 +462,10 @@ static esp_err_t networking_init(char* nvs_namespace) {
         ESP_LOGE(TAG, "Could not attach IP_EVENT event handler!");
         ESP_LOGD(
             TAG,
-            "'esp_event_handler_instance_register()' returned %d",
+            "'esp_event_handler_instance_register()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
             esp_ret);
-        return ESP_FAIL;
+        return esp_ret;
     }
 
     /* Create the actual dedicated task for the component. */
@@ -521,11 +526,17 @@ static esp_err_t networking_deinit(void) {
     }
 
     /* Unregister the IP_EVENT event handler. */
-    if (esp_event_handler_instance_unregister(
+    esp_err_t esp_ret = esp_event_handler_instance_unregister(
         IP_EVENT,
         ESP_EVENT_ANY_ID,
-        state->ip_event_handler) != ESP_OK) {
+        state->ip_event_handler);
+    if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not unregister IP_EVENT event handler!");
+        ESP_LOGD(
+            TAG,
+            "'esp_event_handler_instance_unregister()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
         ESP_LOGW(TAG, "Continuing with de-initialization...");
     }
 
@@ -542,10 +553,13 @@ static esp_err_t networking_deinit(void) {
      * completeness and to be fully compatible, *if* **ESP-IDF** include this
      * in a future release.
      */
-    if (esp_netif_deinit() != ESP_ERR_NOT_SUPPORTED) {
+    esp_ret = esp_netif_deinit();
+    if (esp_ret != ESP_ERR_NOT_SUPPORTED) {
         ESP_LOGW(
             TAG,
-            "'esp_netif_deinit' returned with an unexpected return code");
+            "'esp_netif_deinit()' returned with an unexpected return code: %s [%d]",  // NOLINT(whitespace/line_length)
+            esp_err_to_name(esp_ret),
+            esp_ret);
     }
 
     return ESP_OK;
@@ -615,9 +629,9 @@ static esp_err_t get_wifi_config_from_nvs(
 
     /* Open NVS storage handle. */
     nvs_handle_t nvs_handle;
-    esp_err_t err = nvs_open(nvs_namespace, NVS_READONLY, &nvs_handle);
+    esp_err_t esp_ret = nvs_open(nvs_namespace, NVS_READONLY, &nvs_handle);
 
-    if (err != ESP_OK) {
+    if (esp_ret != ESP_OK) {
         /* This might fail for different reasons, e.g. the NVS is not correctly
          * set up or initialized.
          * Assuming that the NVS **is** available, this will fail with
@@ -626,40 +640,71 @@ static esp_err_t get_wifi_config_from_nvs(
          * This might happen during first start of the applications, as there
          * is no WiFi config yet, so the namespace was never used before.
          */
-        ESP_LOGE(TAG, "Could not open NVS handle (%s)", esp_err_to_name(err));
-        return ESP_FAIL;
+        ESP_LOGE(TAG, "Could not open NVS handle '%s'!", nvs_namespace);
+        ESP_LOGD(
+            TAG,
+            "'nvs_open()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
     }
     ESP_LOGD(TAG, "Handle '%s' successfully opened!", nvs_namespace);
 
     size_t req_size;
-    err = nvs_get_str(nvs_handle, NETWORKING_WIFI_NVS_SSID, NULL, &req_size);
-    if (err != ESP_OK) {
+    esp_ret = nvs_get_str(
+        nvs_handle,
+        NETWORKING_WIFI_NVS_SSID,
+        NULL,
+        &req_size);
+    if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not determine size for SSID!");
-        return ESP_FAIL;
+        ESP_LOGD(
+            TAG,
+            "'nvs_get_str()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
     }
-    err = nvs_get_str(nvs_handle, NETWORKING_WIFI_NVS_SSID, ssid, &req_size);
-    if (err != ESP_OK) {
+    esp_ret = nvs_get_str(
+        nvs_handle,
+        NETWORKING_WIFI_NVS_SSID,
+        ssid,
+        &req_size);
+    if (esp_ret != ESP_OK) {
         ESP_LOGE(
             TAG,
-            "Could not read value of %s (%s)",
-            NETWORKING_WIFI_NVS_SSID,
-            esp_err_to_name(err));
-        return ESP_FAIL;
+            "Could not read value of '%s'!",
+            NETWORKING_WIFI_NVS_SSID);
+        ESP_LOGD(
+            TAG,
+            "'nvs_get_str()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
     }
 
-    err = nvs_get_str(nvs_handle, NETWORKING_WIFI_NVS_PSK, NULL, &req_size);
-    if (err != ESP_OK) {
+    esp_ret = nvs_get_str(nvs_handle, NETWORKING_WIFI_NVS_PSK, NULL, &req_size);
+    if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not determine size for PSK!");
-        return ESP_FAIL;
+        ESP_LOGD(
+            TAG,
+            "'nvs_get_str()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
     }
-    err = nvs_get_str(nvs_handle, NETWORKING_WIFI_NVS_PSK, psk, &req_size);
-    if (err != ESP_OK) {
+    esp_ret = nvs_get_str(nvs_handle, NETWORKING_WIFI_NVS_PSK, psk, &req_size);
+    if (esp_ret != ESP_OK) {
         ESP_LOGE(
             TAG,
-            "Could not read value of %s (%s)",
-            NETWORKING_WIFI_NVS_PSK,
-            esp_err_to_name(err));
-        return ESP_FAIL;
+            "Could not read value of '%s'!",
+            NETWORKING_WIFI_NVS_PSK);
+        ESP_LOGD(
+            TAG,
+            "'nvs_get_str()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
     }
 
     return ESP_OK;
@@ -697,6 +742,7 @@ static esp_err_t wifi_init(char *nvs_namespace) {
 
     /* Initialization has only be performed once */
     if (state->mode != NETWORKING_MODE_NOT_APPLICABLE) {
+        ESP_LOGW(TAG, "WiFi seems to be already initialized!");
         return ESP_OK;
     }
 
@@ -707,8 +753,12 @@ static esp_err_t wifi_init(char *nvs_namespace) {
     esp_ret = esp_wifi_init(&init_cfg);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not initialize WiFi!");
-        ESP_LOGD(TAG, "'esp_wifi_init()' returned %d", esp_ret);
-        return ESP_FAIL;
+        ESP_LOGD(
+            TAG,
+            "'esp_wifi_init()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
     }
     state->medium = NETWORKING_MEDIUM_WIRELESS;
 
@@ -726,9 +776,10 @@ static esp_err_t wifi_init(char *nvs_namespace) {
         ESP_LOGE(TAG, "Could not attach WIFI_EVENT event handler!");
         ESP_LOGD(
             TAG,
-            "'esp_event_handler_instance_register()' returned %d",
+            "'esp_event_handler_instance_register()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
             esp_ret);
-        return ESP_FAIL;
+        return esp_ret;
     }
 
     /* Read WiFi configuration from non-volatile storage (NVS).
@@ -752,7 +803,7 @@ static esp_err_t wifi_init(char *nvs_namespace) {
     ESP_LOGD(TAG, "Retrieved SSID.. %s", nvs_sta_ssid);
     ESP_LOGD(TAG, "Retrieved PSK... %s", nvs_sta_psk);
 
-    esp_ret = wifi_sta_init(nvs_sta_ssid, nvs_sta_pks);
+    esp_ret = wifi_sta_init(nvs_sta_ssid, nvs_sta_psk);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not start WiFi station mode!");
         ESP_LOGI(TAG, "Starting access point!");
@@ -783,14 +834,18 @@ static esp_err_t wifi_init(char *nvs_namespace) {
 static esp_err_t wifi_deinit(void) {
     ESP_LOGV(TAG, "wifi_deinit()");
 
-    esp_err_t esp_ret;
-
     /* Unregister the WIFI_EVENT event handler. */
-    if (esp_event_handler_instance_unregister(
+    esp_err_t esp_ret = esp_event_handler_instance_unregister(
         WIFI_EVENT,
         ESP_EVENT_ANY_ID,
-        state->wifi_event_handler) != ESP_OK) {
+        state->wifi_event_handler);
+    if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not unregister WIFI_EVENT event handler!");
+        ESP_LOGD(
+            TAG,
+            "'esp_event_handler_instance_unregister()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
         ESP_LOGW(TAG, "Continuing with de-initialization...");
     }
 
@@ -803,7 +858,11 @@ static esp_err_t wifi_deinit(void) {
     esp_ret = esp_wifi_deinit();
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Deinitialization of WiFi failed!");
-        ESP_LOGD(TAG, "'esp_wifi_deinit() returned %d", esp_ret);
+        ESP_LOGD(
+            TAG,
+            "'esp_wifi_deinit() returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
     }
     state->medium = NETWORKING_MEDIUM_UNSPECIFIED;
 
@@ -872,22 +931,34 @@ static esp_err_t wifi_ap_init(void) {
     esp_ret = esp_wifi_set_mode(WIFI_MODE_AP);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not set wifi mode to AP!");
-        ESP_LOGD(TAG, "'esp_wifi_set_mode() returned %d", esp_ret);
-        return ESP_FAIL;
+        ESP_LOGD(
+            TAG,
+            "'esp_wifi_set_mode() returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
     }
     state->mode = NETWORKING_MODE_WIFI_AP;
 
     esp_ret = esp_wifi_set_config(WIFI_IF_AP, &ap_config);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not set wifi config for AP!");
-        ESP_LOGD(TAG, "'esp_wifi_set_config()' returned %d", esp_ret);
-        return ESP_FAIL;
+        ESP_LOGD(
+            TAG,
+            "'esp_wifi_set_config()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
     }
     esp_ret = esp_wifi_start();
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not start wifi in AP mode!");
-        ESP_LOGD(TAG, "'esp_wifi_start()' returned %d", esp_ret);
-        return ESP_FAIL;
+        ESP_LOGD(
+            TAG,
+            "'esp_wifi_start()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
     }
 
     return ESP_OK;
@@ -921,7 +992,11 @@ static esp_err_t wifi_ap_deinit(void) {
     esp_err_t esp_ret = esp_wifi_stop();
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not stop WiFi (AP mode)!");
-        ESP_LOGD(TAG, "'esp_wifi_stop()' returned %d", esp_ret);
+        ESP_LOGD(
+            TAG,
+            "'esp_wifi_stop()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
         ESP_LOGW(TAG, "Continuing with de-initialization...");
     }
 
@@ -990,22 +1065,34 @@ static esp_err_t wifi_sta_init(char *sta_ssid, char *sta_psk) {
     esp_ret = esp_wifi_set_mode(WIFI_MODE_STA);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not set wifi mode to STA!");
-        ESP_LOGD(TAG, "'esp_wifi_set_mode() returned %d", esp_ret);
-        return ESP_FAIL;
+        ESP_LOGD(
+            TAG,
+            "'esp_wifi_set_mode() returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
     }
     state->mode = NETWORKING_MODE_WIFI_STA;
 
     esp_ret = esp_wifi_set_config(WIFI_IF_AP, &sta_config);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not set wifi config for station mode!");
-        ESP_LOGD(TAG, "'esp_wifi_set_config()' returned %d", esp_ret);
-        return ESP_FAIL;
+        ESP_LOGD(
+            TAG,
+            "'esp_wifi_set_config()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
     }
     esp_ret = esp_wifi_start();
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not start wifi in station mode!");
-        ESP_LOGD(TAG, "'esp_wifi_start()' returned %d", esp_ret);
-        return ESP_FAIL;
+        ESP_LOGD(
+            TAG,
+            "'esp_wifi_start()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
     }
 
     return ESP_OK;
@@ -1039,7 +1126,11 @@ static esp_err_t wifi_sta_deinit(void) {
     esp_err_t esp_ret = esp_wifi_stop();
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not stop WiFi (station mode)!");
-        ESP_LOGD(TAG, "'esp_wifi_stop()' returned %d", esp_ret);
+        ESP_LOGD(
+            TAG,
+            "'esp_wifi_stop()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
         ESP_LOGW(TAG, "Continuing with de-initialization...");
     }
 
