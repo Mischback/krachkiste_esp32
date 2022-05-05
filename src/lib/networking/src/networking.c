@@ -120,6 +120,7 @@
 typedef enum {
     NETWORKING_NOTIFICATION_BASE,
     NETWORKING_NOTIFICATION_CMD_WIFI_START,
+    NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START,
 } networking_notification;
 
 /**
@@ -164,6 +165,7 @@ typedef enum {
     NETWORKING_STATUS_DOWN,
     NETWORKING_STATUS_READY,
     NETWORKING_STATUS_UP,
+    NETWORKING_STATUS_IDLE,
 } networking_status;
 
 /**
@@ -256,6 +258,33 @@ static void networking(void *task_parameters) {
                     ESP_LOGE(TAG, "Could not start WiFi!");
                 }
                 break;
+            case NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START:
+                /* Handle ``WIFI_EVENT_AP_START`` (received from
+                 * ::networking_event_handler ).
+                 * The *chain* of ::wifi_start, ::wifi_init and ::wifi_ap_init
+                 * has set ``state->medium`` and ``state->mode``, so with this
+                 * event the access point is assumed to be ready, resulting in
+                 * ``state->status = NETWORKING_STATUS_IDLE``, because no
+                 * clients have connected yet.
+                 */
+                ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_START");
+                state->status = NETWORKING_STATUS_IDLE;
+
+                // TODO(mischback) Start the internal timer to shut down the
+                //                 access point eventually. This is a bigger
+                //                 effort, as the timer needs to be created
+                //                 (propably in ::wifi_ap_init ), tracked
+                //                 somewhere (should this be added to ::state
+                //                 ?) and started here!
+
+                // TODO(mischback) Emit an component-specific event to inform
+                //                 other components, that the AP is ready (e.g.
+                //                 the ``min_httpd``)
+
+                // TODO(mischback) Determine which of access point-specific
+                //                 information should be included in the
+                //                 component's *status* event (e.g. AP SSID?)!
+                break;
             default:
                 ESP_LOGW(TAG, "Got unhandled notification: %d", notify_value);
                 break;
@@ -346,7 +375,12 @@ static void networking_event_handler(
             ESP_LOGV(TAG, "WIFI_EVENT_WPS_ER_PIN");
             break;
         case WIFI_EVENT_AP_START:
-            ESP_LOGV(TAG, "WIFI_EVENT_AP_START");
+            /* This event is emitted by ``esp_wifi`` when the access point is
+             * successfully started.
+             */
+            ESP_LOGD(TAG, "WIFI_EVENT_AP_START");
+            networking_notify(
+                NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START);
             break;
         case WIFI_EVENT_AP_STOP:
             ESP_LOGV(TAG, "WIFI_EVENT_AP_STOP");
