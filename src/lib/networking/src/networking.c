@@ -121,6 +121,7 @@ typedef enum {
     NETWORKING_NOTIFICATION_BASE,
     NETWORKING_NOTIFICATION_CMD_WIFI_START,
     NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START,
+    NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED,
 } networking_notification;
 
 /**
@@ -166,6 +167,7 @@ typedef enum {
     NETWORKING_STATUS_READY,
     NETWORKING_STATUS_UP,
     NETWORKING_STATUS_IDLE,
+    NETWORKING_STATUS_BUSY,
 } networking_status;
 
 /**
@@ -285,6 +287,25 @@ static void networking(void *task_parameters) {
                 //                 information should be included in the
                 //                 component's *status* event (e.g. AP SSID?)!
                 break;
+            case NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED:
+                /* A client connected to the access point.
+                 * Set the internal state to NETWORKING_STATUS_BUSY to indicate
+                 * actual usage of the access point. The internal timer to
+                 * shut down the access point has to be stopped, because a
+                 * client *might be* consuming the web interface, so the
+                 * access point has to be kept running.
+                 */
+                ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_STACONNECTED");
+                state->status = NETWORKING_STATUS_BUSY;
+
+                // TODO(mischback) Stop the internal timer to shut down the
+                //                 access point.
+
+                // TODO(mischback) Determine which of the access point-specific
+                //                 information should be included in the
+                //                 components *status* event (e.g. number of
+                //                 connected clients?)
+                break;
             default:
                 ESP_LOGW(TAG, "Got unhandled notification: %d", notify_value);
                 break;
@@ -379,14 +400,18 @@ static void networking_event_handler(
              * successfully started.
              */
             ESP_LOGD(TAG, "WIFI_EVENT_AP_START");
-            networking_notify(
-                NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START);
+            networking_notify(NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START);
             break;
         case WIFI_EVENT_AP_STOP:
             ESP_LOGV(TAG, "WIFI_EVENT_AP_STOP");
             break;
         case WIFI_EVENT_AP_STACONNECTED:
-            ESP_LOGV(TAG, "WIFI_EVENT_AP_STACONNECTED");
+            /* This event is emitted by ``esp_wifi`` when a client connects to
+             * the access point.
+             */
+            ESP_LOGD(TAG, "WIFI_EVENT_AP_STACONNECTED");
+            networking_notify(
+                NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED);
             break;
         case WIFI_EVENT_AP_STADISCONNECTED:
             ESP_LOGV(TAG, "WIFI_EVENT_AP_STADISCONNECTED");
