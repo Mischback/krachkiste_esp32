@@ -122,6 +122,7 @@ typedef enum {
     NETWORKING_NOTIFICATION_CMD_WIFI_START,
     NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START,
     NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED,
+    NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED,
 } networking_notification;
 
 /**
@@ -242,6 +243,13 @@ static void networking(void *task_parameters) {
     BaseType_t notify_result;
     uint32_t notify_value = 0;
 
+    /* This is meant as a temporary variable for the infinite loop.
+     * Any given ``case`` may allocate memory to this pointer, do stuff (most
+     * likely call some **ESP-IDF** function, store and process the result,
+     * take some actions) and then free the memory again.
+     */
+    void *tmp_mem_ptr = NULL;
+
     for (;;) {
         /* Block until notification or ``mon_freq`` reached. */
         notify_result = xTaskNotifyWaitIndexed(
@@ -300,6 +308,42 @@ static void networking(void *task_parameters) {
 
                 // TODO(mischback) Stop the internal timer to shut down the
                 //                 access point.
+
+                // TODO(mischback) Determine which of the access point-specific
+                //                 information should be included in the
+                //                 components *status* event (e.g. number of
+                //                 connected clients?)
+                break;
+            case NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED:
+                ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_STADISCONNECTED");
+
+                tmp_mem_ptr = calloc(
+                    1,
+                    sizeof(wifi_sta_list_t));
+
+                if (esp_wifi_ap_get_sta_list(
+                    (wifi_sta_list_t *)tmp_mem_ptr) != ESP_OK) {
+                    ESP_LOGW(
+                        TAG,
+                        "Could not determine number of connected station!");
+                    }
+                ESP_LOGD(
+                    TAG,
+                    "Connected stations: %d",
+                    ((wifi_sta_list_t *)tmp_mem_ptr)->num);
+
+                if (((wifi_sta_list_t *)tmp_mem_ptr)->num == 0) {
+                    state->status = NETWORKING_STATUS_IDLE;
+
+                    // TODO(mischback) Start the internal timer to shut down the
+                    //                 access point eventually. This is a bigger
+                    //                 effort, as the timer needs to be created
+                    //                 (propably in ::wifi_ap_init ), tracked
+                    //                 somewhere (should this be added to
+                    //                 ::state ?) and started here!
+                }
+
+                free(tmp_mem_ptr);
 
                 // TODO(mischback) Determine which of the access point-specific
                 //                 information should be included in the
@@ -414,7 +458,12 @@ static void networking_event_handler(
                 NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED);
             break;
         case WIFI_EVENT_AP_STADISCONNECTED:
-            ESP_LOGV(TAG, "WIFI_EVENT_AP_STADISCONNECTED");
+            /* This event is emitted by ``esp_wifi`` when a client disconnects
+             * from the access point.
+             */
+            ESP_LOGD(TAG, "WIFI_EVENT_AP_STADISCONNECTED");
+            networking_notify(
+                NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED);
             break;
         case WIFI_EVENT_AP_PROBEREQRECVED:
             ESP_LOGV(TAG, "WIFI_EVENT_AP_PROBEREQRECVED");
@@ -434,6 +483,14 @@ static void networking_event_handler(
             ESP_LOGV(TAG, "IP_EVENT_STA_LOST_IP");
             break;
         case IP_EVENT_AP_STAIPASSIGNED:
+            /* This event is emitted whenever a client connects to the access
+             * point and receives an IP by DHCP.
+             */
+            // TODO(mischback) As of now, this event is not used, instead all
+            //                 of the component's actions are taken in the
+            //                 (corresponding) WIFI_EVENT_AP_STACONNECTED and,
+            //                 more relevant, WIFI_EVENT_AP_STADISCONNECTED.
+            //                 LONG STORY SHORT: This case may be removed!
             ESP_LOGV(TAG, "IP_EVENT_AP_STAIPASSIGNED");
             break;
         case IP_EVENT_GOT_IP6:
