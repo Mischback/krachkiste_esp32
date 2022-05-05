@@ -600,6 +600,81 @@ esp_err_t networking_start(char* nvs_namespace) {
     return ESP_OK;
 }
 
+static esp_err_t get_nvs_handle(
+    const char *namespace,
+    nvs_open_mode_t mode,
+    nvs_handle_t *handle) {
+    ESP_LOGV(TAG, "'get_nvs_handle()'");
+
+    esp_err_t esp_ret = nvs_open(namespace, mode, handle);
+
+    if (esp_ret != ESP_OK) {
+        /* This might fail for different reasons, e.g. the NVS is not correctly
+         * set up or initialized.
+         * Assuming that the NVS **is** available, this will fail with
+         * ESP_ERR_NVS_NOT_FOUND, which means that there is no namespace of
+         * the name ``nvs_namespace`` (yet).
+         * This might happen during first start of the applications, as there
+         * is no WiFi config yet, so the namespace was never used before.
+         */
+        ESP_LOGE(TAG, "Could not open NVS handle '%s'!", namespace);
+        ESP_LOGD(
+            TAG,
+            "'nvs_open()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
+    }
+
+    return ESP_OK;
+}
+
+static esp_err_t get_string_from_nvs(
+    nvs_handle_t handle,
+    const char *key,
+    char *ret_buffer,
+    const size_t max_buf_size) {
+    ESP_LOGV(TAG, "'get_string_from_nvs()'");
+
+    esp_err_t esp_ret;
+    size_t req_size;
+
+    esp_ret = nvs_get_str(handle, key, NULL, &req_size);
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Could not determine size for %s!", key);
+        ESP_LOGD(
+            TAG,
+            "'nvs_get_str()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
+    }
+
+    if (req_size > max_buf_size) {
+        ESP_LOGE(TAG, "Provided buffer has insufficient size!");
+        ESP_LOGD(
+            TAG,
+            "Required: %d / available: %d",
+            req_size,
+            max_buf_size);
+        return ESP_FAIL;
+    }
+
+    esp_ret = nvs_get_str(handle, key, ret_buffer, &req_size);
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(
+            TAG, "Could not read value of '%s'!", key);
+        ESP_LOGD(
+            TAG,
+            "'nvs_get_str()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        return esp_ret;
+    }
+
+    return ESP_OK;
+}
+
 /**
  * Retrieve SSID and PSK for station mode from non-volatile storage.
  *
@@ -629,84 +704,29 @@ static esp_err_t get_wifi_config_from_nvs(
     ESP_LOGV(TAG, "get_wifi_config_from_nvs()");
 
     /* Open NVS storage handle. */
-    nvs_handle_t nvs_handle;
-    esp_err_t esp_ret = nvs_open(nvs_namespace, NVS_READONLY, &nvs_handle);
+    nvs_handle_t handle;
+    esp_err_t esp_ret;
 
-    if (esp_ret != ESP_OK) {
-        /* This might fail for different reasons, e.g. the NVS is not correctly
-         * set up or initialized.
-         * Assuming that the NVS **is** available, this will fail with
-         * ESP_ERR_NVS_NOT_FOUND, which means that there is no namespace of
-         * the name ``nvs_namespace`` (yet).
-         * This might happen during first start of the applications, as there
-         * is no WiFi config yet, so the namespace was never used before.
-         */
-        ESP_LOGE(TAG, "Could not open NVS handle '%s'!", nvs_namespace);
-        ESP_LOGD(
-            TAG,
-            "'nvs_open()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+    esp_ret = get_nvs_handle(nvs_namespace, NVS_READONLY, &handle);
+    if (esp_ret != ESP_OK)
         return esp_ret;
-    }
     ESP_LOGD(TAG, "Handle '%s' successfully opened!", nvs_namespace);
 
-    size_t req_size;
-    esp_ret = nvs_get_str(
-        nvs_handle,
-        NETWORKING_WIFI_NVS_SSID,
-        NULL,
-        &req_size);
-    if (esp_ret != ESP_OK) {
-        ESP_LOGE(TAG, "Could not determine size for SSID!");
-        ESP_LOGD(
-            TAG,
-            "'nvs_get_str()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
-        return esp_ret;
-    }
-    esp_ret = nvs_get_str(
-        nvs_handle,
+    esp_ret = get_string_from_nvs(
+        handle,
         NETWORKING_WIFI_NVS_SSID,
         ssid,
-        &req_size);
-    if (esp_ret != ESP_OK) {
-        ESP_LOGE(
-            TAG,
-            "Could not read value of '%s'!",
-            NETWORKING_WIFI_NVS_SSID);
-        ESP_LOGD(
-            TAG,
-            "'nvs_get_str()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        NETWORKING_WIFI_SSID_MAX_LEN);
+    if (esp_ret != ESP_OK)
         return esp_ret;
-    }
 
-    esp_ret = nvs_get_str(nvs_handle, NETWORKING_WIFI_NVS_PSK, NULL, &req_size);
-    if (esp_ret != ESP_OK) {
-        ESP_LOGE(TAG, "Could not determine size for PSK!");
-        ESP_LOGD(
-            TAG,
-            "'nvs_get_str()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+    esp_ret = get_string_from_nvs(
+        handle,
+        NETWORKING_WIFI_NVS_PSK,
+        psk,
+        NETWORKING_WIFI_PSK_MAX_LEN);
+    if (esp_ret != ESP_OK)
         return esp_ret;
-    }
-    esp_ret = nvs_get_str(nvs_handle, NETWORKING_WIFI_NVS_PSK, psk, &req_size);
-    if (esp_ret != ESP_OK) {
-        ESP_LOGE(
-            TAG,
-            "Could not read value of '%s'!",
-            NETWORKING_WIFI_NVS_PSK);
-        ESP_LOGD(
-            TAG,
-            "'nvs_get_str()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
-        return esp_ret;
-    }
 
     return ESP_OK;
 }
