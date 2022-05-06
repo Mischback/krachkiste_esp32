@@ -208,10 +208,19 @@ static struct networking_state *state = NULL;
 
 /* ***** PROTOTYPES ******************************************************** */
 
+static esp_err_t get_nvs_handle(
+    const char *namespace,
+    nvs_open_mode_t mode,
+    nvs_handle_t *handle);
 static esp_err_t get_wifi_config_from_nvs(
     char *nvs_namespace,
     char *ssid,
     char *psk);
+static esp_err_t get_string_from_nvs(
+    nvs_handle_t handle,
+    const char *key,
+    char *ret_buffer,
+    const size_t max_buf_size);
 
 static void networking(void *task_parameters);
 static void networking_notify(uint32_t notification);
@@ -325,7 +334,7 @@ static void networking(void *task_parameters) {
                     (wifi_sta_list_t *)tmp_mem_ptr) != ESP_OK) {
                     ESP_LOGW(
                         TAG,
-                        "Could not determine number of connected station!");
+                        "Could not determine number of connected stations!");
                     }
                 ESP_LOGD(
                     TAG,
