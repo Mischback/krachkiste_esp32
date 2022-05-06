@@ -277,6 +277,7 @@ static void networking(void *task_parameters) {
             switch (notify_value) {
             case NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP:
                 ESP_LOGD(TAG, "CMD: NETWORKING_STOP");
+                networking_deinit();
                 break;
             case NETWORKING_NOTIFICATION_CMD_WIFI_START:
                 ESP_LOGD(TAG, "CMD: WIFI_START");
@@ -656,8 +657,12 @@ static esp_err_t networking_deinit(void) {
         return ESP_FAIL;
     }
 
+    esp_err_t esp_ret;
+    if (state->medium == NETWORKING_MEDIUM_WIRELESS)
+        esp_ret = wifi_deinit();
+
     /* Unregister the IP_EVENT event handler. */
-    esp_err_t esp_ret = esp_event_handler_instance_unregister(
+    esp_ret = esp_event_handler_instance_unregister(
         IP_EVENT,
         ESP_EVENT_ANY_ID,
         state->ip_event_handler);
