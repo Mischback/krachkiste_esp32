@@ -51,6 +51,16 @@
 #define NETWORKING_WIFI_AP_MAX_CONNS 3
 
 /**
+ * Timespan to keep the project-specific access point available.
+ *
+ * The value is specified in milliseconds, default value of ``60000`` are
+ * *60 seconds*.
+ *
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
+ */
+#define NETWORKING_WIFI_AP_LIFETIME 60000
+
+/**
  * The password to access the project-specific access point.
  *
  * The component ``esp_wifi`` requires the password to be at least 8

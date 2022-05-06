@@ -64,6 +64,7 @@
  */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/timers.h"
 
 /* This is ESP-IDF's library to interface the non-volatile storage (NVS). */
 #include "nvs_flash.h"
@@ -119,6 +120,7 @@
  */
 typedef enum {
     NETWORKING_NOTIFICATION_BASE,
+    NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP,
     NETWORKING_NOTIFICATION_CMD_WIFI_START,
     NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START,
     NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED,
@@ -187,6 +189,7 @@ struct networking_state {
     TaskHandle_t        task;
     esp_event_handler_t ip_event_handler;
     esp_event_handler_t wifi_event_handler;
+    TimerHandle_t       ap_shutdown_timer;
 };
 
 
@@ -237,6 +240,7 @@ static esp_err_t wifi_init(char *nvs_namespace);
 static esp_err_t wifi_deinit(void);
 static esp_err_t wifi_ap_init(void);
 static esp_err_t wifi_ap_deinit(void);
+static void wifi_ap_timed_shutdown(TimerHandle_t timer);
 static esp_err_t wifi_sta_init(char *sta_ssid, char *sta_psk);
 static esp_err_t wifi_sta_deinit(void);
 
@@ -271,6 +275,9 @@ static void networking(void *task_parameters) {
         /* Notification or monitoring? */
         if (notify_result == pdPASS) {
             switch (notify_value) {
+            case NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP:
+                ESP_LOGD(TAG, "CMD: NETWORKING_STOP");
+                break;
             case NETWORKING_NOTIFICATION_CMD_WIFI_START:
                 ESP_LOGD(TAG, "CMD: WIFI_START");
                 if (wifi_start((char *)task_parameters) != ESP_OK) {
@@ -288,13 +295,8 @@ static void networking(void *task_parameters) {
                  */
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_START");
                 state->status = NETWORKING_STATUS_IDLE;
-
-                // TODO(mischback) Start the internal timer to shut down the
-                //                 access point eventually. This is a bigger
-                //                 effort, as the timer needs to be created
-                //                 (propably in ::wifi_ap_init ), tracked
-                //                 somewhere (should this be added to ::state
-                //                 ?) and started here!
+                xTimerStart(state->ap_shutdown_timer, (TickType_t) 0);
+                ESP_LOGD(TAG, "Access point's shutdown timer started!");
 
                 // TODO(mischback) Emit an component-specific event to inform
                 //                 other components, that the AP is ready (e.g.
@@ -315,8 +317,10 @@ static void networking(void *task_parameters) {
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_STACONNECTED");
                 state->status = NETWORKING_STATUS_BUSY;
 
-                // TODO(mischback) Stop the internal timer to shut down the
-                //                 access point.
+                if (xTimerIsTimerActive(state->ap_shutdown_timer) == pdTRUE) {
+                    xTimerStop(state->ap_shutdown_timer, (TickType_t) 0);
+                    ESP_LOGD(TAG, "Access point's shutdown timer stopped!");
+                }
 
                 // TODO(mischback) Determine which of the access point-specific
                 //                 information should be included in the
@@ -344,12 +348,13 @@ static void networking(void *task_parameters) {
                 if (((wifi_sta_list_t *)tmp_mem_ptr)->num == 0) {
                     state->status = NETWORKING_STATUS_IDLE;
 
-                    // TODO(mischback) Start the internal timer to shut down the
-                    //                 access point eventually. This is a bigger
-                    //                 effort, as the timer needs to be created
-                    //                 (propably in ::wifi_ap_init ), tracked
-                    //                 somewhere (should this be added to
-                    //                 ::state ?) and started here!
+                    if (xTimerIsTimerActive(
+                        state->ap_shutdown_timer) == pdFALSE) {
+                        xTimerStart(state->ap_shutdown_timer, (TickType_t) 0);
+                        ESP_LOGD(
+                            TAG,
+                            "No more stations connected, restarting shutdown timer!");  // NOLINT(whitespace/line_length)
+                    }
                 }
 
                 free(tmp_mem_ptr);
@@ -1040,6 +1045,14 @@ static esp_err_t wifi_ap_init(void) {
         return ESP_FAIL;
     }
 
+    /* Create the timer to eventually shut down the access point. */
+    state->ap_shutdown_timer = xTimerCreate(
+        NULL,
+        pdMS_TO_TICKS(NETWORKING_WIFI_AP_LIFETIME),
+        pdFALSE,
+        (void *) 0,
+        wifi_ap_timed_shutdown);
+
     /* Setup the configuration for access point mode.
      * These values are based off project-specific settings, that may be
      * changed by ``menuconfig`` / ``sdkconfig`` during building the
@@ -1152,6 +1165,20 @@ static esp_err_t wifi_ap_deinit(void) {
     state->mode = NETWORKING_MODE_NOT_APPLICABLE;
 
     return ESP_OK;
+}
+
+static void wifi_ap_timed_shutdown(TimerHandle_t timer) {
+    ESP_LOGV(TAG, "wifi_ap_timed_shutdown()");
+
+    if (state->status != NETWORKING_STATUS_IDLE) {
+        ESP_LOGW(TAG, "Access Point is not idle! Skipping shutdown!");
+        return;
+    }
+
+    xTimerStop(timer, (TickType_t) 0);
+    xTimerDelete(timer, (TickType_t) 0);
+
+    networking_notify(NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP);
 }
 
 /**
