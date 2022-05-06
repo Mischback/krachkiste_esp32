@@ -735,6 +735,14 @@ esp_err_t networking_start(char* nvs_namespace) {
     return ESP_OK;
 }
 
+esp_err_t networking_stop(void) {
+    ESP_LOGV(TAG, "networking_stop()");
+
+    networking_notify(NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP);
+
+    return ESP_OK;
+}
+
 static esp_err_t get_nvs_handle(
     const char *namespace,
     nvs_open_mode_t mode,

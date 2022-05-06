@@ -110,4 +110,11 @@
  */
 esp_err_t networking_start(char* nvs_namespace);
 
+/**
+ * Stop all networking and free resources.
+ *
+ * @return esp_err_t Always returns ``ESP_OK``.
+ */
+esp_err_t networking_stop(void);
+
 #endif  // SRC_LIB_NETWORKING_INCLUDE_NETWORKING_NETWORKING_H_
