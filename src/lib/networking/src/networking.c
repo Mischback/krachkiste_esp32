@@ -129,6 +129,7 @@ typedef enum {
     NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED,
     NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED,
     NETWORKING_NOTIFICATION_EVENT_WIFI_STA_START,
+    NETWORKING_NOTIFICATION_EVENT_WIFI_STA_CONNECTED,
     NETWORKING_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED,
 } networking_notification;
 
@@ -272,6 +273,7 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk);
 static esp_err_t wifi_sta_deinit(void);
 static void wifi_sta_connect(void);
 static int8_t wifi_sta_get_num_connection_attempts(void);
+static void wifi_sta_reset_connection_counter(void);
 
 
 /* ***** FUNCTIONS ********************************************************* */
@@ -389,6 +391,14 @@ static void networking(void *task_parameters) {
                 state->status = NETWORKING_STATUS_CONNECTING;
                 wifi_sta_connect();
                 break;
+            case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_CONNECTED:
+                ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_CONNECTED");
+                state->status = NETWORKING_STATUS_READY;
+                wifi_sta_reset_connection_counter();
+                networking_emit_event(NETWORKING_EVENT_READY, NULL);
+                // TODO(mischback) Should the *status event* be emitted here
+                //                 automatically?
+                break;
             case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_DISCONNECTED");
 
@@ -475,7 +485,8 @@ static void networking_event_handler(
             ESP_LOGV(TAG, "WIFI_EVENT_STA_STOP");
             break;
         case WIFI_EVENT_STA_CONNECTED:
-            ESP_LOGV(TAG, "WIFI_EVENT_STA_CONNECTED");
+            ESP_LOGD(TAG, "WIFI_EVENT_STA_CONNECTED");
+            networking_notify(NETWORKING_NOTIFICATION_EVENT_WIFI_STA_CONNECTED);
             break;
         case WIFI_EVENT_STA_DISCONNECTED:
             /* This event is emitted by ``esp_wifi`` in the following
@@ -1365,7 +1376,7 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk) {
 
     /* Allocate memory for the specific state information. */
     state->medium_state = calloc(1, sizeof(struct medium_state_wifi_sta));
-    ((struct medium_state_wifi_sta *)(state->medium_state))->num_connection_attempts = 0;  // NOLINT(whitespace/line_length)
+    wifi_sta_reset_connection_counter();
 
     /* Setup the configuration for station mode.
      * Some of the settings may be configured by ``menuconfig`` / ``sdkconfig``,
@@ -1507,6 +1518,14 @@ static void wifi_sta_connect(void) {
  */
 static int8_t wifi_sta_get_num_connection_attempts(void) {
     return ((struct medium_state_wifi_sta *)(state->medium_state))->num_connection_attempts;  // NOLINT(whitespace/line_length)
+}
+
+/**
+ * Reset the number of failed connection attempts.
+ *
+ */
+static void wifi_sta_reset_connection_counter(void) {
+    ((struct medium_state_wifi_sta *)(state->medium_state))->num_connection_attempts = 0;  // NOLINT(whitespace/line_length)
 }
 
 /**
