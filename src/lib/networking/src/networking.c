@@ -128,6 +128,7 @@ typedef enum {
     NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START,
     NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED,
     NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED,
+    NETWORKING_NOTIFICATION_EVENT_WIFI_STA_START,
 } networking_notification;
 
 /**
@@ -247,6 +248,7 @@ static esp_err_t wifi_ap_deinit(void);
 static void wifi_ap_timed_shutdown(TimerHandle_t timer);
 static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk);
 static esp_err_t wifi_sta_deinit(void);
+static void wifi_sta_connect(void);
 
 
 /* ***** FUNCTIONS ********************************************************* */
@@ -374,6 +376,10 @@ static void networking(void *task_parameters) {
                 //                 components *status* event (e.g. number of
                 //                 connected clients?)
                 break;
+            case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_START:
+                ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_START");
+                wifi_sta_connect();
+                break;
             default:
                 ESP_LOGW(TAG, "Got unhandled notification: %d", notify_value);
                 break;
@@ -437,7 +443,11 @@ static void networking_event_handler(
             ESP_LOGV(TAG, "WIFI_EVENT_SCAN_DONE");
             break;
         case WIFI_EVENT_STA_START:
-            ESP_LOGV(TAG, "WIFI_EVENT_STA_START");
+            /* This event is emitted by ``esp_wifi`` when the interface is
+             * successfully started in station mode.
+             */
+            ESP_LOGD(TAG, "WIFI_EVENT_STA_START");
+            networking_notify(NETWORKING_NOTIFICATION_EVENT_WIFI_STA_START);
             break;
         case WIFI_EVENT_STA_STOP:
             ESP_LOGV(TAG, "WIFI_EVENT_STA_STOP");
@@ -1396,6 +1406,30 @@ static esp_err_t wifi_sta_deinit(void) {
     state->mode = NETWORKING_MODE_NOT_APPLICABLE;
 
     return ESP_OK;
+}
+
+/**
+ * Actually connect to a WiFi access point.
+ *
+ * This function is called from ::networking to perform the actual connect.
+ *
+ * Please note: This function simply wraps **ESP-IDF**'s ``esp_wifi_connect()``
+ * to catch internal errors. It does not actually track the success of the
+ * connection. This has to be done while handling the events raised by
+ * **ESP-IDF**'s ``wifi`` module.
+ */
+static void wifi_sta_connect(void) {
+    ESP_LOGV(TAG, "wifi_sta_connect()");
+
+    esp_err_t esp_ret = esp_wifi_connect();
+    if (esp_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Connect command failed!");
+        ESP_LOGD(
+            TAG,
+            "'esp_wifi_connect()' returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+    }
 }
 
 /**
