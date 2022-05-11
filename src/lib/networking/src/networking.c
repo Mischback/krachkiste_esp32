@@ -247,6 +247,7 @@ static esp_err_t wifi_deinit(void);
 static esp_err_t wifi_ap_init(void);
 static esp_err_t wifi_ap_deinit(void);
 static void wifi_ap_timed_shutdown(TimerHandle_t timer);
+static int8_t wifi_ap_get_connected_stations(void);
 static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk);
 static esp_err_t wifi_sta_deinit(void);
 static void wifi_sta_connect(void);
@@ -262,13 +263,6 @@ static void networking(void *task_parameters) {
         NETWORKING_TASK_MONITOR_FREQUENCY);
     BaseType_t notify_result;
     uint32_t notify_value = 0;
-
-    /* This is meant as a temporary variable for the infinite loop.
-     * Any given ``case`` may allocate memory to this pointer, do stuff (most
-     * likely call some **ESP-IDF** function, store and process the result,
-     * take some actions) and then free the memory again.
-     */
-    void *tmp_mem_ptr = NULL;
 
     for (;;) {
         /* Block until notification or ``mon_freq`` reached. */
@@ -343,22 +337,7 @@ static void networking(void *task_parameters) {
             case NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_STADISCONNECTED");
 
-                tmp_mem_ptr = calloc(
-                    1,
-                    sizeof(wifi_sta_list_t));
-
-                if (esp_wifi_ap_get_sta_list(
-                    (wifi_sta_list_t *)tmp_mem_ptr) != ESP_OK) {
-                    ESP_LOGW(
-                        TAG,
-                        "Could not determine number of connected stations!");
-                    }
-                ESP_LOGD(
-                    TAG,
-                    "Connected stations: %d",
-                    ((wifi_sta_list_t *)tmp_mem_ptr)->num);
-
-                if (((wifi_sta_list_t *)tmp_mem_ptr)->num == 0) {
+                if (wifi_ap_get_connected_stations() == 0) {
                     state->status = NETWORKING_STATUS_IDLE;
 
                     if (xTimerIsTimerActive(
@@ -369,8 +348,6 @@ static void networking(void *task_parameters) {
                             "No more stations connected, restarting shutdown timer!");  // NOLINT(whitespace/line_length)
                     }
                 }
-
-                free(tmp_mem_ptr);
 
                 // TODO(mischback) Determine which of the access point-specific
                 //                 information should be included in the
@@ -1291,6 +1268,25 @@ static void wifi_ap_timed_shutdown(TimerHandle_t timer) {
     xTimerDelete(timer, (TickType_t) 0);
 
     networking_notify(NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP);
+}
+
+/**
+ * Get the number of connected stations in access point mode.
+ *
+ * @return int8_t The number of connected stations or ``-1`` in case of error.
+ */
+static int8_t wifi_ap_get_connected_stations(void) {
+    ESP_LOGV(TAG, "wifi_ap_get_connected_stations()");
+
+    wifi_sta_list_t tmp;
+
+    if (esp_wifi_ap_get_sta_list(&tmp) != ESP_OK) {
+        ESP_LOGW(TAG, "Could not determine number of connected stations!");
+        return -1;  // indicate error with a totally unexpected value!
+    }
+    ESP_LOGD(TAG, "Connected stations: %d", tmp.num);
+
+    return tmp.num;
 }
 
 /**
