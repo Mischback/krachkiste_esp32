@@ -82,6 +82,15 @@
 #define NETWORKING_WIFI_AP_SSID "krachkiste_ap"
 
 /**
+ * The maximum number of connection attempts for station mode.
+ *
+ * After this number is reached, the component will launch the access point.
+ *
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
+ */
+#define NETWORKING_WIFI_STA_MAX_CONNECTION_ATTEMPTS 3
+
+/**
  * Set a minimum required WiFi security while scanning for networks.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)

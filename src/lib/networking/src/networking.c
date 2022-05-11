@@ -205,7 +205,16 @@ struct networking_state {
  * point mode.
  */
 struct medium_state_wifi_ap {
-    TimerHandle_t       ap_shutdown_timer;
+    TimerHandle_t ap_shutdown_timer;
+};
+
+/**
+ * Medium/mode specific state information for station mode.
+ *
+ * In station mode, the number of failed connection attempts has to be tracked.
+ */
+struct medium_state_wifi_sta {
+    int8_t num_connection_attempts;
 };
 
 
@@ -262,6 +271,7 @@ static int8_t wifi_ap_get_connected_stations(void);
 static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk);
 static esp_err_t wifi_sta_deinit(void);
 static void wifi_sta_connect(void);
+static int8_t wifi_sta_get_num_connection_attempts(void);
 
 
 /* ***** FUNCTIONS ********************************************************* */
@@ -381,8 +391,16 @@ static void networking(void *task_parameters) {
                 break;
             case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_DISCONNECTED");
-                // TODO(mischback) More logic goes here, but there's a
-                //                 refactoring step required.
+
+                if (wifi_sta_get_num_connection_attempts()
+                    > NETWORKING_WIFI_STA_MAX_CONNECTION_ATTEMPTS) {
+                    wifi_sta_deinit();
+                    if (wifi_ap_init() != ESP_OK)
+                        networking_notify(
+                            NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP);
+                } else {
+                    wifi_sta_connect();
+                }
                 break;
             default:
                 ESP_LOGW(TAG, "Got unhandled notification: %d", notify_value);
@@ -1154,6 +1172,7 @@ static esp_err_t wifi_ap_init(void) {
         return ESP_FAIL;
     }
 
+    /* Allocate memory for the specific state information. */
     state->medium_state = calloc(1, sizeof(struct medium_state_wifi_ap));
 
     /* Create the timer to eventually shut down the access point. */
@@ -1344,6 +1363,10 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk) {
         return ESP_FAIL;
     }
 
+    /* Allocate memory for the specific state information. */
+    state->medium_state = calloc(1, sizeof(struct medium_state_wifi_sta));
+    ((struct medium_state_wifi_sta *)(state->medium_state))->num_connection_attempts = 0;  // NOLINT(whitespace/line_length)
+
     /* Setup the configuration for station mode.
      * Some of the settings may be configured by ``menuconfig`` / ``sdkconfig``,
      * the ``SSID`` and ``PSK`` are read from the non-volatile storage (NVS) and
@@ -1464,6 +1487,8 @@ static esp_err_t wifi_sta_deinit(void) {
 static void wifi_sta_connect(void) {
     ESP_LOGV(TAG, "wifi_sta_connect()");
 
+    ((struct medium_state_wifi_sta *)(state->medium_state))->num_connection_attempts++;  // NOLINT(whitespace/line_length)
+
     esp_err_t esp_ret = esp_wifi_connect();
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Connect command failed!");
@@ -1473,6 +1498,15 @@ static void wifi_sta_connect(void) {
             esp_err_to_name(esp_ret),
             esp_ret);
     }
+}
+
+/**
+ * Return the number of failed connection attempts.
+ *
+ * @return int8_t The number of failed connection attempts.
+ */
+static int8_t wifi_sta_get_num_connection_attempts(void) {
+    return ((struct medium_state_wifi_sta *)(state->medium_state))->num_connection_attempts;  // NOLINT(whitespace/line_length)
 }
 
 /**
