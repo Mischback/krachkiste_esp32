@@ -193,7 +193,7 @@ struct networking_state {
     esp_netif_t         *interface;
     TaskHandle_t        task;
     esp_event_handler_t ip_event_handler;
-    esp_event_handler_t wifi_event_handler;
+    esp_event_handler_t medium_event_handler;
     TimerHandle_t       ap_shutdown_timer;
 };
 
@@ -642,7 +642,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
     ESP_LOGD(TAG, "state->status.............. %d", state->status);
     ESP_LOGD(TAG, "state->task................ %p", state->task);
     ESP_LOGD(TAG, "state->ip_event_handler.... %p", state->ip_event_handler);
-    ESP_LOGD(TAG, "state->wifi_event_handler.. %p", state->wifi_event_handler);
+    ESP_LOGD(TAG, "state->medium_event_handler.. %p", state->medium_event_handler);  // NOLINT(whitespace/line_length)
 
     /* Place the first command for the dedicated networking task. */
     networking_notify(NETWORKING_NOTIFICATION_CMD_WIFI_START);
@@ -1011,7 +1011,7 @@ static esp_err_t wifi_init(char *nvs_namespace) {
         ESP_EVENT_ANY_ID,
         networking_event_handler,
         NULL,
-        (void **)&(state->wifi_event_handler));
+        (void **)&(state->medium_event_handler));
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not attach WIFI_EVENT event handler!");
         ESP_LOGD(
@@ -1078,7 +1078,7 @@ static esp_err_t wifi_deinit(void) {
     esp_err_t esp_ret = esp_event_handler_instance_unregister(
         WIFI_EVENT,
         ESP_EVENT_ANY_ID,
-        state->wifi_event_handler);
+        state->medium_event_handler);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not unregister WIFI_EVENT event handler!");
         ESP_LOGD(
