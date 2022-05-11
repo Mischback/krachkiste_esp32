@@ -10,6 +10,9 @@
  */
 #include "esp_err.h"
 
+/* This is ESP-IDF's event library. */
+#include "esp_event.h"
+
 /* ESP-IDF's wifi library
  * - defines constants used for NETWORKING_WIFI_STA_THRESHOLD_AUTH
  */
@@ -92,6 +95,17 @@
  * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
 #define NETWORKING_WIFI_STA_THRESHOLD_RSSI -127
+
+
+/**
+ * Declare the component-specific event base.
+ *
+ */
+ESP_EVENT_DECLARE_BASE(NETWORKING_EVENTS);
+
+enum {
+    NETWORKING_EVENT_READY
+};
 
 
 /**

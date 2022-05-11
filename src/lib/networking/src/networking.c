@@ -115,6 +115,9 @@
 
 /* ***** TYPES ************************************************************* */
 
+/* Define the component-specific event base. */
+ESP_EVENT_DEFINE_BASE(NETWORKING_EVENTS);
+
 /**
  * This is the list of accepted notifications.
  */
@@ -234,6 +237,7 @@ static void networking_event_handler(
     void* event_data);
 static esp_err_t networking_deinit(void);
 static esp_err_t networking_init(char* nvs_namespace);
+static void networking_emit_event(int32_t event_id, void *event_data);
 
 static esp_err_t wifi_start(char *nvs_namespace);
 static esp_err_t wifi_init(char *nvs_namespace);
@@ -699,6 +703,57 @@ static esp_err_t networking_deinit(void) {
     }
 
     return ESP_OK;
+}
+
+/**
+ * Emit component-specific events.
+ *
+ * @param event_id   The actual events are defined in networking.h and may be
+ *                   referenced by their human-readable name in the ``enum``.
+ * @param event_data Optional pointer to event-specific context data. This
+ *                   might be set to ``NULL`` to emit events without contextual
+ *                   data.
+ *                   The calling function has to allocate (and free) the actual
+ *                   memory for the context data. It may be free'd after this
+ *                   function returned, because **ESP-IDF**'s event loop will
+ *                   manage a copy of this data, once the event is posted to the
+ *                   loop.
+ */
+static void networking_emit_event(int32_t event_id, void *event_data) {
+    ESP_LOGV(TAG, "networking_emit_event()");
+
+    esp_err_t esp_ret;
+
+    if (event_data == NULL) {
+        ESP_LOGV(TAG, "Event without context data!");
+        esp_ret = esp_event_post(
+            NETWORKING_EVENTS,
+            event_id,
+            NULL,
+            0,
+            (TickType_t) 0);
+    } else {
+        ESP_LOGV(TAG, "Event with context data!");
+        esp_ret = esp_event_post(
+            NETWORKING_EVENTS,
+            event_id,
+            event_data,
+            sizeof(event_data),
+            (TickType_t) 0);
+    }
+
+    if (esp_ret != ESP_OK) {
+        ESP_LOGW(TAG, "Could not emit event!");
+        ESP_LOGD(
+            TAG,
+            "esp_event_post() returned %s [%d]",
+            esp_err_to_name(esp_ret),
+            esp_ret);
+        ESP_LOGD(TAG, "event_base....... %s", NETWORKING_EVENTS);
+        ESP_LOGD(TAG, "event_id......... %d", event_id);
+        ESP_LOGD(TAG, "event_data....... %p", event_data);
+        ESP_LOGD(TAG, "event_data_size.. %d", sizeof(event_data));
+    }
 }
 
 /**
