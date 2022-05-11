@@ -220,8 +220,8 @@ static esp_err_t get_nvs_handle(
     nvs_handle_t *handle);
 static esp_err_t get_wifi_config_from_nvs(
     char *nvs_namespace,
-    char *ssid,
-    char *psk);
+    char **ssid,
+    char **psk);
 static esp_err_t get_string_from_nvs(
     nvs_handle_t handle,
     const char *key,
@@ -245,7 +245,7 @@ static esp_err_t wifi_deinit(void);
 static esp_err_t wifi_ap_init(void);
 static esp_err_t wifi_ap_deinit(void);
 static void wifi_ap_timed_shutdown(TimerHandle_t timer);
-static esp_err_t wifi_sta_init(char *sta_ssid, char *sta_psk);
+static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk);
 static esp_err_t wifi_sta_deinit(void);
 
 
@@ -906,8 +906,8 @@ static esp_err_t get_string_from_nvs(
  */
 static esp_err_t get_wifi_config_from_nvs(
     char *nvs_namespace,
-    char *ssid,
-    char *psk) {
+    char **ssid,
+    char **psk) {
     ESP_LOGV(TAG, "get_wifi_config_from_nvs()");
 
     /* Open NVS storage handle. */
@@ -922,7 +922,7 @@ static esp_err_t get_wifi_config_from_nvs(
     esp_ret = get_string_from_nvs(
         handle,
         NETWORKING_WIFI_NVS_SSID,
-        ssid,
+        (char *)ssid,
         NETWORKING_WIFI_SSID_MAX_LEN);
     if (esp_ret != ESP_OK)
         return esp_ret;
@@ -930,10 +930,15 @@ static esp_err_t get_wifi_config_from_nvs(
     esp_ret = get_string_from_nvs(
         handle,
         NETWORKING_WIFI_NVS_PSK,
-        psk,
+        (char *)psk,
         NETWORKING_WIFI_PSK_MAX_LEN);
     if (esp_ret != ESP_OK)
         return esp_ret;
+
+    // FIXME(mischback) This is just for temporary testing!
+    //                  And no, these are not my actual credentials!
+    // strcpy((char *)ssid, "WiFi_SSID");
+    // strcpy((char *)psk, "WiFi_PSK");
 
     return ESP_OK;
 }
@@ -1021,8 +1026,8 @@ static esp_err_t wifi_init(char *nvs_namespace) {
 
     esp_ret = get_wifi_config_from_nvs(
         nvs_namespace,
-        nvs_sta_ssid,
-        nvs_sta_psk);
+        (char **)&nvs_sta_ssid,
+        (char **)&nvs_sta_psk);
     if (esp_ret != ESP_OK) {
         ESP_LOGI(TAG, "Could not read credentials, starting access point!");
         return wifi_ap_init();
@@ -1031,7 +1036,7 @@ static esp_err_t wifi_init(char *nvs_namespace) {
     ESP_LOGD(TAG, "Retrieved SSID.. %s", nvs_sta_ssid);
     ESP_LOGD(TAG, "Retrieved PSK... %s", nvs_sta_psk);
 
-    esp_ret = wifi_sta_init(nvs_sta_ssid, nvs_sta_psk);
+    esp_ret = wifi_sta_init((char **)&nvs_sta_ssid, (char **)&nvs_sta_psk);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not start WiFi station mode!");
         ESP_LOGI(TAG, "Starting access point!");
@@ -1275,7 +1280,7 @@ static void wifi_ap_timed_shutdown(TimerHandle_t timer) {
  *                   triggered by ::networking_event_handler and performed by
  *                   ::networking .
  */
-static esp_err_t wifi_sta_init(char *sta_ssid, char *sta_psk) {
+static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk) {
     ESP_LOGV(TAG, "wifi_sta_init()");
 
     /* Create a network interface for Access Point mode. */
@@ -1302,12 +1307,12 @@ static esp_err_t wifi_sta_init(char *sta_ssid, char *sta_psk) {
     // ``memcpy`` feels like *force*, but it works.
     memcpy(
         sta_config.sta.ssid,
-        sta_ssid,
-        strlen(sta_ssid));
+        (char *)sta_ssid,
+        strlen((char *)sta_ssid));
     memcpy(
         sta_config.sta.password,
-        sta_psk,
-        strlen(sta_psk));
+        (char *)sta_psk,
+        strlen((char *)sta_psk));
 
     esp_err_t esp_ret;
 
