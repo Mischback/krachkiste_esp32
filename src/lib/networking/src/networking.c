@@ -129,6 +129,7 @@ typedef enum {
     NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED,
     NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED,
     NETWORKING_NOTIFICATION_EVENT_WIFI_STA_START,
+    NETWORKING_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED,
 } networking_notification;
 
 /**
@@ -172,7 +173,7 @@ typedef enum {
 typedef enum {
     NETWORKING_STATUS_DOWN,
     NETWORKING_STATUS_READY,
-    NETWORKING_STATUS_UP,
+    NETWORKING_STATUS_CONNECTING,
     NETWORKING_STATUS_IDLE,
     NETWORKING_STATUS_BUSY,
 } networking_status;
@@ -378,7 +379,13 @@ static void networking(void *task_parameters) {
                 break;
             case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_START:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_START");
+                state->status = NETWORKING_STATUS_CONNECTING;
                 wifi_sta_connect();
+                break;
+            case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED:
+                ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_DISCONNECTED");
+                // TODO(mischback) More logic goes here, but there's a
+                //                 refactoring step required.
                 break;
             default:
                 ESP_LOGW(TAG, "Got unhandled notification: %d", notify_value);
@@ -456,7 +463,19 @@ static void networking_event_handler(
             ESP_LOGV(TAG, "WIFI_EVENT_STA_CONNECTED");
             break;
         case WIFI_EVENT_STA_DISCONNECTED:
-            ESP_LOGV(TAG, "WIFI_EVENT_STA_DISCONNECTED");
+            /* This event is emitted by ``esp_wifi`` in the following
+             * situations:
+             *   a) The application triggers the shutdown of an established
+             *      WiFi connection.
+             *   b) ``esp_wifi_connect()`` failed to establish a connection.
+             *      This is the case if the specified SSID is not reachable or
+             *      the provided PSK is rejected.
+             *   c) The connection got disrupted, either by the WiFi's access
+             *      point or some other external circumstances, e.g. zombies.
+             */
+            ESP_LOGD(TAG, "WIFI_EVENT_STA_DISCONNECTED");
+            networking_notify(
+                NETWORKING_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED);
             break;
         case WIFI_EVENT_STA_AUTHMODE_CHANGE:
             ESP_LOGV(TAG, "WIFI_EVENT_STA_AUTHMODE_CHANGED");
