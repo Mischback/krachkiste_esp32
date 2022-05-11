@@ -911,29 +911,30 @@ static esp_err_t get_wifi_config_from_nvs(
     ESP_LOGV(TAG, "get_wifi_config_from_nvs()");
 
     /* Open NVS storage handle. */
-    nvs_handle_t handle;
-    esp_err_t esp_ret;
+    // FIXME(mischback) Restore implementation once the station mode is working!
+    // nvs_handle_t handle;
+    // esp_err_t esp_ret;
 
-    esp_ret = get_nvs_handle(nvs_namespace, NVS_READONLY, &handle);
-    if (esp_ret != ESP_OK)
-        return esp_ret;
-    ESP_LOGD(TAG, "Handle '%s' successfully opened!", nvs_namespace);
+    // esp_ret = get_nvs_handle(nvs_namespace, NVS_READONLY, &handle);
+    // if (esp_ret != ESP_OK)
+    //     return esp_ret;
+    // ESP_LOGD(TAG, "Handle '%s' successfully opened!", nvs_namespace);
 
-    esp_ret = get_string_from_nvs(
-        handle,
-        NETWORKING_WIFI_NVS_SSID,
-        (char *)ssid,
-        NETWORKING_WIFI_SSID_MAX_LEN);
-    if (esp_ret != ESP_OK)
-        return esp_ret;
+    // esp_ret = get_string_from_nvs(
+    //     handle,
+    //     NETWORKING_WIFI_NVS_SSID,
+    //     (char *)ssid,
+    //     NETWORKING_WIFI_SSID_MAX_LEN);
+    // if (esp_ret != ESP_OK)
+    //     return esp_ret;
 
-    esp_ret = get_string_from_nvs(
-        handle,
-        NETWORKING_WIFI_NVS_PSK,
-        (char *)psk,
-        NETWORKING_WIFI_PSK_MAX_LEN);
-    if (esp_ret != ESP_OK)
-        return esp_ret;
+    // esp_ret = get_string_from_nvs(
+    //     handle,
+    //     NETWORKING_WIFI_NVS_PSK,
+    //     (char *)psk,
+    //     NETWORKING_WIFI_PSK_MAX_LEN);
+    // if (esp_ret != ESP_OK)
+    //     return esp_ret;
 
     // FIXME(mischback) This is just for temporary testing!
     //                  And no, these are not my actual credentials!
@@ -1033,8 +1034,8 @@ static esp_err_t wifi_init(char *nvs_namespace) {
         return wifi_ap_init();
     }
 
-    ESP_LOGD(TAG, "Retrieved SSID.. %s", nvs_sta_ssid);
-    ESP_LOGD(TAG, "Retrieved PSK... %s", nvs_sta_psk);
+    ESP_LOGD(TAG, "Retrieved SSID.. '%s'", nvs_sta_ssid);
+    ESP_LOGD(TAG, "Retrieved PSK... '%s'", nvs_sta_psk);
 
     esp_ret = wifi_sta_init((char **)&nvs_sta_ssid, (char **)&nvs_sta_psk);
     if (esp_ret != ESP_OK) {
@@ -1329,7 +1330,7 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk) {
     }
     state->mode = NETWORKING_MODE_WIFI_STA;
 
-    esp_ret = esp_wifi_set_config(WIFI_IF_AP, &sta_config);
+    esp_ret = esp_wifi_set_config(WIFI_IF_STA, &sta_config);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not set wifi config for station mode!");
         ESP_LOGD(
