@@ -303,9 +303,9 @@ static void networking(void *task_parameters) {
                 xTimerStart(state->ap_shutdown_timer, (TickType_t) 0);
                 ESP_LOGD(TAG, "Access point's shutdown timer started!");
 
-                // TODO(mischback) Emit an component-specific event to inform
-                //                 other components, that the AP is ready (e.g.
-                //                 the ``min_httpd``)
+                networking_emit_event(NETWORKING_EVENT_READY, NULL);
+                // TODO(mischback) Should the *status event* should be emitted
+                //                 here automatically?
 
                 // TODO(mischback) Determine which of access point-specific
                 //                 information should be included in the
