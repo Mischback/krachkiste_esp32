@@ -101,7 +101,6 @@ void app_main(void) {
         1);
 
     // Start ``min_httpd`` as soon as the network becomes ready!
-    // FIXME(mischback) The code only covers WiFi AP mode!
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
         NETWORKING_EVENTS,
         NETWORKING_EVENT_READY,
@@ -109,10 +108,9 @@ void app_main(void) {
         NULL,
         NULL));
     // Stop ``min_httpd`` when the network link goes down!
-    // FIXME(mischback) The code only covers WiFi AP mode!
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        WIFI_EVENT,
-        WIFI_EVENT_AP_STOP,
+        NETWORKING_EVENTS,
+        NETWORKING_EVENT_UNAVAILABLE,
         &min_httpd_external_event_handler_stop,
         NULL,
         NULL));

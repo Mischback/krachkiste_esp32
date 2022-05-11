@@ -281,6 +281,11 @@ static void networking(void *task_parameters) {
             switch (notify_value) {
             case NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP:
                 ESP_LOGD(TAG, "CMD: NETWORKING_STOP");
+                /* Emit the corresponding event *before* actually shutting down
+                 * the networking. This might give other components some time
+                 * to handle the unavailability of networking.
+                 */
+                networking_emit_event(NETWORKING_EVENT_UNAVAILABLE, NULL);
                 networking_deinit();
                 break;
             case NETWORKING_NOTIFICATION_CMD_WIFI_START:
@@ -304,8 +309,8 @@ static void networking(void *task_parameters) {
                 ESP_LOGD(TAG, "Access point's shutdown timer started!");
 
                 networking_emit_event(NETWORKING_EVENT_READY, NULL);
-                // TODO(mischback) Should the *status event* should be emitted
-                //                 here automatically?
+                // TODO(mischback) Should the *status event* be emitted here
+                //                 automatically?
 
                 // TODO(mischback) Determine which of access point-specific
                 //                 information should be included in the
@@ -718,6 +723,10 @@ static esp_err_t networking_deinit(void) {
  *                   function returned, because **ESP-IDF**'s event loop will
  *                   manage a copy of this data, once the event is posted to the
  *                   loop.
+ *
+ * @todo Should ``time_to_wait`` be configurable? Are there events that **MUST**
+ *       be place in the event loop while having other events that may be
+ *       discarded?
  */
 static void networking_emit_event(int32_t event_id, void *event_data) {
     ESP_LOGV(TAG, "networking_emit_event()");
