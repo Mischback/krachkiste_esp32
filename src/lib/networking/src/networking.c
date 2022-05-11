@@ -178,10 +178,6 @@ typedef enum {
     NETWORKING_STATUS_BUSY,
 } networking_status;
 
-struct medium_state_wifi_ap {
-    TimerHandle_t       ap_shutdown_timer;
-};
-
 /**
  * A component-specific struct to keep track of the internal state.
  *
@@ -198,7 +194,18 @@ struct networking_state {
     TaskHandle_t        task;
     esp_event_handler_t ip_event_handler;
     esp_event_handler_t medium_event_handler;
-    struct medium_state_wifi_ap *medium_state;
+    void                *medium_state;
+};
+
+/**
+ * Medium/mode specific state information for access point mode.
+ *
+ * The access point is kept alive for a given timespan. This is controlled by
+ * a ``freeRTOS`` timer. A reference to this timer must be kept while in access
+ * point mode.
+ */
+struct medium_state_wifi_ap {
+    TimerHandle_t       ap_shutdown_timer;
 };
 
 
@@ -307,7 +314,7 @@ static void networking(void *task_parameters) {
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_START");
                 state->status = NETWORKING_STATUS_IDLE;
                 xTimerStart(
-                    (state->medium_state)->ap_shutdown_timer,
+                    ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer,  // NOLINT(whitespace/line_length)
                     (TickType_t) 0);
                 ESP_LOGD(TAG, "Access point's shutdown timer started!");
 
@@ -331,9 +338,10 @@ static void networking(void *task_parameters) {
                 state->status = NETWORKING_STATUS_BUSY;
 
                 if (xTimerIsTimerActive(
-                    (state->medium_state)->ap_shutdown_timer) == pdTRUE) {
+                    ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer)  // NOLINT(whitespace/line_length)
+                    == pdTRUE) {
                     xTimerStop(
-                        (state->medium_state)->ap_shutdown_timer,
+                        ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer,  // NOLINT(whitespace/line_length)
                         (TickType_t) 0);
                     ESP_LOGD(TAG, "Access point's shutdown timer stopped!");
                 }
@@ -350,9 +358,10 @@ static void networking(void *task_parameters) {
                     state->status = NETWORKING_STATUS_IDLE;
 
                     if (xTimerIsTimerActive(
-                        (state->medium_state)->ap_shutdown_timer) == pdFALSE) {
+                        ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer)  // NOLINT(whitespace/line_length)
+                        == pdFALSE) {
                         xTimerStart(
-                            (state->medium_state)->ap_shutdown_timer,
+                            ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer,  // NOLINT(whitespace/line_length)
                             (TickType_t) 0);
                         ESP_LOGD(
                             TAG,
@@ -958,7 +967,7 @@ static esp_err_t get_wifi_config_from_nvs(
     // strcpy((char *)ssid, "WiFi_SSID");
     // strcpy((char *)psk, "WiFi_PSK");
 
-    return ESP_OK;
+    return ESP_FAIL;
 }
 
 /**
@@ -1148,12 +1157,13 @@ static esp_err_t wifi_ap_init(void) {
     state->medium_state = calloc(1, sizeof(struct medium_state_wifi_ap));
 
     /* Create the timer to eventually shut down the access point. */
-    (state->medium_state)->ap_shutdown_timer = xTimerCreate(
-        NULL,
-        pdMS_TO_TICKS(NETWORKING_WIFI_AP_LIFETIME),
-        pdFALSE,
-        (void *) 0,
-        wifi_ap_timed_shutdown);
+    ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer =
+        xTimerCreate(
+            NULL,
+            pdMS_TO_TICKS(NETWORKING_WIFI_AP_LIFETIME),
+            pdFALSE,
+            (void *) 0,
+            wifi_ap_timed_shutdown);
 
     /* Setup the configuration for access point mode.
      * These values are based off project-specific settings, that may be
