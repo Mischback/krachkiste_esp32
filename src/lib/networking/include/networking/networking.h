@@ -141,4 +141,31 @@ esp_err_t networking_start(char* nvs_namespace);
  */
 esp_err_t networking_stop(void);
 
+/**
+ * Handle the event, that the http server is ready to accept further
+ * *URI handlers*.
+ *
+ * This is a specific handler, that does not actually parse or verify the
+ * event, that triggered its execution.
+ *
+ * This requires the *calling code*, or more specifically, the code that
+ * connects this handler with events, to specifically select the events, that
+ * should make this component register its specific *URI handlers*.
+ *
+ * @param arg        Generic arguments.
+ * @param event_base ``esp_event``'s ``EVENT_BASE``. Every event is specified
+ *                   by the ``EVENT_BASE`` and its ``EVENT_ID``.
+ * @param event_id   `esp_event``'s ``EVENT_ID``. Every event is specified by
+ *                   the ``EVENT_BASE`` and its ``EVENT_ID``.
+ * @param event_data Events might provide a pointer to additional,
+ *                   event-related data. This handler assumes, that the
+ *                   provided ``arg`` is an actual ``http_handle_t*`` to the
+ *                   http server instance.
+ */
+void networking_web_attach_handlers(
+    void* arg,
+    esp_event_base_t event_base,
+    int32_t event_id,
+    void* event_data);
+
 #endif  // SRC_LIB_NETWORKING_INCLUDE_NETWORKING_NETWORKING_H_
