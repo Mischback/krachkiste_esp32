@@ -1,4 +1,5 @@
 {
+  "C_Cpp.autoAddFileAssociations": false,
   "C_Cpp.intelliSenseEngine": "Tag Parser",
   "idf.espIdfPath": "${env:HOME}/esp/esp-idf",
   "idf.pythonBinPath": "${env:HOME}/.espressif/python_env/idf4.4_py3.9_env/bin/python",
@@ -9,6 +10,8 @@
   "idf.port": "/dev/ttyUSB0",
   "idf.flashType": "UART",
   "idf.adapterTargetName": "esp32",
+  "idf.showOnboardingOnInit": false,
+  "idf.telemetry": false,
   "files.associations": {
     "sdkconfig": "kconfig",
     "sdkconfig.*": "kconfig"
