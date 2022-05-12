@@ -116,12 +116,12 @@ void app_main(void) {
         NULL));
     // Register *URI handlers* of ``networking`` component when ``min_httpd``
     // is ready!
-    // ESP_ERROR_CHECK(esp_event_handler_instance_register(
-    //     MIN_HTTPD_EVENTS,
-    //     MIN_HTTPD_READY,
-    //     &networking_web_attach_handlers,
-    //     NULL,
-    //     NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        MIN_HTTPD_EVENTS,
+        MIN_HTTPD_READY,
+        &networking_web_attach_handlers,
+        NULL,
+        NULL));
 
     networking_start(PROJECT_NVS_STORAGE_NAMESPACE);
 }
