@@ -269,6 +269,8 @@ static esp_err_t wifi_ap_init(void);
 static esp_err_t wifi_ap_deinit(void);
 static void wifi_ap_timed_shutdown(TimerHandle_t timer);
 static int8_t wifi_ap_get_connected_stations(void);
+static void wifi_ap_timer_start(void);
+static void wifi_ap_timer_stop(void);
 static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk);
 static esp_err_t wifi_sta_deinit(void);
 static void wifi_sta_connect(void);
@@ -301,6 +303,7 @@ static void networking(void *task_parameters) {
             switch (notify_value) {
             case NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP:
                 ESP_LOGD(TAG, "CMD: NETWORKING_STOP");
+
                 /* Emit the corresponding event *before* actually shutting down
                  * the networking. This might give other components some time
                  * to handle the unavailability of networking.
@@ -310,6 +313,7 @@ static void networking(void *task_parameters) {
                 break;
             case NETWORKING_NOTIFICATION_CMD_WIFI_START:
                 ESP_LOGD(TAG, "CMD: WIFI_START");
+
                 if (wifi_start((char *)task_parameters) != ESP_OK) {
                     ESP_LOGE(TAG, "Could not start WiFi!");
                 }
@@ -324,11 +328,9 @@ static void networking(void *task_parameters) {
                  * clients have connected yet.
                  */
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_START");
+
                 state->status = NETWORKING_STATUS_IDLE;
-                xTimerStart(
-                    ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer,  // NOLINT(whitespace/line_length)
-                    (TickType_t) 0);
-                ESP_LOGD(TAG, "Access point's shutdown timer started!");
+                wifi_ap_timer_start();
 
                 networking_emit_event(NETWORKING_EVENT_READY, NULL);
                 // TODO(mischback) Should the *status event* be emitted here
@@ -347,16 +349,9 @@ static void networking(void *task_parameters) {
                  * access point has to be kept running.
                  */
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_STACONNECTED");
-                state->status = NETWORKING_STATUS_BUSY;
 
-                if (xTimerIsTimerActive(
-                    ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer)  // NOLINT(whitespace/line_length)
-                    == pdTRUE) {
-                    xTimerStop(
-                        ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer,  // NOLINT(whitespace/line_length)
-                        (TickType_t) 0);
-                    ESP_LOGD(TAG, "Access point's shutdown timer stopped!");
-                }
+                state->status = NETWORKING_STATUS_BUSY;
+                wifi_ap_timer_stop();
 
                 // TODO(mischback) Determine which of the access point-specific
                 //                 information should be included in the
@@ -369,16 +364,10 @@ static void networking(void *task_parameters) {
                 if (wifi_ap_get_connected_stations() == 0) {
                     state->status = NETWORKING_STATUS_IDLE;
 
-                    if (xTimerIsTimerActive(
-                        ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer)  // NOLINT(whitespace/line_length)
-                        == pdFALSE) {
-                        xTimerStart(
-                            ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer,  // NOLINT(whitespace/line_length)
-                            (TickType_t) 0);
-                        ESP_LOGD(
-                            TAG,
-                            "No more stations connected, restarting shutdown timer!");  // NOLINT(whitespace/line_length)
-                    }
+                    ESP_LOGD(
+                        TAG,
+                        "No more stations connected, restarting shutdown timer!");  // NOLINT(whitespace/line_length)
+                    wifi_ap_timer_start();
                 }
 
                 // TODO(mischback) Determine which of the access point-specific
@@ -388,11 +377,13 @@ static void networking(void *task_parameters) {
                 break;
             case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_START:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_START");
+
                 state->status = NETWORKING_STATUS_CONNECTING;
                 wifi_sta_connect();
                 break;
             case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_CONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_CONNECTED");
+
                 state->status = NETWORKING_STATUS_READY;
                 wifi_sta_reset_connection_counter();
                 networking_emit_event(NETWORKING_EVENT_READY, NULL);
@@ -1345,6 +1336,62 @@ static int8_t wifi_ap_get_connected_stations(void) {
     ESP_LOGD(TAG, "Connected stations: %d", tmp.num);
 
     return tmp.num;
+}
+
+/**
+ * Start the access point's shutdown timer.
+ *
+ * The timer is created in ::wifi_ap_init and should be available here. There
+ * is a basic check of the presence and a log message of level ``WARNING`` is
+ * emitted, if the timer (``TimerHandle_t``) is not available.
+ */
+static void wifi_ap_timer_start(void) {
+    ESP_LOGV(TAG, "wifi_ap_timer_start()");
+
+    if (((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer == NULL) {  // NOLINT(whitespace/line_length)
+        ESP_LOGW(TAG, "The ap_shutdown_timer is not available!");
+        return;  // fail silently
+    }
+
+    if (xTimerIsTimerActive(
+        ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer)  // NOLINT(whitespace/line_length)
+        == pdTRUE) {
+        ESP_LOGW(TAG, "Access point's shutdown timer is already running!");
+        return;  // fail silently
+    }
+
+    xTimerStart(
+        ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer,  // NOLINT(whitespace/line_length)
+        (TickType_t) 0);
+    ESP_LOGD(TAG, "Access point's shutdown timer started!");
+}
+
+/**
+ * Stop the access point's shutdown timer.
+ *
+ * The timer is created in ::wifi_ap_init and should be available here. There
+ * is a basic check of the presence and a log message of level ``WARNING`` is
+ * emitted, if the timer (``TimerHandle_t``) is not available.
+ */
+static void wifi_ap_timer_stop(void) {
+    ESP_LOGV(TAG, "wifi_ap_timer_stop()");
+
+    if (((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer == NULL) {  // NOLINT(whitespace/line_length)
+        ESP_LOGW(TAG, "The ap_shutdown_timer is not available!");
+        return;  // fail silently
+    }
+
+    if (xTimerIsTimerActive(
+        ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer)  // NOLINT(whitespace/line_length)
+        != pdTRUE) {
+        ESP_LOGW(TAG, "Access point's shutdown timer is not running!");
+        return;  // fail silently
+    }
+
+    xTimerStop(
+        ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer,  // NOLINT(whitespace/line_length)
+        (TickType_t) 0);
+    ESP_LOGD(TAG, "Access point's shutdown timer stopped!");
 }
 
 /**
