@@ -203,7 +203,7 @@ static void networking(void *task_parameters) {
                  */
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_START");
 
-                networking_state_set_status_idle();
+                mnet32_state_set_status_idle();
                 networking_wifi_ap_timer_start();
 
                 networking_emit_event(MNET32_EVENT_READY, NULL);
@@ -224,7 +224,7 @@ static void networking(void *task_parameters) {
                  */
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_STACONNECTED");
 
-                networking_state_set_status_busy();
+                mnet32_state_set_status_busy();
                 networking_wifi_ap_timer_stop();
 
                 // TODO(mischback) Determine which of the access point-specific
@@ -236,7 +236,7 @@ static void networking(void *task_parameters) {
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_STADISCONNECTED");
 
                 if (networking_wifi_ap_get_connected_stations() == 0) {
-                    networking_state_set_status_idle();
+                    mnet32_state_set_status_idle();
 
                     ESP_LOGD(
                         TAG,
@@ -252,13 +252,13 @@ static void networking(void *task_parameters) {
             case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_START:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_START");
 
-                networking_state_set_status_connecting();
+                mnet32_state_set_status_connecting();
                 networking_wifi_sta_connect();
                 break;
             case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_CONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_CONNECTED");
 
-                networking_state_set_status_ready();
+                mnet32_state_set_status_ready();
                 networking_wifi_sta_reset_connection_counter();
                 networking_emit_event(MNET32_EVENT_READY, NULL);
                 // TODO(mischback) Should the *status event* be emitted here
@@ -456,7 +456,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
     ESP_LOGV(TAG, "networking_init()");
 
     /* Check if this a recurrent call to the function. */
-    if (networking_state_is_initialized()) {
+    if (mnet32_state_is_initialized()) {
         ESP_LOGE(TAG, "Internal state already initialized!");
         return ESP_FAIL;
     }
@@ -480,7 +480,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
     }
 
     /* Initialize internal state information */
-    networking_state_init();
+    mnet32_state_init();
 
     /* Register IP_EVENT event handler.
      * These events are required for any *medium*, so the handler can already
@@ -492,7 +492,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
         ESP_EVENT_ANY_ID,
         mnet32_event_handler,
         NULL,
-        (void **)networking_state_get_ip_event_handler_ptr());
+        (void **)mnet32_state_get_ip_event_handler_ptr());
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not attach IP_EVENT event handler!");
         ESP_LOGD(
@@ -557,20 +557,20 @@ static esp_err_t networking_init(char* nvs_namespace) {
 static esp_err_t networking_deinit(void) {
     ESP_LOGV(TAG, "networking_deinit()");
 
-    if (!networking_state_is_initialized()) {
+    if (!mnet32_state_is_initialized()) {
         ESP_LOGE(TAG, "No state information available!");
         return ESP_FAIL;
     }
 
     esp_err_t esp_ret;
-    if (networking_state_is_medium_wireless())
+    if (mnet32_state_is_medium_wireless())
         esp_ret = networking_wifi_deinit();
 
     /* Unregister the IP_EVENT event handler. */
     esp_ret = esp_event_handler_instance_unregister(
         IP_EVENT,
         ESP_EVENT_ANY_ID,
-        networking_state_get_ip_event_handler());
+        mnet32_state_get_ip_event_handler());
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not unregister IP_EVENT event handler!");
         ESP_LOGD(
@@ -582,11 +582,11 @@ static esp_err_t networking_deinit(void) {
     }
 
     /* Stop and remove the dedicated networking task */
-    if (networking_state_get_task_handle() != NULL)
-        vTaskDelete(networking_state_get_task_handle());
+    if (mnet32_state_get_task_handle() != NULL)
+        vTaskDelete(mnet32_state_get_task_handle());
 
     /* Free internal state memory. */
-    networking_state_destroy();
+    mnet32_state_destroy();
 
     /* De-initialize the network stack.
      * This is actually not supported by **ESP-IDF**, but included here for
@@ -677,7 +677,7 @@ static void networking_notify(uint32_t notification) {
     ESP_LOGV(TAG, "networking_notify()");
 
     xTaskNotifyIndexed(
-        networking_state_get_task_handle(),
+        mnet32_state_get_task_handle(),
         NETWORKING_TASK_NOTIFICATION_INDEX,
         notification,
         eSetValueWithOverwrite);
