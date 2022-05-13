@@ -58,7 +58,7 @@
 
 /* ESP-IDF's wifi library.
  * The header has to be included here, because the component uses one single
- * event handler function (::networking_event_handler), thus, the specific
+ * event handler function (::mnet32_event_handler), thus, the specific
  * WiFi-related events must be known.
  */
 #include "esp_wifi.h"
@@ -194,7 +194,7 @@ static void networking(void *task_parameters) {
                 break;
             case NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START:
                 /* Handle ``WIFI_EVENT_AP_START`` (received from
-                 * ::networking_event_handler ).
+                 * ::mnet32_event_handler ).
                  * The *chain* of ::networking_wifi_start, ::wifi_init and ::networking_wifi_ap_init
                  * has set ``state->medium`` and ``state->mode``, so with this
                  * event the access point is assumed to be ready, resulting in
@@ -298,12 +298,12 @@ static void networking(void *task_parameters) {
     vTaskDelete(NULL);
 }
 
-void networking_event_handler(
+void mnet32_event_handler(
     void* arg,
     esp_event_base_t event_base,
     int32_t event_id,
     void* event_data) {
-    ESP_LOGV(TAG, "networking_event_handler()");
+    ESP_LOGV(TAG, "mnet32_event_handler()");
 
     if (event_base == WIFI_EVENT) {
         /* All WIFI_EVENT event_ids
@@ -434,7 +434,7 @@ void networking_event_handler(
  * Initialize the component.
  *
  * Initialization process includes initialization of **ESP-IDF**'s networking
- * stack (``esp_netif``), registering of ::networking_event_handler for
+ * stack (``esp_netif``), registering of ::mnet32_event_handler for
  * ``IP_EVENT`` occurences and allocating and initializing the internal ::state
  * variable.
  *
@@ -490,7 +490,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
     esp_ret = esp_event_handler_instance_register(
         IP_EVENT,
         ESP_EVENT_ANY_ID,
-        networking_event_handler,
+        mnet32_event_handler,
         NULL,
         (void **)networking_state_get_ip_event_handler_ptr());
     if (esp_ret != ESP_OK) {
@@ -546,7 +546,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
  * Basically this function destroys all of the component's setup, reversing
  * anything done by ::networking_init .
  *
- * This includes unregistering the ::networking_event_handler for ``IP_EVENT``
+ * This includes unregistering the ::mnet32_event_handler for ``IP_EVENT``
  * occurences, deleting the internal task, freeing memory and actually
  * deinitializing **ESP-IDF**'s networking stack (though this is - as of now -
  * a no-op).

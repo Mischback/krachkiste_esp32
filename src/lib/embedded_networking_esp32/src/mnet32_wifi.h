@@ -27,7 +27,7 @@ int8_t networking_wifi_ap_get_connected_stations(void);
  * @return esp_err_t ``ESP_OK`` on success, ``ESP_FAIL`` on failure.
  *                   On ``ESP_OK`` the calling code may assume that the access
  *                   point is successfully started. Subsequent actions are
- *                   triggered by ::networking_event_handler and performed by
+ *                   triggered by ::mnet32_event_handler and performed by
  *                   ::networking .
  */
 esp_err_t networking_wifi_ap_init(void);
@@ -54,7 +54,7 @@ void networking_wifi_ap_timer_stop(void);
  * WiFi-specific deinitialization.
  *
  * Clean up for WiFi-related stuff, including deinitialization of the
- * ``netif``, unregistering ::networking_event_handler from ``WIFI_EVENT``
+ * ``netif``, unregistering ::mnet32_event_handler from ``WIFI_EVENT``
  * and resetting ``state->medium`` to ``NETWORKING_MEDIUM_UNSPECIFIED``.
  *
  * The function calls ::networking_wifi_sta_deinit or ::wifi_ap_deinit, depending on the
@@ -85,7 +85,7 @@ void networking_wifi_sta_connect(void);
  *
  * This function is meant to be called by ::networking_wifi_deinit and performs only the
  * specific deinitialization steps of *station mode*, e.g. it does **not**
- * unregister ::networking_event_handler from ``WIFI_EVENT``.
+ * unregister ::mnet32_event_handler from ``WIFI_EVENT``.
  *
  * The function sets ``state->mode`` to ``NETWORKING_MODE_NOT_APPLICABLE`` and
  * ``state->interface`` to ``NULL``.

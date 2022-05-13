@@ -125,7 +125,7 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk);
  *
  * Perform the required steps to use the controller's WiFi interface. This
  * includes the initialization of the WiFi interface, registering of
- * ::networking_event_handler for ``WIFI_EVENT`` occurences and reading an
+ * ::mnet32_event_handler for ``WIFI_EVENT`` occurences and reading an
  * optionally available configuration (for station mode) from the non-volatile
  * storage.
  *
@@ -179,7 +179,7 @@ static esp_err_t wifi_init(char *nvs_namespace) {
     esp_ret = esp_event_handler_instance_register(
         WIFI_EVENT,
         ESP_EVENT_ANY_ID,
-        networking_event_handler,
+        mnet32_event_handler,
         NULL,
         (void **)networking_state_get_medium_event_handler_ptr());
     if (esp_ret != ESP_OK) {
@@ -222,7 +222,7 @@ static esp_err_t wifi_init(char *nvs_namespace) {
     }
 
     /* At this point, the WiFi is started in station mode. All further
-     * actions will be triggered by ::networking_event_handler
+     * actions will be triggered by ::mnet32_event_handler
      */
     return ESP_OK;
 }
@@ -364,7 +364,7 @@ esp_err_t networking_wifi_ap_init(void) {
  *
  * This function is meant to be called by ::networking_wifi_deinit and performs only the
  * specific deinitialization steps of *access point mode*, e.g. it does **not**
- * unregister ::networking_event_handler from ``WIFI_EVENT``.
+ * unregister ::mnet32_event_handler from ``WIFI_EVENT``.
  *
  * The function sets ``state->mode`` to ``NETWORKING_MODE_NOT_APPLICABLE`` and
  * ``state->interface`` to ``NULL``.
@@ -546,7 +546,7 @@ static esp_err_t wifi_get_config_from_nvs(
  * @return esp_err_t ``ESP_OK`` on success, ``ESP_FAIL`` on failure.
  *                   On ``ESP_OK`` the calling code may assume that the access
  *                   point is successfully started. Subsequent actions are
- *                   triggered by ::networking_event_handler and performed by
+ *                   triggered by ::mnet32_event_handler and performed by
  *                   ::networking .
  */
 static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk) {
