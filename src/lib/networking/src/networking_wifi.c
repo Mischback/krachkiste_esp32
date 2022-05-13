@@ -22,6 +22,7 @@
 
 /* Other headers of the component. */
 #include "networking/networking.h"  // The public header
+#include "networking_state.h"       // manage the internal state
 
 /* This is ESP-IDF's event library. */
 #include "esp_event.h"
@@ -149,7 +150,7 @@ static esp_err_t wifi_init(char *nvs_namespace) {
     ESP_LOGV(TAG, "wifi_init()");
 
     /* Initialization has only be performed once */
-    if (state->mode != NETWORKING_MODE_NOT_APPLICABLE) {
+    if (networking_state_is_mode_set()) {
         ESP_LOGW(TAG, "WiFi seems to be already initialized!");
         return ESP_OK;
     }
@@ -168,7 +169,7 @@ static esp_err_t wifi_init(char *nvs_namespace) {
             esp_ret);
         return esp_ret;
     }
-    state->medium = NETWORKING_MEDIUM_WIRELESS;
+    networking_state_set_medium_wireless();
 
     /* Register WIFI_EVENT event handler.
      * These events are required for any *mode*, so the handler can already
@@ -179,7 +180,7 @@ static esp_err_t wifi_init(char *nvs_namespace) {
         ESP_EVENT_ANY_ID,
         networking_event_handler,
         NULL,
-        (void **)&(state->medium_event_handler));
+        (void **)networking_state_get_medium_event_handler_ptr());
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not attach WIFI_EVENT event handler!");
         ESP_LOGD(
@@ -232,7 +233,7 @@ esp_err_t wifi_deinit(void) {
     esp_err_t esp_ret = esp_event_handler_instance_unregister(
         WIFI_EVENT,
         ESP_EVENT_ANY_ID,
-        state->medium_event_handler);
+        networking_state_get_medium_event_handler());
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not unregister WIFI_EVENT event handler!");
         ESP_LOGD(
@@ -243,10 +244,10 @@ esp_err_t wifi_deinit(void) {
         ESP_LOGW(TAG, "Continuing with de-initialization...");
     }
 
-    if (state->mode == NETWORKING_MODE_WIFI_AP)
+    if (networking_state_is_mode_ap())
         wifi_ap_deinit();
 
-    if (state->mode == NETWORKING_MODE_WIFI_STA)
+    if (networking_state_is_mode_sta())
         wifi_sta_deinit();
 
     esp_ret = esp_wifi_deinit();
@@ -258,7 +259,7 @@ esp_err_t wifi_deinit(void) {
             esp_err_to_name(esp_ret),
             esp_ret);
     }
-    state->medium = NETWORKING_MEDIUM_UNSPECIFIED;
+    networking_state_clear_medium();
 
     return ESP_OK;
 }
@@ -267,17 +268,17 @@ esp_err_t wifi_ap_init(void) {
     ESP_LOGV(TAG, "wifi_ap_init()");
 
     /* Create a network interface for access point mode. */
-    state->interface = esp_netif_create_default_wifi_ap();
-    if (state->interface == NULL) {
+    networking_state_set_interface(esp_netif_create_default_wifi_ap());
+    if (!networking_state_is_interface_set()) {
         ESP_LOGE(TAG, "Could not create network interface for AP!");
         return ESP_FAIL;
     }
 
     /* Allocate memory for the specific state information. */
-    state->medium_state = calloc(1, sizeof(struct medium_state_wifi_ap));
+    networking_state_medium_state_init(sizeof(struct medium_state_wifi_ap));
 
     /* Create the timer to eventually shut down the access point. */
-    ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer =
+    ((struct medium_state_wifi_ap *)networking_state_get_medium_state())->ap_shutdown_timer =  // NOLINT(whitespace/line_length)
         xTimerCreate(
             NULL,
             pdMS_TO_TICKS(NETWORKING_WIFI_AP_LIFETIME),
@@ -329,7 +330,7 @@ esp_err_t wifi_ap_init(void) {
             esp_ret);
         return esp_ret;
     }
-    state->mode = NETWORKING_MODE_WIFI_AP;
+    networking_state_set_mode_ap();
 
     esp_ret = esp_wifi_set_config(WIFI_IF_AP, &ap_config);
     if (esp_ret != ESP_OK) {
@@ -374,9 +375,9 @@ esp_err_t wifi_ap_init(void) {
 static esp_err_t wifi_ap_deinit(void) {
     ESP_LOGV(TAG, "wifi_ap_deinit()");
 
-    if (state->mode == NETWORKING_MODE_NOT_APPLICABLE) {
+    if (!networking_state_is_mode_set()) {
         ESP_LOGE(TAG, "WiFi is not initialized!");
-        ESP_LOGD(TAG, "Current WiFi mode is %d", state->mode);
+        ESP_LOGD(TAG, "Current WiFi mode is %d", networking_state_get_mode());
         ESP_LOGW(TAG, "Continuing with de-initialization...");
     }
 
@@ -391,15 +392,13 @@ static esp_err_t wifi_ap_deinit(void) {
         ESP_LOGW(TAG, "Continuing with de-initialization...");
     }
 
-    esp_netif_destroy_default_wifi(state->interface);
-    state->interface = NULL;
+    esp_netif_destroy_default_wifi(networking_state_get_interface());
+    networking_state_clear_interface();
 
-    if (state->medium_state != NULL) {
-        free(state->medium_state);
-        state->medium_state = NULL;
-    }
+    if (networking_state_is_medium_state_initialized())
+        networking_state_medium_state_destroy();
 
-    state->mode = NETWORKING_MODE_NOT_APPLICABLE;
+    networking_state_clear_mode();
 
     return ESP_OK;
 }
@@ -407,7 +406,7 @@ static esp_err_t wifi_ap_deinit(void) {
 static void wifi_ap_timed_shutdown(TimerHandle_t timer) {
     ESP_LOGV(TAG, "wifi_ap_timed_shutdown()");
 
-    if (state->status != NETWORKING_STATUS_IDLE) {
+    if (!networking_state_is_status_idle()) {
         ESP_LOGW(TAG, "Access Point is not idle! Skipping shutdown!");
         return;
     }
@@ -435,42 +434,38 @@ int8_t wifi_ap_get_connected_stations(void) {
 void wifi_ap_timer_start(void) {
     ESP_LOGV(TAG, "wifi_ap_timer_start()");
 
-    if (((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer == NULL) {  // NOLINT(whitespace/line_length)
+    struct medium_state_wifi_ap *tmp = networking_state_get_medium_state();
+
+    if (tmp->ap_shutdown_timer == NULL) {
         ESP_LOGW(TAG, "The ap_shutdown_timer is not available!");
         return;  // fail silently
     }
 
-    if (xTimerIsTimerActive(
-        ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer)  // NOLINT(whitespace/line_length)
-        == pdTRUE) {
+    if (xTimerIsTimerActive(tmp->ap_shutdown_timer) == pdTRUE) {
         ESP_LOGW(TAG, "Access point's shutdown timer is already running!");
         return;  // fail silently
     }
 
-    xTimerStart(
-        ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer,  // NOLINT(whitespace/line_length)
-        (TickType_t) 0);
+    xTimerStart(tmp->ap_shutdown_timer, (TickType_t) 0);
     ESP_LOGD(TAG, "Access point's shutdown timer started!");
 }
 
 void wifi_ap_timer_stop(void) {
     ESP_LOGV(TAG, "wifi_ap_timer_stop()");
 
-    if (((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer == NULL) {  // NOLINT(whitespace/line_length)
+    struct medium_state_wifi_ap *tmp = networking_state_get_medium_state();
+
+    if (tmp->ap_shutdown_timer == NULL) {
         ESP_LOGW(TAG, "The ap_shutdown_timer is not available!");
         return;  // fail silently
     }
 
-    if (xTimerIsTimerActive(
-        ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer)  // NOLINT(whitespace/line_length)
-        != pdTRUE) {
+    if (xTimerIsTimerActive(tmp->ap_shutdown_timer) != pdTRUE) {
         ESP_LOGW(TAG, "Access point's shutdown timer is not running!");
         return;  // fail silently
     }
 
-    xTimerStop(
-        ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer,  // NOLINT(whitespace/line_length)
-        (TickType_t) 0);
+    xTimerStop(tmp->ap_shutdown_timer, (TickType_t) 0);
     ESP_LOGD(TAG, "Access point's shutdown timer stopped!");
 }
 
@@ -557,14 +552,14 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk) {
     ESP_LOGV(TAG, "wifi_sta_init()");
 
     /* Create a network interface for Access Point mode. */
-    state->interface = esp_netif_create_default_wifi_sta();
-    if (state->interface == NULL) {
+    networking_state_set_interface(esp_netif_create_default_wifi_sta());
+    if (!networking_state_is_interface_set()) {
         ESP_LOGE(TAG, "Could not create network interface for station mode!");
         return ESP_FAIL;
     }
 
     /* Allocate memory for the specific state information. */
-    state->medium_state = calloc(1, sizeof(struct medium_state_wifi_sta));
+    networking_state_medium_state_init(sizeof(struct medium_state_wifi_sta));
     wifi_sta_reset_connection_counter();
 
     /* Setup the configuration for station mode.
@@ -604,7 +599,7 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk) {
             esp_ret);
         return esp_ret;
     }
-    state->mode = NETWORKING_MODE_WIFI_STA;
+    networking_state_set_mode_sta();
 
     esp_ret = esp_wifi_set_config(WIFI_IF_STA, &sta_config);
     if (esp_ret != ESP_OK) {
@@ -633,9 +628,9 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk) {
 esp_err_t wifi_sta_deinit(void) {
     ESP_LOGV(TAG, "wifi_sta_deinit()");
 
-    if (state->mode == NETWORKING_MODE_NOT_APPLICABLE) {
+    if (!networking_state_is_mode_set()) {
         ESP_LOGE(TAG, "WiFi is not initialized!");
-        ESP_LOGD(TAG, "Current WiFi mode is %d", state->mode);
+        ESP_LOGD(TAG, "Current WiFi mode is %d", networking_state_get_mode());
         ESP_LOGW(TAG, "Continuing with de-initialization...");
     }
 
@@ -650,10 +645,13 @@ esp_err_t wifi_sta_deinit(void) {
         ESP_LOGW(TAG, "Continuing with de-initialization...");
     }
 
-    esp_netif_destroy_default_wifi(state->interface);
-    state->interface = NULL;
+    esp_netif_destroy_default_wifi(networking_state_get_interface());
+    networking_state_clear_interface();
 
-    state->mode = NETWORKING_MODE_NOT_APPLICABLE;
+    if (networking_state_is_medium_state_initialized())
+        networking_state_medium_state_destroy();
+
+    networking_state_clear_mode();
 
     return ESP_OK;
 }
@@ -661,7 +659,7 @@ esp_err_t wifi_sta_deinit(void) {
 void wifi_sta_connect(void) {
     ESP_LOGV(TAG, "wifi_sta_connect()");
 
-    ((struct medium_state_wifi_sta *)(state->medium_state))->num_connection_attempts++;  // NOLINT(whitespace/line_length)
+    ((struct medium_state_wifi_sta *)networking_state_get_medium_state())->num_connection_attempts++;  // NOLINT(whitespace/line_length)
 
     esp_err_t esp_ret = esp_wifi_connect();
     if (esp_ret != ESP_OK) {
@@ -675,11 +673,11 @@ void wifi_sta_connect(void) {
 }
 
 int8_t wifi_sta_get_num_connection_attempts(void) {
-    return ((struct medium_state_wifi_sta *)(state->medium_state))->num_connection_attempts;  // NOLINT(whitespace/line_length)
+    return ((struct medium_state_wifi_sta *)networking_state_get_medium_state())->num_connection_attempts;  // NOLINT(whitespace/line_length)
 }
 
 void wifi_sta_reset_connection_counter(void) {
-    ((struct medium_state_wifi_sta *)(state->medium_state))->num_connection_attempts = 0;  // NOLINT(whitespace/line_length)
+    ((struct medium_state_wifi_sta *)networking_state_get_medium_state())->num_connection_attempts = 0;  // NOLINT(whitespace/line_length)
 }
 
 esp_err_t wifi_start(char *nvs_namespace) {

@@ -31,7 +31,8 @@
 #include <string.h>
 
 /* Other headers of the component. */
-#include "networking_wifi.h"  // WiFi-related functions
+#include "networking_state.h"  // manage the internal state
+#include "networking_wifi.h"   // WiFi-related functions
 
 /* This is ESP-IDF's error handling library.
  * - defines the **type** ``esp_err_t``
@@ -119,71 +120,6 @@ typedef enum {
     NETWORKING_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED,
 } networking_notification;
 
-/**
- * Specify the actual connection medium.
- *
- * This might be a wired connection (``NETWORKING_MEDIUM_ETHERNET``) or a
- * wireless connection (``NETWORKING_MEDIUM_WIRELESS``) when the component is
- * actually up and running.
- *
- * This is tracked in the component's ::state.
- */
-typedef enum {
-    NETWORKING_MEDIUM_UNSPECIFIED,
-    NETWORKING_MEDIUM_ETHERNET,
-    NETWORKING_MEDIUM_WIRELESS,
-} networking_medium;
-
-/**
- * Specify the mode of the wireless connection.
- *
- * This is only applicable for ``NETWORKING_MEDIUM_WIRELESS`` and will be set
- * to ``NETWORKING_MODE_NOT_APPLICABLE`` on initialization or if the medium
- * is set to ``NETWORKING_MEDIUM_ETHERNET``.
- *
- * This is tracked in the component's ::state.
- */
-typedef enum {
-    NETWORKING_MODE_NOT_APPLICABLE,
-    NETWORKING_MODE_WIFI_AP,
-    NETWORKING_MODE_WIFI_STA,
-} networking_mode;
-
-/**
- * Specify the actual status of the connection.
- *
- * The connection status must be evaluated in the context of its ``medium`` -
- * and in case of a wireless connection - its ``mode``.
- *
- * This is tracked in the component's ::state.
- */
-typedef enum {
-    NETWORKING_STATUS_DOWN,
-    NETWORKING_STATUS_READY,
-    NETWORKING_STATUS_CONNECTING,
-    NETWORKING_STATUS_IDLE,
-    NETWORKING_STATUS_BUSY,
-} networking_status;
-
-/**
- * A component-specific struct to keep track of the internal state.
- *
- * It contains several fields that track the component's internal state aswell
- * as fields to keep track of the actual *interface*
- * (``esp_netif_t *interface``), the dedicated networking *task*
- * (``TaskHandle_t task``) and the required event handler instances.
- */
-struct networking_state {
-    networking_medium   medium;
-    networking_mode     mode;
-    networking_status   status;
-    esp_netif_t         *interface;
-    TaskHandle_t        task;
-    esp_event_handler_t ip_event_handler;
-    esp_event_handler_t medium_event_handler;
-    void                *medium_state;
-};
-
 
 /* ***** VARIABLES ********************************************************* */
 
@@ -194,11 +130,6 @@ struct networking_state {
  * [its API documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html#how-to-use-this-library).
  */
 static const char* TAG = "networking";
-
-/**
- * Track the internal state of the component.
- */
-static struct networking_state *state = NULL;
 
 
 /* ***** PROTOTYPES ******************************************************** */
@@ -276,7 +207,7 @@ static void networking(void *task_parameters) {
                  */
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_START");
 
-                state->status = NETWORKING_STATUS_IDLE;
+                networking_state_set_status_idle();
                 wifi_ap_timer_start();
 
                 networking_emit_event(NETWORKING_EVENT_READY, NULL);
@@ -297,7 +228,7 @@ static void networking(void *task_parameters) {
                  */
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_STACONNECTED");
 
-                state->status = NETWORKING_STATUS_BUSY;
+                networking_state_set_status_busy();
                 wifi_ap_timer_stop();
 
                 // TODO(mischback) Determine which of the access point-specific
@@ -309,7 +240,7 @@ static void networking(void *task_parameters) {
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_STADISCONNECTED");
 
                 if (wifi_ap_get_connected_stations() == 0) {
-                    state->status = NETWORKING_STATUS_IDLE;
+                    networking_state_set_status_idle();
 
                     ESP_LOGD(
                         TAG,
@@ -325,13 +256,13 @@ static void networking(void *task_parameters) {
             case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_START:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_START");
 
-                state->status = NETWORKING_STATUS_CONNECTING;
+                networking_state_set_status_connecting();
                 wifi_sta_connect();
                 break;
             case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_CONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_CONNECTED");
 
-                state->status = NETWORKING_STATUS_READY;
+                networking_state_set_status_ready();
                 wifi_sta_reset_connection_counter();
                 networking_emit_event(NETWORKING_EVENT_READY, NULL);
                 // TODO(mischback) Should the *status event* be emitted here
@@ -552,7 +483,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
     ESP_LOGV(TAG, "networking_init()");
 
     /* Check if this a recurrent call to the function. */
-    if (state != NULL) {
+    if (networking_state_is_initialized()) {
         ESP_LOGE(TAG, "Internal state already initialized!");
         return ESP_FAIL;
     }
@@ -576,10 +507,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
     }
 
     /* Initialize internal state information */
-    state = calloc(1, sizeof(*state));
-    state->medium = NETWORKING_MEDIUM_UNSPECIFIED;
-    state->mode = NETWORKING_MODE_NOT_APPLICABLE;
-    state->status = NETWORKING_STATUS_DOWN;
+    networking_state_init();
 
     /* Register IP_EVENT event handler.
      * These events are required for any *medium*, so the handler can already
@@ -591,7 +519,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
         ESP_EVENT_ANY_ID,
         networking_event_handler,
         NULL,
-        (void **)&(state->ip_event_handler));
+        networking_state_get_ip_event_handler_ptr());
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not attach IP_EVENT event handler!");
         ESP_LOGD(
@@ -618,18 +546,20 @@ static esp_err_t networking_init(char* nvs_namespace) {
             4096,
             nvs_namespace,
             NETWORKING_TASK_PRIORITY,
-            &(state->task)) != pdPASS) {
+            networking_state_get_task_handle_ptr()) != pdPASS) {
         ESP_LOGE(TAG, "Could not create task!");
         return ESP_FAIL;
     }
 
-    ESP_LOGI(TAG, "Successfully initialized networking component.");
-    ESP_LOGD(TAG, "state->medium.............. %d", state->medium);
-    ESP_LOGD(TAG, "state->mode................ %d", state->mode);
-    ESP_LOGD(TAG, "state->status.............. %d", state->status);
-    ESP_LOGD(TAG, "state->task................ %p", state->task);
-    ESP_LOGD(TAG, "state->ip_event_handler.... %p", state->ip_event_handler);
-    ESP_LOGD(TAG, "state->medium_event_handler.. %p", state->medium_event_handler);  // NOLINT(whitespace/line_length)
+    // TODO(mischback) This may be moved to networking_state.c
+    //                 Might even be part of the monitoring event payload
+    // ESP_LOGI(TAG, "Successfully initialized networking component.");
+    // ESP_LOGD(TAG, "state->medium.............. %d", state->medium);
+    // ESP_LOGD(TAG, "state->mode................ %d", state->mode);
+    // ESP_LOGD(TAG, "state->status.............. %d", state->status);
+    // ESP_LOGD(TAG, "state->task................ %p", state->task);
+    // ESP_LOGD(TAG, "state->ip_event_handler.... %p", state->ip_event_handler);
+    // ESP_LOGD(TAG, "state->medium_event_handler.. %p", state->medium_event_handler);  // NOLINT(whitespace/line_length)
 
     /* Place the first command for the dedicated networking task. */
     networking_notify(NETWORKING_NOTIFICATION_CMD_WIFI_START);
@@ -654,20 +584,20 @@ static esp_err_t networking_init(char* nvs_namespace) {
 static esp_err_t networking_deinit(void) {
     ESP_LOGV(TAG, "networking_deinit()");
 
-    if (state == NULL) {
+    if (!networking_state_is_initialized()) {
         ESP_LOGE(TAG, "No state information available!");
         return ESP_FAIL;
     }
 
     esp_err_t esp_ret;
-    if (state->medium == NETWORKING_MEDIUM_WIRELESS)
+    if (networking_state_is_medium_wireless())
         esp_ret = wifi_deinit();
 
     /* Unregister the IP_EVENT event handler. */
     esp_ret = esp_event_handler_instance_unregister(
         IP_EVENT,
         ESP_EVENT_ANY_ID,
-        state->ip_event_handler);
+        networking_state_get_ip_event_handler());
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not unregister IP_EVENT event handler!");
         ESP_LOGD(
@@ -679,12 +609,11 @@ static esp_err_t networking_deinit(void) {
     }
 
     /* Stop and remove the dedicated networking task */
-    if (state->task != NULL)
-        vTaskDelete(state->task);
+    if (networking_state_get_task_handle() != NULL)
+        vTaskDelete(networking_state_get_task_handle());
 
     /* Free internal state memory. */
-    free(state);
-    state = NULL;
+    networking_state_destroy();
 
     /* De-initialize the network stack.
      * This is actually not supported by **ESP-IDF**, but included here for
@@ -775,7 +704,7 @@ static void networking_notify(uint32_t notification) {
     ESP_LOGV(TAG, "networking_notify()");
 
     xTaskNotifyIndexed(
-        state->task,
+        networking_state_get_task_handle(),
         NETWORKING_TASK_NOTIFICATION_INDEX,
         notification,
         eSetValueWithOverwrite);
