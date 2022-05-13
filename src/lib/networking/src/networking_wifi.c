@@ -17,14 +17,98 @@
 /* This file's header. */
 #include "networking_wifi.h"
 
+/* Other headers of the component. */
+#include "networking/networking.h"  // The public header
+
+/* This is ESP-IDF's event library. */
+#include "esp_event.h"
+
+/* This is ESP-IDF's logging library.
+ * - ESP_LOGE(TAG, "Error");
+ * - ESP_LOGW(TAG, "Warning");
+ * - ESP_LOGI(TAG, "Info");
+ * - ESP_LOGD(TAG, "Debug");
+ * - ESP_LOGV(TAG, "Verbose");
+ */
+#include "esp_log.h"
+
+/* ESP-IDF's network abstraction layer. */
+#include "esp_netif.h"
+
+/* ESP-IDF's wifi library. */
+#include "esp_wifi.h"
+
+/* FreeRTOS headers.
+ * - the ``FreeRTOS.h`` is required
+ * - ``timers.h`` for timers
+ */
+#include "freertos/FreeRTOS.h"
+#include "freertos/timers.h"
+
+
 /* ***** DEFINES *********************************************************** */
+
+/**
+ * The maximum length of the ``char`` array to store SSID.
+ *
+ * IEEE 802.11 says, that the maximum length of an SSID is 32, which is also
+ * the value provided in **ESP-IDF**'s ``esp_wifi_types.h``.
+ */
+#define NETWORKING_WIFI_SSID_MAX_LEN 32
+
+/**
+ * The maximum length of the ``char`` array to store the pre-shared key
+ * for a WiFi connection.
+ *
+ * IEEE 801.11 says, that the maximum length of an PSK is 64, which is also the
+ * value provided in **ESP-IDF**'s ``esp_wifi_types.h``.
+ */
+#define NETWORKING_WIFI_PSK_MAX_LEN 64
+
+
 /* ***** TYPES ************************************************************* */
+
+/**
+ * Medium/mode specific state information for access point mode.
+ *
+ * The access point is kept alive for a given timespan. This is controlled by
+ * a ``freeRTOS`` timer. A reference to this timer must be kept while in access
+ * point mode.
+ */
+struct medium_state_wifi_ap {
+    TimerHandle_t ap_shutdown_timer;
+};
+
+/**
+ * Medium/mode specific state information for station mode.
+ *
+ * In station mode, the number of failed connection attempts has to be tracked.
+ */
+struct medium_state_wifi_sta {
+    int8_t num_connection_attempts;
+};
+
+
 /* ***** VARIABLES ********************************************************* */
+
+/**
+ * Set the module-specific ``TAG`` to be used with ESP-IDF's logging library.
+ *
+ * See
+ * [its API documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html#how-to-use-this-library).
+ */
+static const char* TAG = "networking";
+
+
 /* ***** PROTOTYPES ******************************************************** */
 
 static esp_err_t wifi_init(char *nvs_namespace);
 static esp_err_t wifi_ap_deinit(void);
 static void wifi_ap_timed_shutdown(TimerHandle_t timer);
+static esp_err_t wifi_get_config_from_nvs(
+    char *nvs_namespace,
+    char **ssid,
+    char **psk);
 static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk);
 
 
@@ -112,7 +196,7 @@ static esp_err_t wifi_init(char *nvs_namespace) {
     memset(nvs_sta_ssid, 0x00, NETWORKING_WIFI_SSID_MAX_LEN);
     memset(nvs_sta_psk, 0x00, NETWORKING_WIFI_PSK_MAX_LEN);
 
-    esp_ret = get_wifi_config_from_nvs(
+    esp_ret = wifi_get_config_from_nvs(
         nvs_namespace,
         (char **)&nvs_sta_ssid,
         (char **)&nvs_sta_psk);
@@ -385,6 +469,68 @@ void wifi_ap_timer_stop(void) {
         ((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer,  // NOLINT(whitespace/line_length)
         (TickType_t) 0);
     ESP_LOGD(TAG, "Access point's shutdown timer stopped!");
+}
+
+/**
+ * Retrieve SSID and PSK for station mode from non-volatile storage.
+ *
+ * @param nvs_namespace The NVS namespace to read values from.
+ * @param ssid          A pointer to a *big enough* ``char`` array to store
+ *                      the read value to (*big enough* =
+ *                      ::NETWORKING_WIFI_SSID_MAX_LEN )
+ * @param psk           A pointer to a *big enough* ``char`` array to store
+ *                      thr read value to (*big enough* =
+ *                      ::NETWORKING_WIFI_PSK_MAX_LEN )
+ * @return esp_err_t    ``ESP_OK`` on success, ``ESP_FAIL`` on failure; see the
+ *                      provided log messages (of level ``ERROR`` and ``DEBUG``)
+ *                      for the actual reason of failure.
+ *
+ * @todo Needs validation/testing. ``ssid`` and ``psk`` should be ``char**``?
+ * @todo This should be refactored!
+ *       - provide a generic function to open nvs, e.g.
+ *         ``static nvs_handle_t get_nvs_handle(char *nvs_namespace)``
+ *       - provide a generic function to read a string from nvs, e.g.
+ *         ``static char* get_nvs_string(nvs_handle_t handle, char *key)``
+ *       - the prototype of this function may be left untouched!
+ */
+static esp_err_t wifi_get_config_from_nvs(
+    char *nvs_namespace,
+    char **ssid,
+    char **psk) {
+    ESP_LOGV(TAG, "wifi_get_config_from_nvs()");
+
+    /* Open NVS storage handle. */
+    // FIXME(mischback) Restore implementation once the station mode is working!
+    // nvs_handle_t handle;
+    // esp_err_t esp_ret;
+
+    // esp_ret = get_nvs_handle(nvs_namespace, NVS_READONLY, &handle);
+    // if (esp_ret != ESP_OK)
+    //     return esp_ret;
+    // ESP_LOGD(TAG, "Handle '%s' successfully opened!", nvs_namespace);
+
+    // esp_ret = get_string_from_nvs(
+    //     handle,
+    //     NETWORKING_WIFI_NVS_SSID,
+    //     (char *)ssid,
+    //     NETWORKING_WIFI_SSID_MAX_LEN);
+    // if (esp_ret != ESP_OK)
+    //     return esp_ret;
+
+    // esp_ret = get_string_from_nvs(
+    //     handle,
+    //     NETWORKING_WIFI_NVS_PSK,
+    //     (char *)psk,
+    //     NETWORKING_WIFI_PSK_MAX_LEN);
+    // if (esp_ret != ESP_OK)
+    //     return esp_ret;
+
+    // FIXME(mischback) This is just for temporary testing!
+    //                  And no, these are not my actual credentials!
+    // strcpy((char *)ssid, "WiFi_SSID");
+    // strcpy((char *)psk, "WiFi_PSK");
+
+    return ESP_FAIL;
 }
 
 /**

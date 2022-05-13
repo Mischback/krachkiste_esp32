@@ -64,7 +64,6 @@
  */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/timers.h"
 
 /* This is ESP-IDF's library to interface the non-volatile storage (NVS). */
 #include "nvs_flash.h"
@@ -96,22 +95,6 @@
  */
 #define NETWORKING_WIFI_NVS_PSK "net_psk"
 
-/**
- * The maximum length of the ``char`` array to store SSID.
- *
- * IEEE 802.11 says, that the maximum length of an SSID is 32, which is also
- * the value provided in **ESP-IDF**'s ``esp_wifi_types.h``.
- */
-#define NETWORKING_WIFI_SSID_MAX_LEN 32
-
-/**
- * The maximum length of the ``char`` array to store the pre-shared key
- * for a WiFi connection.
- *
- * IEEE 801.11 says, that the maximum length of an PSK is 64, which is also the
- * value provided in **ESP-IDF**'s ``esp_wifi_types.h``.
- */
-#define NETWORKING_WIFI_PSK_MAX_LEN 64
 
 /* ***** TYPES ************************************************************* */
 
@@ -198,26 +181,6 @@ struct networking_state {
     void                *medium_state;
 };
 
-/**
- * Medium/mode specific state information for access point mode.
- *
- * The access point is kept alive for a given timespan. This is controlled by
- * a ``freeRTOS`` timer. A reference to this timer must be kept while in access
- * point mode.
- */
-struct medium_state_wifi_ap {
-    TimerHandle_t ap_shutdown_timer;
-};
-
-/**
- * Medium/mode specific state information for station mode.
- *
- * In station mode, the number of failed connection attempts has to be tracked.
- */
-struct medium_state_wifi_sta {
-    int8_t num_connection_attempts;
-};
-
 
 /* ***** VARIABLES ********************************************************* */
 
@@ -241,10 +204,6 @@ static esp_err_t get_nvs_handle(
     const char *namespace,
     nvs_open_mode_t mode,
     nvs_handle_t *handle);
-static esp_err_t get_wifi_config_from_nvs(
-    char *nvs_namespace,
-    char **ssid,
-    char **psk);
 static esp_err_t get_string_from_nvs(
     nvs_handle_t handle,
     const char *key,
@@ -911,66 +870,4 @@ static esp_err_t get_string_from_nvs(
     }
 
     return ESP_OK;
-}
-
-/**
- * Retrieve SSID and PSK for station mode from non-volatile storage.
- *
- * @param nvs_namespace The NVS namespace to read values from.
- * @param ssid          A pointer to a *big enough* ``char`` array to store
- *                      the read value to (*big enough* =
- *                      ::NETWORKING_WIFI_SSID_MAX_LEN )
- * @param psk           A pointer to a *big enough* ``char`` array to store
- *                      thr read value to (*big enough* =
- *                      ::NETWORKING_WIFI_PSK_MAX_LEN )
- * @return esp_err_t    ``ESP_OK`` on success, ``ESP_FAIL`` on failure; see the
- *                      provided log messages (of level ``ERROR`` and ``DEBUG``)
- *                      for the actual reason of failure.
- *
- * @todo Needs validation/testing. ``ssid`` and ``psk`` should be ``char**``?
- * @todo This should be refactored!
- *       - provide a generic function to open nvs, e.g.
- *         ``static nvs_handle_t get_nvs_handle(char *nvs_namespace)``
- *       - provide a generic function to read a string from nvs, e.g.
- *         ``static char* get_nvs_string(nvs_handle_t handle, char *key)``
- *       - the prototype of this function may be left untouched!
- */
-static esp_err_t get_wifi_config_from_nvs(
-    char *nvs_namespace,
-    char **ssid,
-    char **psk) {
-    ESP_LOGV(TAG, "get_wifi_config_from_nvs()");
-
-    /* Open NVS storage handle. */
-    // FIXME(mischback) Restore implementation once the station mode is working!
-    // nvs_handle_t handle;
-    // esp_err_t esp_ret;
-
-    // esp_ret = get_nvs_handle(nvs_namespace, NVS_READONLY, &handle);
-    // if (esp_ret != ESP_OK)
-    //     return esp_ret;
-    // ESP_LOGD(TAG, "Handle '%s' successfully opened!", nvs_namespace);
-
-    // esp_ret = get_string_from_nvs(
-    //     handle,
-    //     NETWORKING_WIFI_NVS_SSID,
-    //     (char *)ssid,
-    //     NETWORKING_WIFI_SSID_MAX_LEN);
-    // if (esp_ret != ESP_OK)
-    //     return esp_ret;
-
-    // esp_ret = get_string_from_nvs(
-    //     handle,
-    //     NETWORKING_WIFI_NVS_PSK,
-    //     (char *)psk,
-    //     NETWORKING_WIFI_PSK_MAX_LEN);
-    // if (esp_ret != ESP_OK)
-    //     return esp_ret;
-
-    // FIXME(mischback) This is just for temporary testing!
-    //                  And no, these are not my actual credentials!
-    // strcpy((char *)ssid, "WiFi_SSID");
-    // strcpy((char *)psk, "WiFi_PSK");
-
-    return ESP_FAIL;
 }
