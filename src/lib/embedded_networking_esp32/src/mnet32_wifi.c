@@ -15,7 +15,7 @@
 /* ***** INCLUDES ********************************************************** */
 
 /* This file's header. */
-#include "networking_wifi.h"
+#include "mnet32_wifi.h"
 
 /* C's standard libraries. */
 #include <string.h>

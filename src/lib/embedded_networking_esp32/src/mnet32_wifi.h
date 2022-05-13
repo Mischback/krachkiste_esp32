@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileType: SOURCE
 
-#ifndef SRC_LIB_NETWORKING_SRC_NETWORKING_WIFI_H_
-#define SRC_LIB_NETWORKING_SRC_NETWORKING_WIFI_H_
+#ifndef SRC_LIB_EMBEDDED_NETWORKING_ESP32_SRC_MNET32_WIFI_H_
+#define SRC_LIB_EMBEDDED_NETWORKING_ESP32_SRC_MNET32_WIFI_H_
 
 /* This is ESP-IDF's error handling library. */
 #include "esp_err.h"
@@ -120,4 +120,4 @@ void networking_wifi_sta_reset_connection_counter(void);
  */
 esp_err_t networking_wifi_start(char *nvs_namespace);
 
-#endif  // SRC_LIB_NETWORKING_SRC_NETWORKING_WIFI_H_
+#endif  // SRC_LIB_EMBEDDED_NETWORKING_ESP32_SRC_MNET32_WIFI_H_
