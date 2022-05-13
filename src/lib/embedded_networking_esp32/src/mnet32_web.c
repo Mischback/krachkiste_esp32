@@ -16,7 +16,7 @@
  */
 
 /* This files header */
-#include "networking_web.h"
+#include "mnet32_web.h"
 
 /* Other headers of the component */
 #include "mnet32/mnet32.h"
