@@ -3,12 +3,12 @@
 // SPDX-FileType: SOURCE
 
 /**
- * The web interface of the ``networking`` component.
+ * The web interface of the ``mnet32`` component.
  *
  * Basically this includes **URI definitions** and the respective
  * **URI handler** implementations.
  *
- * @file   networking_web.c
+ * @file   mnet32_web.c
  * @author Mischback
  * @bug    Bugs are tracked with the
  *         [issue tracker](https://github.com/Mischback/krachkiste_esp32/issues)
@@ -41,7 +41,7 @@
 
 
 /* ***** PROTOTYPES ******************************************************** */
-static esp_err_t networking_web_handler_get_config(httpd_req_t* request);
+static esp_err_t mnet32_web_handler_get_config(httpd_req_t* request);
 
 
 /* ***** URI DEFINITIONS ***************************************************
@@ -56,10 +56,10 @@ static esp_err_t networking_web_handler_get_config(httpd_req_t* request);
  * @todo Move this to networking.h
  * @todo Add networking.h to this file's includes
  */
-static const httpd_uri_t networking_web_uri_get_config = {
+static const httpd_uri_t mnet32_web_uri_get_config = {
     .uri = "/config/wifi",
     .method = HTTP_GET,
-    .handler = networking_web_handler_get_config,
+    .handler = mnet32_web_handler_get_config,
     .user_ctx = NULL
 };
 
@@ -78,18 +78,18 @@ void mnet32_web_attach_handlers(
     // Register this component's *URI handlers* with the server instance.
     httpd_register_uri_handler(
         server,
-        &networking_web_uri_get_config);
+        &mnet32_web_uri_get_config);
 }
 
 /**
  * Show the WiFi configuration form.
  *
- * The matching *URI definition* is ::networking_web_uri_get_config.
+ * The matching *URI definition* is ::mnet32_web_uri_get_config.
  *
  * @param request The request that should be responded to with this function.
  * @return Always returns ``ESP_OK``.
  */
-static esp_err_t networking_web_handler_get_config(httpd_req_t* request) {
+static esp_err_t mnet32_web_handler_get_config(httpd_req_t* request) {
     // Access the embedded HTML file.
     // See this component's ``CMakeLists.txt`` for the actual embedding (in
     // ``idf_component_register()``) and see **ESP-IDF**'s documentation on how
