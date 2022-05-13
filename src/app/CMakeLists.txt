@@ -7,5 +7,5 @@
 idf_component_register(
   SRCS "main.c"
   INCLUDE_DIRS "."
-  PRIV_REQUIRES "esp_event log min_httpd nvs_flash networking"
+  PRIV_REQUIRES "esp_event log min_httpd nvs_flash embedded_networking_esp32"
 )

@@ -36,7 +36,7 @@
 #include "min_httpd/min_httpd.h"
 
 /* Project-specific library to manage wifi connections. */
-#include "networking/networking.h"
+#include "mnet32/mnet32.h"
 
 /**
  * The project-specific namespace to access the non-volatile storage.
