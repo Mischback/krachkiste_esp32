@@ -21,9 +21,9 @@
 #include <string.h>
 
 /* Other headers of the component. */
-#include "mnet32/mnet32.h"        // The public header
-#include "networking_internal.h"  // The private header
-#include "networking_state.h"     // manage the internal state
+#include "mnet32/mnet32.h"     // The public header
+#include "mnet32_internal.h"   // The private header
+#include "networking_state.h"  // manage the internal state
 
 /* This is ESP-IDF's event library. */
 #include "esp_event.h"
