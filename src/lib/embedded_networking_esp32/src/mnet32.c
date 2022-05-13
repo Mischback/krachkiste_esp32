@@ -188,14 +188,14 @@ static void networking(void *task_parameters) {
             case NETWORKING_NOTIFICATION_CMD_WIFI_START:
                 ESP_LOGD(TAG, "CMD: WIFI_START");
 
-                if (networking_wifi_start((char *)task_parameters) != ESP_OK) {
+                if (mnet32_wifi_start((char *)task_parameters) != ESP_OK) {
                     ESP_LOGE(TAG, "Could not start WiFi!");
                 }
                 break;
             case NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START:
                 /* Handle ``WIFI_EVENT_AP_START`` (received from
                  * ::mnet32_event_handler ).
-                 * The *chain* of ::networking_wifi_start, ::wifi_init and ::networking_wifi_ap_init
+                 * The *chain* of ::mnet32_wifi_start, ::wifi_init and ::mnet32_wifi_ap_init
                  * has set ``state->medium`` and ``state->mode``, so with this
                  * event the access point is assumed to be ready, resulting in
                  * ``state->status = NETWORKING_STATUS_IDLE``, because no
@@ -204,7 +204,7 @@ static void networking(void *task_parameters) {
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_START");
 
                 mnet32_state_set_status_idle();
-                networking_wifi_ap_timer_start();
+                mnet32_wifi_ap_timer_start();
 
                 networking_emit_event(MNET32_EVENT_READY, NULL);
                 // TODO(mischback) Should the *status event* be emitted here
@@ -225,7 +225,7 @@ static void networking(void *task_parameters) {
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_STACONNECTED");
 
                 mnet32_state_set_status_busy();
-                networking_wifi_ap_timer_stop();
+                mnet32_wifi_ap_timer_stop();
 
                 // TODO(mischback) Determine which of the access point-specific
                 //                 information should be included in the
@@ -235,13 +235,13 @@ static void networking(void *task_parameters) {
             case NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_STADISCONNECTED");
 
-                if (networking_wifi_ap_get_connected_stations() == 0) {
+                if (mnet32_wifi_ap_get_connected_stations() == 0) {
                     mnet32_state_set_status_idle();
 
                     ESP_LOGD(
                         TAG,
                         "No more stations connected, restarting shutdown timer!");  // NOLINT(whitespace/line_length)
-                    networking_wifi_ap_timer_start();
+                    mnet32_wifi_ap_timer_start();
                 }
 
                 // TODO(mischback) Determine which of the access point-specific
@@ -253,13 +253,13 @@ static void networking(void *task_parameters) {
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_START");
 
                 mnet32_state_set_status_connecting();
-                networking_wifi_sta_connect();
+                mnet32_wifi_sta_connect();
                 break;
             case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_CONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_CONNECTED");
 
                 mnet32_state_set_status_ready();
-                networking_wifi_sta_reset_connection_counter();
+                mnet32_wifi_sta_reset_connection_counter();
                 networking_emit_event(MNET32_EVENT_READY, NULL);
                 // TODO(mischback) Should the *status event* be emitted here
                 //                 automatically?
@@ -267,14 +267,14 @@ static void networking(void *task_parameters) {
             case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_DISCONNECTED");
 
-                if (networking_wifi_sta_get_num_connection_attempts()
+                if (mnet32_wifi_sta_get_num_connection_attempts()
                     > MNET32_WIFI_STA_MAX_CONNECTION_ATTEMPTS) {
-                    networking_wifi_sta_deinit();
-                    if (networking_wifi_ap_init() != ESP_OK)
+                    mnet32_wifi_sta_deinit();
+                    if (mnet32_wifi_ap_init() != ESP_OK)
                         networking_notify(
                             NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP);
                 } else {
-                    networking_wifi_sta_connect();
+                    mnet32_wifi_sta_connect();
                 }
                 break;
             default:
@@ -564,7 +564,7 @@ static esp_err_t networking_deinit(void) {
 
     esp_err_t esp_ret;
     if (mnet32_state_is_medium_wireless())
-        esp_ret = networking_wifi_deinit();
+        esp_ret = mnet32_wifi_deinit();
 
     /* Unregister the IP_EVENT event handler. */
     esp_ret = esp_event_handler_instance_unregister(
