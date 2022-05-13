@@ -29,7 +29,7 @@
 #define MNET32_TASK_PRIORITY 10
 
 /**
- * The networking task will automatically provide status information to other
+ * The component will automatically provide status information to other
  * components with this frequency.
  *
  * @todo Determine a sane (default) value for this! Currently: 5 seconds.

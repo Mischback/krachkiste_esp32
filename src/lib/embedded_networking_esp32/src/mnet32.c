@@ -7,7 +7,7 @@
  *
  * This file is the actual implementation of the component. For a detailed
  * description of the actual usage, including how the component may be reused
- * in some other codebase, refer to networking.h .
+ * in some other codebase, refer to mnet32.h .
  *
  * **Resources:**
  *   - https://github.com/nkolban/esp32-snippets/tree/master/networking/bootwifi
@@ -15,7 +15,7 @@
  *   - https://github.com/tonyp7/esp32-wifi-manager/blob/master/src/wifi_manager.c
  *   - https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_eth.html
  *
- * @file   networking.c
+ * @file   mnet32.c
  * @author Mischback
  * @bug    Bugs are tracked with the
  *         [issue tracker](https://github.com/Mischback/krachkiste_esp32/issues)
@@ -87,18 +87,7 @@
  * ``xTaskNotify()``, so this constant ensures, that the notifications will be
  * send to the right *receiver*.
  */
-#define NETWORKING_TASK_NOTIFICATION_INDEX 0
-
-/**
- * The component-specific key to access the NVS to set/get the stored SSID.
- */
-#define NETWORKING_WIFI_NVS_SSID "net_ssid"
-
-/**
- * The component-specific key to access the NVS to set/get the stored WiFi
- * password.
- */
-#define NETWORKING_WIFI_NVS_PSK "net_psk"
+#define MNET32_TASK_NOTIFICATION_INDEX 0
 
 
 /* ***** TYPES ************************************************************* */
@@ -110,16 +99,16 @@ ESP_EVENT_DEFINE_BASE(MNET32_EVENTS);
  * This is the list of accepted notifications.
  */
 typedef enum {
-    NETWORKING_NOTIFICATION_BASE,
-    NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP,
-    NETWORKING_NOTIFICATION_CMD_WIFI_START,
-    NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START,
-    NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED,
-    NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED,
-    NETWORKING_NOTIFICATION_EVENT_WIFI_STA_START,
-    NETWORKING_NOTIFICATION_EVENT_WIFI_STA_CONNECTED,
-    NETWORKING_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED,
-} networking_notification;
+    MNET32_NOTIFICATION_BASE,
+    MNET32_NOTIFICATION_CMD_NETWORKING_STOP,
+    MNET32_NOTIFICATION_CMD_WIFI_START,
+    MNET32_NOTIFICATION_EVENT_WIFI_AP_START,
+    MNET32_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED,
+    MNET32_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED,
+    MNET32_NOTIFICATION_EVENT_WIFI_STA_START,
+    MNET32_NOTIFICATION_EVENT_WIFI_STA_CONNECTED,
+    MNET32_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED,
+} mnet32_task_notification;
 
 
 /* ***** VARIABLES ********************************************************* */
@@ -130,7 +119,7 @@ typedef enum {
  * See
  * [its API documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html#how-to-use-this-library).
  */
-static const char* TAG = "networking";
+static const char* TAG = "mnet32";
 
 
 /* ***** PROTOTYPES ******************************************************** */
@@ -145,17 +134,17 @@ static esp_err_t get_string_from_nvs(
     char *ret_buffer,
     const size_t max_buf_size);
 
-static void networking(void *task_parameters);
-static void networking_notify(uint32_t notification);
-static esp_err_t networking_deinit(void);
-static esp_err_t networking_init(char* nvs_namespace);
-static void networking_emit_event(int32_t event_id, void *event_data);
+static void mnet32_task(void *task_parameters);
+static void mnet32_notify(uint32_t notification);
+static esp_err_t mnet32_deinit(void);
+static esp_err_t mnet32_init(char* nvs_namespace);
+static void mnet32_emit_event(int32_t event_id, void *event_data);
 
 
 /* ***** FUNCTIONS ********************************************************* */
 
-static void networking(void *task_parameters) {
-    ESP_LOGV(TAG, "networking() [the actual task function]");
+static void mnet32_task(void *task_parameters) {
+    ESP_LOGV(TAG, "mnet32_task() [the actual task function]");
     ESP_LOGD(TAG, "task_parameters: %s", (char *)task_parameters);
 
     const TickType_t mon_freq = pdMS_TO_TICKS(
@@ -166,7 +155,7 @@ static void networking(void *task_parameters) {
     for (;;) {
         /* Block until notification or ``mon_freq`` reached. */
         notify_result = xTaskNotifyWaitIndexed(
-            NETWORKING_TASK_NOTIFICATION_INDEX,
+            MNET32_TASK_NOTIFICATION_INDEX,
             pdFALSE,
             ULONG_MAX,
             &notify_value,
@@ -175,24 +164,24 @@ static void networking(void *task_parameters) {
         /* Notification or monitoring? */
         if (notify_result == pdPASS) {
             switch (notify_value) {
-            case NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP:
+            case MNET32_NOTIFICATION_CMD_NETWORKING_STOP:
                 ESP_LOGD(TAG, "CMD: NETWORKING_STOP");
 
                 /* Emit the corresponding event *before* actually shutting down
                  * the networking. This might give other components some time
                  * to handle the unavailability of networking.
                  */
-                networking_emit_event(MNET32_EVENT_UNAVAILABLE, NULL);
-                networking_deinit();
+                mnet32_emit_event(MNET32_EVENT_UNAVAILABLE, NULL);
+                mnet32_deinit();
                 break;
-            case NETWORKING_NOTIFICATION_CMD_WIFI_START:
+            case MNET32_NOTIFICATION_CMD_WIFI_START:
                 ESP_LOGD(TAG, "CMD: WIFI_START");
 
                 if (mnet32_wifi_start((char *)task_parameters) != ESP_OK) {
                     ESP_LOGE(TAG, "Could not start WiFi!");
                 }
                 break;
-            case NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START:
+            case MNET32_NOTIFICATION_EVENT_WIFI_AP_START:
                 /* Handle ``WIFI_EVENT_AP_START`` (received from
                  * ::mnet32_event_handler ).
                  * The *chain* of ::mnet32_wifi_start, ::mnet32_wifi_init and ::mnet32_wifi_ap_init
@@ -206,7 +195,7 @@ static void networking(void *task_parameters) {
                 mnet32_state_set_status_idle();
                 mnet32_wifi_ap_timer_start();
 
-                networking_emit_event(MNET32_EVENT_READY, NULL);
+                mnet32_emit_event(MNET32_EVENT_READY, NULL);
                 // TODO(mischback) Should the *status event* be emitted here
                 //                 automatically?
 
@@ -214,7 +203,7 @@ static void networking(void *task_parameters) {
                 //                 information should be included in the
                 //                 component's *status* event (e.g. AP SSID?)!
                 break;
-            case NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED:
+            case MNET32_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED:
                 /* A client connected to the access point.
                  * Set the internal state to MNET32_STATUS_BUSY to indicate
                  * actual usage of the access point. The internal timer to
@@ -232,7 +221,7 @@ static void networking(void *task_parameters) {
                 //                 components *status* event (e.g. number of
                 //                 connected clients?)
                 break;
-            case NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED:
+            case MNET32_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_STADISCONNECTED");
 
                 if (mnet32_wifi_ap_get_connected_stations() == 0) {
@@ -249,30 +238,30 @@ static void networking(void *task_parameters) {
                 //                 components *status* event (e.g. number of
                 //                 connected clients?)
                 break;
-            case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_START:
+            case MNET32_NOTIFICATION_EVENT_WIFI_STA_START:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_START");
 
                 mnet32_state_set_status_connecting();
                 mnet32_wifi_sta_connect();
                 break;
-            case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_CONNECTED:
+            case MNET32_NOTIFICATION_EVENT_WIFI_STA_CONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_CONNECTED");
 
                 mnet32_state_set_status_ready();
                 mnet32_wifi_sta_reset_connection_counter();
-                networking_emit_event(MNET32_EVENT_READY, NULL);
+                mnet32_emit_event(MNET32_EVENT_READY, NULL);
                 // TODO(mischback) Should the *status event* be emitted here
                 //                 automatically?
                 break;
-            case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED:
+            case MNET32_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_DISCONNECTED");
 
                 if (mnet32_wifi_sta_get_num_connection_attempts()
                     > MNET32_WIFI_STA_MAX_CONNECTION_ATTEMPTS) {
                     mnet32_wifi_sta_deinit();
                     if (mnet32_wifi_ap_init() != ESP_OK)
-                        networking_notify(
-                            NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP);
+                        mnet32_notify(
+                            MNET32_NOTIFICATION_CMD_NETWORKING_STOP);
                 } else {
                     mnet32_wifi_sta_connect();
                 }
@@ -321,14 +310,14 @@ void mnet32_event_handler(
              * successfully started in station mode.
              */
             ESP_LOGD(TAG, "WIFI_EVENT_STA_START");
-            networking_notify(NETWORKING_NOTIFICATION_EVENT_WIFI_STA_START);
+            mnet32_notify(MNET32_NOTIFICATION_EVENT_WIFI_STA_START);
             break;
         case WIFI_EVENT_STA_STOP:
             ESP_LOGV(TAG, "WIFI_EVENT_STA_STOP");
             break;
         case WIFI_EVENT_STA_CONNECTED:
             ESP_LOGD(TAG, "WIFI_EVENT_STA_CONNECTED");
-            networking_notify(NETWORKING_NOTIFICATION_EVENT_WIFI_STA_CONNECTED);
+            mnet32_notify(MNET32_NOTIFICATION_EVENT_WIFI_STA_CONNECTED);
             break;
         case WIFI_EVENT_STA_DISCONNECTED:
             /* This event is emitted by ``esp_wifi`` in the following
@@ -342,8 +331,8 @@ void mnet32_event_handler(
              *      point or some other external circumstances, e.g. zombies.
              */
             ESP_LOGD(TAG, "WIFI_EVENT_STA_DISCONNECTED");
-            networking_notify(
-                NETWORKING_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED);
+            mnet32_notify(
+                MNET32_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED);
             break;
         case WIFI_EVENT_STA_AUTHMODE_CHANGE:
             ESP_LOGV(TAG, "WIFI_EVENT_STA_AUTHMODE_CHANGED");
@@ -365,7 +354,7 @@ void mnet32_event_handler(
              * successfully started.
              */
             ESP_LOGD(TAG, "WIFI_EVENT_AP_START");
-            networking_notify(NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START);
+            mnet32_notify(MNET32_NOTIFICATION_EVENT_WIFI_AP_START);
             break;
         case WIFI_EVENT_AP_STOP:
             ESP_LOGV(TAG, "WIFI_EVENT_AP_STOP");
@@ -375,16 +364,16 @@ void mnet32_event_handler(
              * the access point.
              */
             ESP_LOGD(TAG, "WIFI_EVENT_AP_STACONNECTED");
-            networking_notify(
-                NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED);
+            mnet32_notify(
+                MNET32_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED);
             break;
         case WIFI_EVENT_AP_STADISCONNECTED:
             /* This event is emitted by ``esp_wifi`` when a client disconnects
              * from the access point.
              */
             ESP_LOGD(TAG, "WIFI_EVENT_AP_STADISCONNECTED");
-            networking_notify(
-                NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED);
+            mnet32_notify(
+                MNET32_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED);
             break;
         case WIFI_EVENT_AP_PROBEREQRECVED:
             ESP_LOGV(TAG, "WIFI_EVENT_AP_PROBEREQRECVED");
@@ -440,7 +429,7 @@ void mnet32_event_handler(
  *
  * This function is also responsible for the creation of the component's
  * internal ``task``, which will handle all further actions of the component
- * (see ::networking).
+ * (see ::mnet32_task).
  *
  * @param nvs_namespace The name of the namespace to be used to retrieve
  *                      non-volatile configuration options from.
@@ -448,12 +437,12 @@ void mnet32_event_handler(
  *                      provided log messages (of level ``ERROR`` and ``DEBUG``)
  *                      for the actual reason of failure.
  */
-static esp_err_t networking_init(char* nvs_namespace) {
+static esp_err_t mnet32_init(char* nvs_namespace) {
     // Set log-level of our own code to VERBOSE
     // FIXME: Final code should not do this, but respect the project's settings
     esp_log_level_set(TAG, ESP_LOG_VERBOSE);
 
-    ESP_LOGV(TAG, "networking_init()");
+    ESP_LOGV(TAG, "mnet32_init()");
 
     /* Check if this a recurrent call to the function. */
     if (mnet32_state_is_initialized()) {
@@ -514,8 +503,8 @@ static esp_err_t networking_init(char* nvs_namespace) {
     //                    should be minimized (see freeRTOS'
     //                    ``uxTaskGetStackHighWaterMark()``).
     if (xTaskCreate(
-            networking,
-            "networking",
+            mnet32_task,
+            "mnet32_task",
             4096,
             nvs_namespace,
             MNET32_TASK_PRIORITY,
@@ -526,7 +515,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
 
     // TODO(mischback) This may be moved to mnet32_state.c
     //                 Might even be part of the monitoring event payload
-    // ESP_LOGI(TAG, "Successfully initialized networking component.");
+    // ESP_LOGI(TAG, "Successfully initialized mnet32 component.");
     // ESP_LOGD(TAG, "state->medium.............. %d", state->medium);
     // ESP_LOGD(TAG, "state->mode................ %d", state->mode);
     // ESP_LOGD(TAG, "state->status.............. %d", state->status);
@@ -534,8 +523,8 @@ static esp_err_t networking_init(char* nvs_namespace) {
     // ESP_LOGD(TAG, "state->ip_event_handler.... %p", state->ip_event_handler);
     // ESP_LOGD(TAG, "state->medium_event_handler.. %p", state->medium_event_handler);  // NOLINT(whitespace/line_length)
 
-    /* Place the first command for the dedicated networking task. */
-    networking_notify(NETWORKING_NOTIFICATION_CMD_WIFI_START);
+    /* Place the first command for the dedicated mnet32_task. */
+    mnet32_notify(MNET32_NOTIFICATION_CMD_WIFI_START);
 
     return ESP_OK;
 }
@@ -544,7 +533,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
  * De-initialize the component.
  *
  * Basically this function destroys all of the component's setup, reversing
- * anything done by ::networking_init .
+ * anything done by ::mnet32_init .
  *
  * This includes unregistering the ::mnet32_event_handler for ``IP_EVENT``
  * occurences, deleting the internal task, freeing memory and actually
@@ -554,8 +543,8 @@ static esp_err_t networking_init(char* nvs_namespace) {
  * @return esp_err_t ``ESP_OK`` on success, ``ESP_FAIL`` if there is no
  *                   internal ::state
  */
-static esp_err_t networking_deinit(void) {
-    ESP_LOGV(TAG, "networking_deinit()");
+static esp_err_t mnet32_deinit(void) {
+    ESP_LOGV(TAG, "mnet32_deinit()");
 
     if (!mnet32_state_is_initialized()) {
         ESP_LOGE(TAG, "No state information available!");
@@ -608,7 +597,7 @@ static esp_err_t networking_deinit(void) {
 /**
  * Emit component-specific events.
  *
- * @param event_id   The actual events are defined in networking.h and may be
+ * @param event_id   The actual events are defined in mnet32.h and may be
  *                   referenced by their human-readable name in the ``enum``.
  * @param event_data Optional pointer to event-specific context data. This
  *                   might be set to ``NULL`` to emit events without contextual
@@ -623,8 +612,8 @@ static esp_err_t networking_deinit(void) {
  *       be place in the event loop while having other events that may be
  *       discarded?
  */
-static void networking_emit_event(int32_t event_id, void *event_data) {
-    ESP_LOGV(TAG, "networking_emit_event()");
+static void mnet32_emit_event(int32_t event_id, void *event_data) {
+    ESP_LOGV(TAG, "mnet32_emit_event()");
 
     esp_err_t esp_ret;
 
@@ -664,21 +653,21 @@ static void networking_emit_event(int32_t event_id, void *event_data) {
  * Send a notification to the component's internal ``task``.
  *
  * Technically, this sends a notification to the task as specified by
- * ::networking , unblocking the task and triggering some action.
+ * ::mnet32_task , unblocking the task and triggering some action.
  *
  * The function sends a notification on the index specified by
- * ``NETWORKING_TASK_NOTIFICATION_INDEX`` with ``eAction`` set to
+ * ``MNET32_TASK_NOTIFICATION_INDEX`` with ``eAction`` set to
  * ``eSetValueWithOverwrite``, meaning: if the task was already notified, that
  * notification will be overwritten.
  *
  * @param notification
  */
-static void networking_notify(uint32_t notification) {
-    ESP_LOGV(TAG, "networking_notify()");
+static void mnet32_notify(uint32_t notification) {
+    ESP_LOGV(TAG, "mnet32_notify()");
 
     xTaskNotifyIndexed(
         mnet32_state_get_task_handle(),
-        NETWORKING_TASK_NOTIFICATION_INDEX,
+        MNET32_TASK_NOTIFICATION_INDEX,
         notification,
         eSetValueWithOverwrite);
 }
@@ -686,8 +675,8 @@ static void networking_notify(uint32_t notification) {
 esp_err_t mnet32_start(char* nvs_namespace) {
     ESP_LOGV(TAG, "mnet32_start()");
 
-    if (networking_init(nvs_namespace) != ESP_OK) {
-        networking_deinit();
+    if (mnet32_init(nvs_namespace) != ESP_OK) {
+        mnet32_deinit();
         return ESP_FAIL;
     }
 
@@ -697,7 +686,7 @@ esp_err_t mnet32_start(char* nvs_namespace) {
 esp_err_t mnet32_stop(void) {
     ESP_LOGV(TAG, "mnet32_stop()");
 
-    networking_notify(NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP);
+    mnet32_notify(MNET32_NOTIFICATION_CMD_NETWORKING_STOP);
 
     return ESP_OK;
 }

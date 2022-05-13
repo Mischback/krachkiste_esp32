@@ -114,8 +114,8 @@ void app_main(void) {
         &min_httpd_external_event_handler_stop,
         NULL,
         NULL));
-    // Register *URI handlers* of ``networking`` component when ``min_httpd``
-    // is ready!
+    // Register *URI handlers* of ``mnet32`` component when ``min_httpd`` is
+    // ready!
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
         MIN_HTTPD_EVENTS,
         MIN_HTTPD_READY,

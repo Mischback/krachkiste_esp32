@@ -84,7 +84,7 @@ typedef enum {
  *
  * It contains several fields that track the component's internal state aswell
  * as fields to keep track of the actual *interface*
- * (``esp_netif_t *interface``), the dedicated networking *task*
+ * (``esp_netif_t *interface``), the dedicated component's *task*
  * (``TaskHandle_t task``) and the required event handler instances.
  */
 struct mnet32_state {

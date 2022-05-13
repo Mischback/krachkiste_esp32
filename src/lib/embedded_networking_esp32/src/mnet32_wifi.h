@@ -28,7 +28,7 @@ int8_t mnet32_wifi_ap_get_connected_stations(void);
  *                   On ``ESP_OK`` the calling code may assume that the access
  *                   point is successfully started. Subsequent actions are
  *                   triggered by ::mnet32_event_handler and performed by
- *                   ::networking .
+ *                   ::mnet32_task .
  */
 esp_err_t mnet32_wifi_ap_init(void);
 
@@ -69,7 +69,7 @@ esp_err_t mnet32_wifi_deinit(void);
 /**
  * Actually connect to a WiFi access point.
  *
- * This function is called from ::networking to perform the actual connect.
+ * This function is called from ::mnet32_task to perform the actual connect.
  *
  * Please note: This function simply wraps **ESP-IDF**'s ``esp_wifi_connect()``
  * to catch internal errors. It does not actually track the success of the

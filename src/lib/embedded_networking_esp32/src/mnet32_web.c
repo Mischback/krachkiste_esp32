@@ -53,8 +53,7 @@ static esp_err_t mnet32_web_handler_get_config(httpd_req_t* request);
  * URI definition for the *homepage*, which will be served from ``/``.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
- * @todo Move this to networking.h
- * @todo Add networking.h to this file's includes
+ * @todo Move this to mnet32/mnet32.h
  */
 static const httpd_uri_t mnet32_web_uri_get_config = {
     .uri = "/config/wifi",
@@ -66,7 +65,6 @@ static const httpd_uri_t mnet32_web_uri_get_config = {
 
 /* ***** FUNCTIONS ********************************************************* */
 
-// Documentation in networking.h
 void mnet32_web_attach_handlers(
     void* arg,
     esp_event_base_t event_base,

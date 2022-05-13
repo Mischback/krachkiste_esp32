@@ -54,6 +54,17 @@
 /* ***** DEFINES *********************************************************** */
 
 /**
+ * The component-specific key to access the NVS to set/get the stored SSID.
+ */
+#define MNET32_WIFI_NVS_SSID "net_ssid"
+
+/**
+ * The component-specific key to access the NVS to set/get the stored WiFi
+ * password.
+ */
+#define MNET32_WIFI_NVS_PSK "net_psk"
+
+/**
  * The maximum length of the ``char`` array to store SSID.
  *
  * IEEE 802.11 says, that the maximum length of an SSID is 32, which is also
@@ -514,7 +525,7 @@ static esp_err_t mnet32_wifi_get_config_from_nvs(
 
     // esp_ret = get_string_from_nvs(
     //     handle,
-    //     NETWORKING_WIFI_NVS_SSID,
+    //     MNET32_WIFI_NVS_SSID,
     //     (char *)ssid,
     //     MNET32_WIFI_SSID_MAX_LEN);
     // if (esp_ret != ESP_OK)
@@ -522,7 +533,7 @@ static esp_err_t mnet32_wifi_get_config_from_nvs(
 
     // esp_ret = get_string_from_nvs(
     //     handle,
-    //     NETWORKING_WIFI_NVS_PSK,
+    //     MNET32_WIFI_NVS_PSK,
     //     (char *)psk,
     //     MNET32_WIFI_PSK_MAX_LEN);
     // if (esp_ret != ESP_OK)
@@ -551,7 +562,7 @@ static esp_err_t mnet32_wifi_get_config_from_nvs(
  *                   On ``ESP_OK`` the calling code may assume that the access
  *                   point is successfully started. Subsequent actions are
  *                   triggered by ::mnet32_event_handler and performed by
- *                   ::networking .
+ *                   ::mnet32_task .
  */
 static esp_err_t mnet32_wifi_sta_init(char **sta_ssid, char **sta_psk) {
     ESP_LOGV(TAG, "mnet32_wifi_sta_init()");
