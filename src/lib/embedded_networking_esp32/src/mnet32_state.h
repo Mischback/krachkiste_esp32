@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileType: SOURCE
 
-#ifndef SRC_LIB_NETWORKING_SRC_NETWORKING_STATE_H_
-#define SRC_LIB_NETWORKING_SRC_NETWORKING_STATE_H_
+#ifndef SRC_LIB_EMBEDDED_NETWORKING_ESP32_SRC_MNET32_STATE_H_
+#define SRC_LIB_EMBEDDED_NETWORKING_ESP32_SRC_MNET32_STATE_H_
 
 /* This is ESP-IDF's event library. */
 #include "esp_event.h"
@@ -56,4 +56,4 @@ void networking_state_set_status_connecting(void);
 void networking_state_set_status_idle(void);
 void networking_state_set_status_ready(void);
 
-#endif  // SRC_LIB_NETWORKING_SRC_NETWORKING_STATE_H_
+#endif  // SRC_LIB_EMBEDDED_NETWORKING_ESP32_SRC_MNET32_STATE_H_

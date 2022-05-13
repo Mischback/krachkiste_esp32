@@ -31,9 +31,9 @@
 #include <string.h>
 
 /* Other headers of the component. */
-#include "mnet32_internal.h"   // The private header
-#include "networking_state.h"  // manage the internal state
-#include "networking_wifi.h"   // WiFi-related functions
+#include "mnet32_internal.h"  // The private header
+#include "mnet32_state.h"     // manage the internal state
+#include "networking_wifi.h"  // WiFi-related functions
 
 /* This is ESP-IDF's error handling library.
  * - defines the **type** ``esp_err_t``

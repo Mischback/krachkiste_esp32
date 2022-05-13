@@ -15,7 +15,7 @@
 /* ***** INCLUDES ********************************************************** */
 
 /* This file's header. */
-#include "networking_state.h"
+#include "mnet32_state.h"
 
 /* This is ESP-IDF's event library. */
 #include "esp_event.h"
