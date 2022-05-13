@@ -21,7 +21,7 @@ int8_t mnet32_wifi_ap_get_connected_stations(void);
  * Basically this creates the access point-specific configuration, applies it
  * to **ESP-IDF**'s wifi module and starts the wifi.
  *
- * It sets ``state->mode`` to ``NETWORKING_MODE_WIFI_AP`` and provides a
+ * It sets ``state->mode`` to ``MNET32_MODE_WIFI_AP`` and provides a
  * reference to the ``netif`` in ``state->interface``.
  *
  * @return esp_err_t ``ESP_OK`` on success, ``ESP_FAIL`` on failure.
@@ -55,7 +55,7 @@ void mnet32_wifi_ap_timer_stop(void);
  *
  * Clean up for WiFi-related stuff, including deinitialization of the
  * ``netif``, unregistering ::mnet32_event_handler from ``WIFI_EVENT``
- * and resetting ``state->medium`` to ``NETWORKING_MEDIUM_UNSPECIFIED``.
+ * and resetting ``state->medium`` to ``MNET32_MEDIUM_UNSPECIFIED``.
  *
  * The function calls ::mnet32_wifi_sta_deinit or ::wifi_ap_deinit, depending on the
  * value of ``state->mode``.
@@ -87,7 +87,7 @@ void mnet32_wifi_sta_connect(void);
  * specific deinitialization steps of *station mode*, e.g. it does **not**
  * unregister ::mnet32_event_handler from ``WIFI_EVENT``.
  *
- * The function sets ``state->mode`` to ``NETWORKING_MODE_NOT_APPLICABLE`` and
+ * The function sets ``state->mode`` to ``MNET32_MODE_NOT_APPLICABLE`` and
  * ``state->interface`` to ``NULL``.
  *
  * @return esp_err_t This function always returns ``ESP_OK``, all potentially

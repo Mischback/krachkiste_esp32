@@ -198,7 +198,7 @@ static void networking(void *task_parameters) {
                  * The *chain* of ::mnet32_wifi_start, ::wifi_init and ::mnet32_wifi_ap_init
                  * has set ``state->medium`` and ``state->mode``, so with this
                  * event the access point is assumed to be ready, resulting in
-                 * ``state->status = NETWORKING_STATUS_IDLE``, because no
+                 * ``state->status = MNET32_STATUS_IDLE``, because no
                  * clients have connected yet.
                  */
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_START");
@@ -216,7 +216,7 @@ static void networking(void *task_parameters) {
                 break;
             case NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED:
                 /* A client connected to the access point.
-                 * Set the internal state to NETWORKING_STATUS_BUSY to indicate
+                 * Set the internal state to MNET32_STATUS_BUSY to indicate
                  * actual usage of the access point. The internal timer to
                  * shut down the access point has to be stopped, because a
                  * client *might be* consuming the web interface, so the
@@ -524,7 +524,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
         return ESP_FAIL;
     }
 
-    // TODO(mischback) This may be moved to networking_state.c
+    // TODO(mischback) This may be moved to mnet32_state.c
     //                 Might even be part of the monitoring event payload
     // ESP_LOGI(TAG, "Successfully initialized networking component.");
     // ESP_LOGD(TAG, "state->medium.............. %d", state->medium);

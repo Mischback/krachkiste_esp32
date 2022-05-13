@@ -3,9 +3,9 @@
 // SPDX-FileType: SOURCE
 
 /**
- * Functions to manage the internal state of the ``networking`` component.
+ * Functions to manage the internal state of the ``mnet32`` component.
  *
- * @file   networking_state.c
+ * @file   mnet32_state.c
  * @author Mischback
  * @bug    Bugs are tracked with the
  *         [issue tracker](https://github.com/Mischback/krachkiste_esp32/issues)
@@ -36,32 +36,32 @@
 /**
  * Specify the actual connection medium.
  *
- * This might be a wired connection (``NETWORKING_MEDIUM_ETHERNET``) or a
- * wireless connection (``NETWORKING_MEDIUM_WIRELESS``) when the component is
+ * This might be a wired connection (``MNET32_MEDIUM_ETHERNET``) or a
+ * wireless connection (``MNET32_MEDIUM_WIRELESS``) when the component is
  * actually up and running.
  *
  * This is tracked in the component's ::state.
  */
 typedef enum {
-    NETWORKING_MEDIUM_UNSPECIFIED,
-    NETWORKING_MEDIUM_ETHERNET,
-    NETWORKING_MEDIUM_WIRELESS,
-} networking_medium;
+    MNET32_MEDIUM_UNSPECIFIED,
+    MNET32_MEDIUM_ETHERNET,
+    MNET32_MEDIUM_WIRELESS,
+} mnet32_medium;
 
 /**
  * Specify the mode of the wireless connection.
  *
- * This is only applicable for ``NETWORKING_MEDIUM_WIRELESS`` and will be set
- * to ``NETWORKING_MODE_NOT_APPLICABLE`` on initialization or if the medium
- * is set to ``NETWORKING_MEDIUM_ETHERNET``.
+ * This is only applicable for ``MNET32_MEDIUM_WIRELESS`` and will be set
+ * to ``MNET32_MODE_NOT_APPLICABLE`` on initialization or if the medium
+ * is set to ``MNET32_MEDIUM_ETHERNET``.
  *
  * This is tracked in the component's ::state.
  */
 typedef enum {
-    NETWORKING_MODE_NOT_APPLICABLE,
-    NETWORKING_MODE_WIFI_AP,
-    NETWORKING_MODE_WIFI_STA,
-} networking_mode;
+    MNET32_MODE_NOT_APPLICABLE,
+    MNET32_MODE_WIFI_AP,
+    MNET32_MODE_WIFI_STA,
+} mnet32_mode;
 
 /**
  * Specify the actual status of the connection.
@@ -72,12 +72,12 @@ typedef enum {
  * This is tracked in the component's ::state.
  */
 typedef enum {
-    NETWORKING_STATUS_DOWN,
-    NETWORKING_STATUS_READY,
-    NETWORKING_STATUS_CONNECTING,
-    NETWORKING_STATUS_IDLE,
-    NETWORKING_STATUS_BUSY,
-} networking_status;
+    MNET32_STATUS_DOWN,
+    MNET32_STATUS_READY,
+    MNET32_STATUS_CONNECTING,
+    MNET32_STATUS_IDLE,
+    MNET32_STATUS_BUSY,
+} mnet32_status;
 
 /**
  * A component-specific struct to keep track of the internal state.
@@ -87,10 +87,10 @@ typedef enum {
  * (``esp_netif_t *interface``), the dedicated networking *task*
  * (``TaskHandle_t task``) and the required event handler instances.
  */
-struct networking_state {
-    networking_medium   medium;
-    networking_mode     mode;
-    networking_status   status;
+struct mnet32_state {
+    mnet32_medium       medium;
+    mnet32_mode         mode;
+    mnet32_status       status;
     esp_netif_t         *interface;
     TaskHandle_t        task;
     esp_event_handler_t ip_event_handler;
@@ -104,16 +104,16 @@ struct networking_state {
 /**
  * Track the internal state of the component.
  */
-static struct networking_state *state = NULL;
+static struct mnet32_state *state = NULL;
 
 
 /* ***** FUNCTIONS ********************************************************* */
 
 void mnet32_state_init(void) {
     state = calloc(1, sizeof(*state));
-    state->medium = NETWORKING_MEDIUM_UNSPECIFIED;
-    state->mode = NETWORKING_MODE_NOT_APPLICABLE;
-    state->status = NETWORKING_STATUS_DOWN;
+    state->medium = MNET32_MEDIUM_UNSPECIFIED;
+    state->mode = MNET32_MODE_NOT_APPLICABLE;
+    state->status = MNET32_STATUS_DOWN;
 }
 
 void mnet32_state_destroy(void) {
@@ -143,22 +143,22 @@ bool mnet32_state_is_interface_set(void) {
 }
 
 bool mnet32_state_is_medium_wireless(void) {
-    return state->medium == NETWORKING_MEDIUM_WIRELESS;
+    return state->medium == MNET32_MEDIUM_WIRELESS;
 }
 bool mnet32_state_is_mode_ap(void) {
-    return state->mode == NETWORKING_MODE_WIFI_AP;
+    return state->mode == MNET32_MODE_WIFI_AP;
 }
 
 bool mnet32_state_is_mode_set(void) {
-    return state->mode != NETWORKING_MODE_NOT_APPLICABLE;
+    return state->mode != MNET32_MODE_NOT_APPLICABLE;
 }
 
 bool mnet32_state_is_mode_sta(void) {
-    return state->mode == NETWORKING_MODE_WIFI_STA;
+    return state->mode == MNET32_MODE_WIFI_STA;
 }
 
 bool mnet32_state_is_status_idle(void) {
-    return state->status == NETWORKING_STATUS_IDLE;
+    return state->status == MNET32_STATUS_IDLE;
 }
 
 esp_netif_t *mnet32_state_get_interface(void) {
@@ -206,37 +206,37 @@ void mnet32_state_set_interface(esp_netif_t *interface) {
 }
 
 void mnet32_state_clear_medium(void) {
-    state->medium = NETWORKING_MEDIUM_UNSPECIFIED;
+    state->medium = MNET32_MEDIUM_UNSPECIFIED;
 }
 
 void mnet32_state_set_medium_wireless(void) {
-    state->medium = NETWORKING_MEDIUM_WIRELESS;
+    state->medium = MNET32_MEDIUM_WIRELESS;
 }
 
 void mnet32_state_clear_mode(void) {
-    state->mode = NETWORKING_MODE_NOT_APPLICABLE;
+    state->mode = MNET32_MODE_NOT_APPLICABLE;
 }
 
 void mnet32_state_set_mode_ap(void) {
-    state->mode = NETWORKING_MODE_WIFI_AP;
+    state->mode = MNET32_MODE_WIFI_AP;
 }
 
 void mnet32_state_set_mode_sta(void) {
-    state->mode = NETWORKING_MODE_WIFI_STA;
+    state->mode = MNET32_MODE_WIFI_STA;
 }
 
 void mnet32_state_set_status_busy(void) {
-    state->status = NETWORKING_STATUS_BUSY;
+    state->status = MNET32_STATUS_BUSY;
 }
 
 void mnet32_state_set_status_connecting(void) {
-    state->status = NETWORKING_STATUS_CONNECTING;
+    state->status = MNET32_STATUS_CONNECTING;
 }
 
 void mnet32_state_set_status_idle(void) {
-    state->status = NETWORKING_STATUS_IDLE;
+    state->status = MNET32_STATUS_IDLE;
 }
 
 void mnet32_state_set_status_ready(void) {
-    state->status = NETWORKING_STATUS_READY;
+    state->status = MNET32_STATUS_READY;
 }

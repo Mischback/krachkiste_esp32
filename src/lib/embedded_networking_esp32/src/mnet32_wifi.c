@@ -133,7 +133,7 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk);
  * ::mnet32_wifi_ap_init, depending on the availability of credentials for station
  * mode.
  *
- * This function will set ``state->medium`` to ``NETWORKING_MEDIUM_WIRELESS``
+ * This function will set ``state->medium`` to ``MNET32_MEDIUM_WIRELESS``
  * (``state->mode`` will be set in the specific initialization function).
  *
  * @param nvs_namespace The NVS namespace to read values from.
@@ -366,7 +366,7 @@ esp_err_t mnet32_wifi_ap_init(void) {
  * specific deinitialization steps of *access point mode*, e.g. it does **not**
  * unregister ::mnet32_event_handler from ``WIFI_EVENT``.
  *
- * The function sets ``state->mode`` to ``NETWORKING_MODE_NOT_APPLICABLE`` and
+ * The function sets ``state->mode`` to ``MNET32_MODE_NOT_APPLICABLE`` and
  * ``state->interface`` to ``NULL``.
  *
  * @return esp_err_t This function always returns ``ESP_OK``, all potentially
@@ -538,7 +538,7 @@ static esp_err_t wifi_get_config_from_nvs(
  * Basically this creates the station-specific configuration, applies it to
  * **ESP-IDF**'s wifi module and starts the wifi.
  *
- * It sets ``state->mode`` to ``NETWORKING_MODE_WIFI_STA`` and provides a
+ * It sets ``state->mode`` to ``MNET32_MODE_WIFI_STA`` and provides a
  * reference to the ``netif`` in ``state->interface``.
  *
  * @param sta_ssid   The SSID of the WiFi network to connect to.
