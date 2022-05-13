@@ -104,7 +104,7 @@
 /* ***** TYPES ************************************************************* */
 
 /* Define the component-specific event base. */
-ESP_EVENT_DEFINE_BASE(NETWORKING_EVENTS);
+ESP_EVENT_DEFINE_BASE(MNET32_EVENTS);
 
 /**
  * This is the list of accepted notifications.
@@ -159,7 +159,7 @@ static void networking(void *task_parameters) {
     ESP_LOGD(TAG, "task_parameters: %s", (char *)task_parameters);
 
     const TickType_t mon_freq = pdMS_TO_TICKS(
-        NETWORKING_TASK_MONITOR_FREQUENCY);
+        MNET32_TASK_MONITOR_FREQUENCY);
     BaseType_t notify_result;
     uint32_t notify_value = 0;
 
@@ -182,7 +182,7 @@ static void networking(void *task_parameters) {
                  * the networking. This might give other components some time
                  * to handle the unavailability of networking.
                  */
-                networking_emit_event(NETWORKING_EVENT_UNAVAILABLE, NULL);
+                networking_emit_event(MNET32_EVENT_UNAVAILABLE, NULL);
                 networking_deinit();
                 break;
             case NETWORKING_NOTIFICATION_CMD_WIFI_START:
@@ -206,7 +206,7 @@ static void networking(void *task_parameters) {
                 networking_state_set_status_idle();
                 networking_wifi_ap_timer_start();
 
-                networking_emit_event(NETWORKING_EVENT_READY, NULL);
+                networking_emit_event(MNET32_EVENT_READY, NULL);
                 // TODO(mischback) Should the *status event* be emitted here
                 //                 automatically?
 
@@ -260,7 +260,7 @@ static void networking(void *task_parameters) {
 
                 networking_state_set_status_ready();
                 networking_wifi_sta_reset_connection_counter();
-                networking_emit_event(NETWORKING_EVENT_READY, NULL);
+                networking_emit_event(MNET32_EVENT_READY, NULL);
                 // TODO(mischback) Should the *status event* be emitted here
                 //                 automatically?
                 break;
@@ -268,7 +268,7 @@ static void networking(void *task_parameters) {
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_DISCONNECTED");
 
                 if (networking_wifi_sta_get_num_connection_attempts()
-                    > NETWORKING_WIFI_STA_MAX_CONNECTION_ATTEMPTS) {
+                    > MNET32_WIFI_STA_MAX_CONNECTION_ATTEMPTS) {
                     networking_wifi_sta_deinit();
                     if (networking_wifi_ap_init() != ESP_OK)
                         networking_notify(
@@ -518,7 +518,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
             "networking",
             4096,
             nvs_namespace,
-            NETWORKING_TASK_PRIORITY,
+            MNET32_TASK_PRIORITY,
             networking_state_get_task_handle_ptr()) != pdPASS) {
         ESP_LOGE(TAG, "Could not create task!");
         return ESP_FAIL;
@@ -631,7 +631,7 @@ static void networking_emit_event(int32_t event_id, void *event_data) {
     if (event_data == NULL) {
         ESP_LOGV(TAG, "Event without context data!");
         esp_ret = esp_event_post(
-            NETWORKING_EVENTS,
+            MNET32_EVENTS,
             event_id,
             NULL,
             0,
@@ -639,7 +639,7 @@ static void networking_emit_event(int32_t event_id, void *event_data) {
     } else {
         ESP_LOGV(TAG, "Event with context data!");
         esp_ret = esp_event_post(
-            NETWORKING_EVENTS,
+            MNET32_EVENTS,
             event_id,
             event_data,
             sizeof(event_data),
@@ -653,7 +653,7 @@ static void networking_emit_event(int32_t event_id, void *event_data) {
             "esp_event_post() returned %s [%d]",
             esp_err_to_name(esp_ret),
             esp_ret);
-        ESP_LOGD(TAG, "event_base....... %s", NETWORKING_EVENTS);
+        ESP_LOGD(TAG, "event_base....... %s", MNET32_EVENTS);
         ESP_LOGD(TAG, "event_id......... %d", event_id);
         ESP_LOGD(TAG, "event_data....... %p", event_data);
         ESP_LOGD(TAG, "event_data_size.. %d", sizeof(event_data));
@@ -683,8 +683,8 @@ static void networking_notify(uint32_t notification) {
         eSetValueWithOverwrite);
 }
 
-esp_err_t networking_start(char* nvs_namespace) {
-    ESP_LOGV(TAG, "networking_start()");
+esp_err_t mnet32_start(char* nvs_namespace) {
+    ESP_LOGV(TAG, "mnet32_start()");
 
     if (networking_init(nvs_namespace) != ESP_OK) {
         networking_deinit();
@@ -694,8 +694,8 @@ esp_err_t networking_start(char* nvs_namespace) {
     return ESP_OK;
 }
 
-esp_err_t networking_stop(void) {
-    ESP_LOGV(TAG, "networking_stop()");
+esp_err_t mnet32_stop(void) {
+    ESP_LOGV(TAG, "mnet32_stop()");
 
     networking_notify(NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP);
 

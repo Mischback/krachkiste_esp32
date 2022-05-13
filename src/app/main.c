@@ -102,15 +102,15 @@ void app_main(void) {
 
     // Start ``min_httpd`` as soon as the network becomes ready!
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        NETWORKING_EVENTS,
-        NETWORKING_EVENT_READY,
+        MNET32_EVENTS,
+        MNET32_EVENT_READY,
         &min_httpd_external_event_handler_start,
         NULL,
         NULL));
     // Stop ``min_httpd`` when the network link goes down!
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        NETWORKING_EVENTS,
-        NETWORKING_EVENT_UNAVAILABLE,
+        MNET32_EVENTS,
+        MNET32_EVENT_UNAVAILABLE,
         &min_httpd_external_event_handler_stop,
         NULL,
         NULL));
@@ -119,9 +119,9 @@ void app_main(void) {
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
         MIN_HTTPD_EVENTS,
         MIN_HTTPD_READY,
-        &networking_web_attach_handlers,
+        &mnet32_web_attach_handlers,
         NULL,
         NULL));
 
-    networking_start(PROJECT_NVS_STORAGE_NAMESPACE);
+    mnet32_start(PROJECT_NVS_STORAGE_NAMESPACE);
 }

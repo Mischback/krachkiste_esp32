@@ -14,7 +14,7 @@
 #include "esp_event.h"
 
 /* ESP-IDF's wifi library
- * - defines constants used for NETWORKING_WIFI_STA_THRESHOLD_AUTH
+ * - defines constants used for MNET32_WIFI_STA_THRESHOLD_AUTH
  */
 #include "esp_wifi.h"
 
@@ -26,7 +26,7 @@
  *       task priorities.
  * @todo Should this be make configurable by ``sdkconfig``?
  */
-#define NETWORKING_TASK_PRIORITY 10
+#define MNET32_TASK_PRIORITY 10
 
 /**
  * The networking task will automatically provide status information to other
@@ -35,7 +35,7 @@
  * @todo Determine a sane (default) value for this! Currently: 5 seconds.
  * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
-#define NETWORKING_TASK_MONITOR_FREQUENCY 5000
+#define MNET32_TASK_MONITOR_FREQUENCY 5000
 
 /**
  * The channel to be used while providing the project-specific access point.
@@ -43,7 +43,7 @@
  * @todo Is there a nice way to provide a **dynamic** channel?
  * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
-#define NETWORKING_WIFI_AP_CHANNEL 5
+#define MNET32_WIFI_AP_CHANNEL 5
 
 /**
  * The maximum number of allowed clients while providing the project-specific
@@ -51,7 +51,7 @@
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
-#define NETWORKING_WIFI_AP_MAX_CONNS 3
+#define MNET32_WIFI_AP_MAX_CONNS 3
 
 /**
  * Timespan to keep the project-specific access point available.
@@ -61,7 +61,7 @@
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
-#define NETWORKING_WIFI_AP_LIFETIME 60000
+#define MNET32_WIFI_AP_LIFETIME 60000
 
 /**
  * The password to access the project-specific access point.
@@ -72,14 +72,14 @@
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
-#define NETWORKING_WIFI_AP_PSK "foobar"
+#define MNET32_WIFI_AP_PSK "foobar"
 
 /**
  * The actual SSID of the project-specific access point.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
-#define NETWORKING_WIFI_AP_SSID "krachkiste_ap"
+#define MNET32_WIFI_AP_SSID "krachkiste_ap"
 
 /**
  * The maximum number of connection attempts for station mode.
@@ -88,7 +88,7 @@
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
-#define NETWORKING_WIFI_STA_MAX_CONNECTION_ATTEMPTS 3
+#define MNET32_WIFI_STA_MAX_CONNECTION_ATTEMPTS 3
 
 /**
  * Set a minimum required WiFi security while scanning for networks.
@@ -96,25 +96,25 @@
  * @todo Make this configurable (pre-build with ``sdkconfig``)
  * @todo Include a dedicated warning about security!
  */
-#define NETWORKING_WIFI_STA_THRESHOLD_AUTH WIFI_AUTH_WPA_PSK
+#define MNET32_WIFI_STA_THRESHOLD_AUTH WIFI_AUTH_WPA_PSK
 
 /**
  * Set a minimum required WiFi signal strength while scanning for networks.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
-#define NETWORKING_WIFI_STA_THRESHOLD_RSSI -127
+#define MNET32_WIFI_STA_THRESHOLD_RSSI -127
 
 
 /**
  * Declare the component-specific event base.
  *
  */
-ESP_EVENT_DECLARE_BASE(NETWORKING_EVENTS);
+ESP_EVENT_DECLARE_BASE(MNET32_EVENTS);
 
 enum {
-    NETWORKING_EVENT_UNAVAILABLE,
-    NETWORKING_EVENT_READY
+    MNET32_EVENT_UNAVAILABLE,
+    MNET32_EVENT_READY
 };
 
 
@@ -132,14 +132,14 @@ enum {
  * @return esp_err_t
  * @todo Complete the documentation!
  */
-esp_err_t networking_start(char* nvs_namespace);
+esp_err_t mnet32_start(char* nvs_namespace);
 
 /**
  * Stop all networking and free resources.
  *
  * @return esp_err_t Always returns ``ESP_OK``.
  */
-esp_err_t networking_stop(void);
+esp_err_t mnet32_stop(void);
 
 /**
  * Handle the event, that the http server is ready to accept further
@@ -162,7 +162,7 @@ esp_err_t networking_stop(void);
  *                   provided ``arg`` is an actual ``http_handle_t*`` to the
  *                   http server instance.
  */
-void networking_web_attach_handlers(
+void mnet32_web_attach_handlers(
     void* arg,
     esp_event_base_t event_base,
     int32_t event_id,

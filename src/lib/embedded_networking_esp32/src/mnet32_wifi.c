@@ -282,7 +282,7 @@ esp_err_t networking_wifi_ap_init(void) {
     ((struct medium_state_wifi_ap *)networking_state_get_medium_state())->ap_shutdown_timer =  // NOLINT(whitespace/line_length)
         xTimerCreate(
             NULL,
-            pdMS_TO_TICKS(NETWORKING_WIFI_AP_LIFETIME),
+            pdMS_TO_TICKS(MNET32_WIFI_AP_LIFETIME),
             pdFALSE,
             (void *) 0,
             wifi_ap_timed_shutdown);
@@ -294,11 +294,11 @@ esp_err_t networking_wifi_ap_init(void) {
      */
     wifi_config_t ap_config = {
         .ap = {
-            .ssid = NETWORKING_WIFI_AP_SSID,
-            .ssid_len = strlen(NETWORKING_WIFI_AP_SSID),
-            .channel = NETWORKING_WIFI_AP_CHANNEL,
-            .password = NETWORKING_WIFI_AP_PSK,
-            .max_connection = NETWORKING_WIFI_AP_MAX_CONNS,
+            .ssid = MNET32_WIFI_AP_SSID,
+            .ssid_len = strlen(MNET32_WIFI_AP_SSID),
+            .channel = MNET32_WIFI_AP_CHANNEL,
+            .password = MNET32_WIFI_AP_PSK,
+            .max_connection = MNET32_WIFI_AP_MAX_CONNS,
             .authmode = WIFI_AUTH_WPA_WPA2_PSK,
         },
     };
@@ -308,7 +308,7 @@ esp_err_t networking_wifi_ap_init(void) {
      *                  an ``#define`` that may be picked up in our code or is
      *                  it really hardcoded in the esp_wifi library/component?
      */
-    if (strlen(NETWORKING_WIFI_AP_PSK) <= 8) {
+    if (strlen(MNET32_WIFI_AP_PSK) <= 8) {
         ap_config.ap.authmode = WIFI_AUTH_OPEN;
         memset(ap_config.ap.password, 0, sizeof(ap_config.ap.password));
         ESP_LOGW(
@@ -415,7 +415,7 @@ static void wifi_ap_timed_shutdown(TimerHandle_t timer) {
     xTimerStop(timer, (TickType_t) 0);
     xTimerDelete(timer, (TickType_t) 0);
 
-    networking_stop();
+    mnet32_stop();
 }
 
 int8_t networking_wifi_ap_get_connected_stations(void) {
@@ -572,8 +572,8 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk) {
         .sta = {
             .scan_method = WIFI_FAST_SCAN,
             .sort_method = WIFI_CONNECT_AP_BY_SECURITY,
-            .threshold.rssi = NETWORKING_WIFI_STA_THRESHOLD_RSSI,
-            .threshold.authmode = NETWORKING_WIFI_STA_THRESHOLD_AUTH,
+            .threshold.rssi = MNET32_WIFI_STA_THRESHOLD_RSSI,
+            .threshold.authmode = MNET32_WIFI_STA_THRESHOLD_AUTH,
         },
     };
     // Inject the SSID / PSK as fetched from the NVS.

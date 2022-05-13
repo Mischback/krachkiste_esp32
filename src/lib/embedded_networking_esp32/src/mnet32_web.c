@@ -67,7 +67,7 @@ static const httpd_uri_t networking_web_uri_get_config = {
 /* ***** FUNCTIONS ********************************************************* */
 
 // Documentation in networking.h
-void networking_web_attach_handlers(
+void mnet32_web_attach_handlers(
     void* arg,
     esp_event_base_t event_base,
     int32_t event_id,
