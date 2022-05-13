@@ -31,8 +31,9 @@
 #include <string.h>
 
 /* Other headers of the component. */
-#include "networking_state.h"  // manage the internal state
-#include "networking_wifi.h"   // WiFi-related functions
+#include "networking_internal.h"  // The private header
+#include "networking_state.h"     // manage the internal state
+#include "networking_wifi.h"      // WiFi-related functions
 
 /* This is ESP-IDF's error handling library.
  * - defines the **type** ``esp_err_t``
@@ -146,11 +147,6 @@ static esp_err_t get_string_from_nvs(
 
 static void networking(void *task_parameters);
 static void networking_notify(uint32_t notification);
-static void networking_event_handler(
-    void* arg,
-    esp_event_base_t event_base,
-    int32_t event_id,
-    void* event_data);
 static esp_err_t networking_deinit(void);
 static esp_err_t networking_init(char* nvs_namespace);
 static void networking_emit_event(int32_t event_id, void *event_data);
@@ -192,14 +188,14 @@ static void networking(void *task_parameters) {
             case NETWORKING_NOTIFICATION_CMD_WIFI_START:
                 ESP_LOGD(TAG, "CMD: WIFI_START");
 
-                if (wifi_start((char *)task_parameters) != ESP_OK) {
+                if (networking_wifi_start((char *)task_parameters) != ESP_OK) {
                     ESP_LOGE(TAG, "Could not start WiFi!");
                 }
                 break;
             case NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START:
                 /* Handle ``WIFI_EVENT_AP_START`` (received from
                  * ::networking_event_handler ).
-                 * The *chain* of ::wifi_start, ::wifi_init and ::wifi_ap_init
+                 * The *chain* of ::networking_wifi_start, ::wifi_init and ::networking_wifi_ap_init
                  * has set ``state->medium`` and ``state->mode``, so with this
                  * event the access point is assumed to be ready, resulting in
                  * ``state->status = NETWORKING_STATUS_IDLE``, because no
@@ -208,7 +204,7 @@ static void networking(void *task_parameters) {
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_START");
 
                 networking_state_set_status_idle();
-                wifi_ap_timer_start();
+                networking_wifi_ap_timer_start();
 
                 networking_emit_event(NETWORKING_EVENT_READY, NULL);
                 // TODO(mischback) Should the *status event* be emitted here
@@ -229,7 +225,7 @@ static void networking(void *task_parameters) {
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_STACONNECTED");
 
                 networking_state_set_status_busy();
-                wifi_ap_timer_stop();
+                networking_wifi_ap_timer_stop();
 
                 // TODO(mischback) Determine which of the access point-specific
                 //                 information should be included in the
@@ -239,13 +235,13 @@ static void networking(void *task_parameters) {
             case NETWORKING_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_STADISCONNECTED");
 
-                if (wifi_ap_get_connected_stations() == 0) {
+                if (networking_wifi_ap_get_connected_stations() == 0) {
                     networking_state_set_status_idle();
 
                     ESP_LOGD(
                         TAG,
                         "No more stations connected, restarting shutdown timer!");  // NOLINT(whitespace/line_length)
-                    wifi_ap_timer_start();
+                    networking_wifi_ap_timer_start();
                 }
 
                 // TODO(mischback) Determine which of the access point-specific
@@ -257,13 +253,13 @@ static void networking(void *task_parameters) {
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_START");
 
                 networking_state_set_status_connecting();
-                wifi_sta_connect();
+                networking_wifi_sta_connect();
                 break;
             case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_CONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_CONNECTED");
 
                 networking_state_set_status_ready();
-                wifi_sta_reset_connection_counter();
+                networking_wifi_sta_reset_connection_counter();
                 networking_emit_event(NETWORKING_EVENT_READY, NULL);
                 // TODO(mischback) Should the *status event* be emitted here
                 //                 automatically?
@@ -271,14 +267,14 @@ static void networking(void *task_parameters) {
             case NETWORKING_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_DISCONNECTED");
 
-                if (wifi_sta_get_num_connection_attempts()
+                if (networking_wifi_sta_get_num_connection_attempts()
                     > NETWORKING_WIFI_STA_MAX_CONNECTION_ATTEMPTS) {
-                    wifi_sta_deinit();
-                    if (wifi_ap_init() != ESP_OK)
+                    networking_wifi_sta_deinit();
+                    if (networking_wifi_ap_init() != ESP_OK)
                         networking_notify(
                             NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP);
                 } else {
-                    wifi_sta_connect();
+                    networking_wifi_sta_connect();
                 }
                 break;
             default:
@@ -302,30 +298,7 @@ static void networking(void *task_parameters) {
     vTaskDelete(NULL);
 }
 
-/**
- * Handle ``IP_EVENT`` and ``WIFI_EVENT`` occurences.
- *
- * @param arg
- * @param event_base The base of the actual event. The handler *can handle*
- *                   occurences of ``IP_EVENT`` and ``WIFI_EVENT``.
- * @param event_id   The actual event, as specified by its ``base`` and its
- *                   ``id``.
- * @param event_data
- *
- * @todo Complete this documentation block!
- * @todo The current implementation defines ``case`` statements for all events,
- *       that *might* happen. Probably many of them are not acutally required
- *       for the component to work. All ``case`` statements do provide a log
- *       message of level ``VERBOSE``.
- *       a) Can this code be kept without impacting the build size? Or in other
- *          words: Will these statements be *optimized away* if the minimum
- *          log level is greater than ``VERBOSE``?
- *       b) For actual *events in use* by the component, switch to log level
- *          ``DEBUG``.
- * @todo When ``ethernet`` networking is implemented, the related events must
- *       be included here!
- */
-static void networking_event_handler(
+void networking_event_handler(
     void* arg,
     esp_event_base_t event_base,
     int32_t event_id,
@@ -519,7 +492,7 @@ static esp_err_t networking_init(char* nvs_namespace) {
         ESP_EVENT_ANY_ID,
         networking_event_handler,
         NULL,
-        networking_state_get_ip_event_handler_ptr());
+        (void **)networking_state_get_ip_event_handler_ptr());
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not attach IP_EVENT event handler!");
         ESP_LOGD(
@@ -591,7 +564,7 @@ static esp_err_t networking_deinit(void) {
 
     esp_err_t esp_ret;
     if (networking_state_is_medium_wireless())
-        esp_ret = wifi_deinit();
+        esp_ret = networking_wifi_deinit();
 
     /* Unregister the IP_EVENT event handler. */
     esp_ret = esp_event_handler_instance_unregister(

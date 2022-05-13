@@ -22,6 +22,7 @@
 
 /* Other headers of the component. */
 #include "networking/networking.h"  // The public header
+#include "networking_internal.h"    // The private header
 #include "networking_state.h"       // manage the internal state
 
 /* This is ESP-IDF's event library. */
@@ -129,7 +130,7 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk);
  * storage.
  *
  * The actual, *mode-specific* initialization is done in ::wifi_sta_init and
- * ::wifi_ap_init, depending on the availability of credentials for station
+ * ::networking_wifi_ap_init, depending on the availability of credentials for station
  * mode.
  *
  * This function will set ``state->medium`` to ``NETWORKING_MEDIUM_WIRELESS``
@@ -139,7 +140,7 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk);
  * @return esp_err_t    ``ESP_OK`` on success, ``ESP_FAIL`` on failure; This
  *                      function may return ``ESP_FAIL`` by itsself or by the
  *                      specific initialization functions ::wifi_sta_init and
- *                      ::wifi_ap_init, see the provided log messages (of
+ *                      ::networking_wifi_ap_init, see the provided log messages (of
  *                      level ``ERROR`` and ``DEBUG``) for the actual reason
  *                      of failure. **This function does return** ``ESP_OK``
  *                      in case that ``state->mode`` **is not**
@@ -206,7 +207,7 @@ static esp_err_t wifi_init(char *nvs_namespace) {
         (char **)&nvs_sta_psk);
     if (esp_ret != ESP_OK) {
         ESP_LOGI(TAG, "Could not read credentials, starting access point!");
-        return wifi_ap_init();
+        return networking_wifi_ap_init();
     }
 
     ESP_LOGD(TAG, "Retrieved SSID.. '%s'", nvs_sta_ssid);
@@ -216,8 +217,8 @@ static esp_err_t wifi_init(char *nvs_namespace) {
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not start WiFi station mode!");
         ESP_LOGI(TAG, "Starting access point!");
-        wifi_sta_deinit();
-        return wifi_ap_init();
+        networking_wifi_sta_deinit();
+        return networking_wifi_ap_init();
     }
 
     /* At this point, the WiFi is started in station mode. All further
@@ -226,8 +227,8 @@ static esp_err_t wifi_init(char *nvs_namespace) {
     return ESP_OK;
 }
 
-esp_err_t wifi_deinit(void) {
-    ESP_LOGV(TAG, "wifi_deinit()");
+esp_err_t networking_wifi_deinit(void) {
+    ESP_LOGV(TAG, "networking_wifi_deinit()");
 
     /* Unregister the WIFI_EVENT event handler. */
     esp_err_t esp_ret = esp_event_handler_instance_unregister(
@@ -248,7 +249,7 @@ esp_err_t wifi_deinit(void) {
         wifi_ap_deinit();
 
     if (networking_state_is_mode_sta())
-        wifi_sta_deinit();
+        networking_wifi_sta_deinit();
 
     esp_ret = esp_wifi_deinit();
     if (esp_ret != ESP_OK) {
@@ -264,8 +265,8 @@ esp_err_t wifi_deinit(void) {
     return ESP_OK;
 }
 
-esp_err_t wifi_ap_init(void) {
-    ESP_LOGV(TAG, "wifi_ap_init()");
+esp_err_t networking_wifi_ap_init(void) {
+    ESP_LOGV(TAG, "networking_wifi_ap_init()");
 
     /* Create a network interface for access point mode. */
     networking_state_set_interface(esp_netif_create_default_wifi_ap());
@@ -361,7 +362,7 @@ esp_err_t wifi_ap_init(void) {
  *
  * Stops the access point and destroys the ``netif``.
  *
- * This function is meant to be called by ::wifi_deinit and performs only the
+ * This function is meant to be called by ::networking_wifi_deinit and performs only the
  * specific deinitialization steps of *access point mode*, e.g. it does **not**
  * unregister ::networking_event_handler from ``WIFI_EVENT``.
  *
@@ -417,8 +418,8 @@ static void wifi_ap_timed_shutdown(TimerHandle_t timer) {
     networking_stop();
 }
 
-int8_t wifi_ap_get_connected_stations(void) {
-    ESP_LOGV(TAG, "wifi_ap_get_connected_stations()");
+int8_t networking_wifi_ap_get_connected_stations(void) {
+    ESP_LOGV(TAG, "networking_wifi_ap_get_connected_stations()");
 
     wifi_sta_list_t tmp;
 
@@ -431,8 +432,8 @@ int8_t wifi_ap_get_connected_stations(void) {
     return tmp.num;
 }
 
-void wifi_ap_timer_start(void) {
-    ESP_LOGV(TAG, "wifi_ap_timer_start()");
+void networking_wifi_ap_timer_start(void) {
+    ESP_LOGV(TAG, "networking_wifi_ap_timer_start()");
 
     struct medium_state_wifi_ap *tmp = networking_state_get_medium_state();
 
@@ -450,8 +451,8 @@ void wifi_ap_timer_start(void) {
     ESP_LOGD(TAG, "Access point's shutdown timer started!");
 }
 
-void wifi_ap_timer_stop(void) {
-    ESP_LOGV(TAG, "wifi_ap_timer_stop()");
+void networking_wifi_ap_timer_stop(void) {
+    ESP_LOGV(TAG, "networking_wifi_ap_timer_stop()");
 
     struct medium_state_wifi_ap *tmp = networking_state_get_medium_state();
 
@@ -560,7 +561,7 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk) {
 
     /* Allocate memory for the specific state information. */
     networking_state_medium_state_init(sizeof(struct medium_state_wifi_sta));
-    wifi_sta_reset_connection_counter();
+    networking_wifi_sta_reset_connection_counter();
 
     /* Setup the configuration for station mode.
      * Some of the settings may be configured by ``menuconfig`` / ``sdkconfig``,
@@ -625,8 +626,8 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk) {
     return ESP_OK;
 }
 
-esp_err_t wifi_sta_deinit(void) {
-    ESP_LOGV(TAG, "wifi_sta_deinit()");
+esp_err_t networking_wifi_sta_deinit(void) {
+    ESP_LOGV(TAG, "networking_wifi_sta_deinit()");
 
     if (!networking_state_is_mode_set()) {
         ESP_LOGE(TAG, "WiFi is not initialized!");
@@ -656,8 +657,8 @@ esp_err_t wifi_sta_deinit(void) {
     return ESP_OK;
 }
 
-void wifi_sta_connect(void) {
-    ESP_LOGV(TAG, "wifi_sta_connect()");
+void networking_wifi_sta_connect(void) {
+    ESP_LOGV(TAG, "networking_wifi_sta_connect()");
 
     ((struct medium_state_wifi_sta *)networking_state_get_medium_state())->num_connection_attempts++;  // NOLINT(whitespace/line_length)
 
@@ -672,19 +673,19 @@ void wifi_sta_connect(void) {
     }
 }
 
-int8_t wifi_sta_get_num_connection_attempts(void) {
+int8_t networking_wifi_sta_get_num_connection_attempts(void) {
     return ((struct medium_state_wifi_sta *)networking_state_get_medium_state())->num_connection_attempts;  // NOLINT(whitespace/line_length)
 }
 
-void wifi_sta_reset_connection_counter(void) {
+void networking_wifi_sta_reset_connection_counter(void) {
     ((struct medium_state_wifi_sta *)networking_state_get_medium_state())->num_connection_attempts = 0;  // NOLINT(whitespace/line_length)
 }
 
-esp_err_t wifi_start(char *nvs_namespace) {
-    ESP_LOGV(TAG, "wifi_start()");
+esp_err_t networking_wifi_start(char *nvs_namespace) {
+    ESP_LOGV(TAG, "networking_wifi_start()");
 
     if (wifi_init(nvs_namespace) != ESP_OK) {
-        wifi_deinit();
+        networking_wifi_deinit();
         return ESP_FAIL;
     }
 
