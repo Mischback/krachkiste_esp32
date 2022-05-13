@@ -23,7 +23,11 @@
 /* Other headers of the component. */
 #include "mnet32/mnet32.h"    // The public header
 #include "mnet32_internal.h"  // The private header
+#include "mnet32_nvs.h"       // access to non-volatile storage
 #include "mnet32_state.h"     // manage the internal state
+
+/* This is ESP-IDF's error handling library. */
+#include "esp_err.h"
 
 /* This is ESP-IDF's event library. */
 #include "esp_event.h"
@@ -49,6 +53,9 @@
  */
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
+
+/* This is ESP-IDF's library to interface the non-volatile storage (NVS). */
+#include "nvs_flash.h"
 
 
 /* ***** DEFINES *********************************************************** */

@@ -71,7 +71,8 @@
 #include "freertos/task.h"
 
 /* This is ESP-IDF's library to interface the non-volatile storage (NVS). */
-#include "nvs_flash.h"
+// TODO(mischback) Verify that this include is obsolete!
+// #include "nvs_flash.h"
 
 
 /* ***** DEFINES *********************************************************** */
@@ -123,16 +124,6 @@ static const char* TAG = "mnet32";
 
 
 /* ***** PROTOTYPES ******************************************************** */
-
-static esp_err_t get_nvs_handle(
-    const char *namespace,
-    nvs_open_mode_t mode,
-    nvs_handle_t *handle);
-static esp_err_t get_string_from_nvs(
-    nvs_handle_t handle,
-    const char *key,
-    char *ret_buffer,
-    const size_t max_buf_size);
 
 static void mnet32_task(void *task_parameters);
 static void mnet32_notify(uint32_t notification);
@@ -439,6 +430,7 @@ void mnet32_event_handler(
  */
 static esp_err_t mnet32_init(char* nvs_namespace) {
     // Set log-level of our own code to VERBOSE
+    // TODO(mischback) Now there a dedicated tags for ``wifi`` and ``nvs``
     // FIXME: Final code should not do this, but respect the project's settings
     esp_log_level_set(TAG, ESP_LOG_VERBOSE);
 
@@ -687,81 +679,6 @@ esp_err_t mnet32_stop(void) {
     ESP_LOGV(TAG, "mnet32_stop()");
 
     mnet32_notify(MNET32_NOTIFICATION_CMD_NETWORKING_STOP);
-
-    return ESP_OK;
-}
-
-static esp_err_t get_nvs_handle(
-    const char *namespace,
-    nvs_open_mode_t mode,
-    nvs_handle_t *handle) {
-    ESP_LOGV(TAG, "'get_nvs_handle()'");
-
-    esp_err_t esp_ret = nvs_open(namespace, mode, handle);
-
-    if (esp_ret != ESP_OK) {
-        /* This might fail for different reasons, e.g. the NVS is not correctly
-         * set up or initialized.
-         * Assuming that the NVS **is** available, this will fail with
-         * ESP_ERR_NVS_NOT_FOUND, which means that there is no namespace of
-         * the name ``nvs_namespace`` (yet).
-         * This might happen during first start of the applications, as there
-         * is no WiFi config yet, so the namespace was never used before.
-         */
-        ESP_LOGE(TAG, "Could not open NVS handle '%s'!", namespace);
-        ESP_LOGD(
-            TAG,
-            "'nvs_open()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
-        return esp_ret;
-    }
-
-    return ESP_OK;
-}
-
-static esp_err_t get_string_from_nvs(
-    nvs_handle_t handle,
-    const char *key,
-    char *ret_buffer,
-    const size_t max_buf_size) {
-    ESP_LOGV(TAG, "'get_string_from_nvs()'");
-
-    esp_err_t esp_ret;
-    size_t req_size;
-
-    esp_ret = nvs_get_str(handle, key, NULL, &req_size);
-    if (esp_ret != ESP_OK) {
-        ESP_LOGE(TAG, "Could not determine size for %s!", key);
-        ESP_LOGD(
-            TAG,
-            "'nvs_get_str()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
-        return esp_ret;
-    }
-
-    if (req_size > max_buf_size) {
-        ESP_LOGE(TAG, "Provided buffer has insufficient size!");
-        ESP_LOGD(
-            TAG,
-            "Required: %d / available: %d",
-            req_size,
-            max_buf_size);
-        return ESP_FAIL;
-    }
-
-    esp_ret = nvs_get_str(handle, key, ret_buffer, &req_size);
-    if (esp_ret != ESP_OK) {
-        ESP_LOGE(
-            TAG, "Could not read value of '%s'!", key);
-        ESP_LOGD(
-            TAG,
-            "'nvs_get_str()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
-        return esp_ret;
-    }
 
     return ESP_OK;
 }
