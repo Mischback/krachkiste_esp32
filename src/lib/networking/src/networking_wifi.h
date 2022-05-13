@@ -5,6 +5,9 @@
 #ifndef SRC_LIB_NETWORKING_SRC_NETWORKING_WIFI_H_
 #define SRC_LIB_NETWORKING_SRC_NETWORKING_WIFI_H_
 
+/* This is ESP-IDF's error handling library. */
+#include "esp_err.h"
+
 /**
  * Get the number of connected stations in access point mode.
  *

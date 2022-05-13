@@ -30,6 +30,9 @@
 /* C's standard libraries. */
 #include <string.h>
 
+/* Other headers of the component. */
+#include "networking_wifi.h"  // WiFi-related functions
+
 /* This is ESP-IDF's error handling library.
  * - defines the **type** ``esp_err_t``
  * - defines common return values (``ESP_OK``, ``ESP_FAIL``)

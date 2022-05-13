@@ -17,6 +17,9 @@
 /* This file's header. */
 #include "networking_wifi.h"
 
+/* C's standard libraries. */
+#include <string.h>
+
 /* Other headers of the component. */
 #include "networking/networking.h"  // The public header
 
@@ -412,7 +415,7 @@ static void wifi_ap_timed_shutdown(TimerHandle_t timer) {
     xTimerStop(timer, (TickType_t) 0);
     xTimerDelete(timer, (TickType_t) 0);
 
-    networking_notify(NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP);
+    networking_stop();
 }
 
 int8_t wifi_ap_get_connected_stations(void) {
