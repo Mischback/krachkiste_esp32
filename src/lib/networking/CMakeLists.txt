@@ -11,7 +11,7 @@ minimizeHTML(src/wifi_config.src.html src/wifi_config.html)
 # they are included by default, see
 # https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#common-component-requirements
 idf_component_register(
-  SRCS "src/networking.c" "src/networking_web.c" "src/networking_wifi.c" "src/wifi_config.html"
+  SRCS "src/networking.c" "src/networking_state.c" "src/networking_web.c" "src/networking_wifi.c" "src/wifi_config.html"
   INCLUDE_DIRS "include"
   PRIV_REQUIRES "esp_common esp_event esp_http_server esp_netif esp_wifi log nvs_flash"
   EMBED_TXTFILES "src/wifi_config.html"
