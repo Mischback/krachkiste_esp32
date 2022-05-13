@@ -46,12 +46,11 @@ static const char* TAG = "mnet32.nvs";
 
 /* ***** FUNCTIONS ********************************************************* */
 
-
-esp_err_t get_nvs_handle(
+esp_err_t mnet32_get_nvs_handle(
     const char *namespace,
     nvs_open_mode_t mode,
     nvs_handle_t *handle) {
-    ESP_LOGV(TAG, "'get_nvs_handle()'");
+    ESP_LOGV(TAG, "'mnet32_get_nvs_handle()'");
 
     esp_err_t esp_ret = nvs_open(namespace, mode, handle);
 
@@ -76,12 +75,12 @@ esp_err_t get_nvs_handle(
     return ESP_OK;
 }
 
-esp_err_t get_string_from_nvs(
+esp_err_t mnet32_get_string_from_nvs(
     nvs_handle_t handle,
     const char *key,
     char *ret_buffer,
     const size_t max_buf_size) {
-    ESP_LOGV(TAG, "'get_string_from_nvs()'");
+    ESP_LOGV(TAG, "'mnet32_get_string_from_nvs()'");
 
     esp_err_t esp_ret;
     size_t req_size;

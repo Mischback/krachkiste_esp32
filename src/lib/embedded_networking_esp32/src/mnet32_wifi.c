@@ -505,14 +505,6 @@ void mnet32_wifi_ap_timer_stop(void) {
  * @return esp_err_t    ``ESP_OK`` on success, ``ESP_FAIL`` on failure; see the
  *                      provided log messages (of level ``ERROR`` and ``DEBUG``)
  *                      for the actual reason of failure.
- *
- * @todo Needs validation/testing. ``ssid`` and ``psk`` should be ``char**``?
- * @todo This should be refactored!
- *       - provide a generic function to open nvs, e.g.
- *         ``static nvs_handle_t get_nvs_handle(char *nvs_namespace)``
- *       - provide a generic function to read a string from nvs, e.g.
- *         ``static char* get_nvs_string(nvs_handle_t handle, char *key)``
- *       - the prototype of this function may be left untouched!
  */
 static esp_err_t mnet32_wifi_get_config_from_nvs(
     char *nvs_namespace,
@@ -524,12 +516,12 @@ static esp_err_t mnet32_wifi_get_config_from_nvs(
     nvs_handle_t handle;
     esp_err_t esp_ret;
 
-    esp_ret = get_nvs_handle(nvs_namespace, NVS_READONLY, &handle);
+    esp_ret = mnet32_get_nvs_handle(nvs_namespace, NVS_READONLY, &handle);
     if (esp_ret != ESP_OK)
         return esp_ret;
     ESP_LOGD(TAG, "Handle '%s' successfully opened!", nvs_namespace);
 
-    esp_ret = get_string_from_nvs(
+    esp_ret = mnet32_get_string_from_nvs(
         handle,
         MNET32_WIFI_NVS_SSID,
         (char *)ssid,
@@ -537,7 +529,7 @@ static esp_err_t mnet32_wifi_get_config_from_nvs(
     if (esp_ret != ESP_OK)
         return esp_ret;
 
-    esp_ret = get_string_from_nvs(
+    esp_ret = mnet32_get_string_from_nvs(
         handle,
         MNET32_WIFI_NVS_PSK,
         (char *)psk,
