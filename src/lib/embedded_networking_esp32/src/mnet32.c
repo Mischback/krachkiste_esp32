@@ -508,7 +508,7 @@ static esp_err_t mnet32_init(char* nvs_namespace) {
             4096,
             nvs_namespace,
             MNET32_TASK_PRIORITY,
-            networking_state_get_task_handle_ptr()) != pdPASS) {
+            mnet32_state_get_task_handle_ptr()) != pdPASS) {
         ESP_LOGE(TAG, "Could not create task!");
         return ESP_FAIL;
     }

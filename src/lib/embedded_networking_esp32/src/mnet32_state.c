@@ -193,7 +193,7 @@ TaskHandle_t mnet32_state_get_task_handle(void) {
     return state->task;
 }
 
-TaskHandle_t *networking_state_get_task_handle_ptr(void) {
+TaskHandle_t *mnet32_state_get_task_handle_ptr(void) {
     return &(state->task);
 }
 

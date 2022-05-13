@@ -42,7 +42,7 @@ esp_event_handler_t *mnet32_state_get_medium_event_handler_ptr(void);
 void *mnet32_state_get_medium_state(void);
 uint8_t mnet32_state_get_mode(void);
 TaskHandle_t mnet32_state_get_task_handle(void);
-TaskHandle_t *networking_state_get_task_handle_ptr(void);
+TaskHandle_t *mnet32_state_get_task_handle_ptr(void);
 
 void mnet32_state_clear_interface(void);
 void mnet32_state_set_interface(esp_netif_t *interface);

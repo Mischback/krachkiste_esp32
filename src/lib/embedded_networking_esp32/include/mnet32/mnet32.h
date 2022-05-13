@@ -67,8 +67,7 @@
  * The password to access the project-specific access point.
  *
  * The component ``esp_wifi`` requires the password to be at least 8
- * characters! It fails badly otherwise. ::networking_wifi_ap_initialize does
- * handle this.
+ * characters! It fails badly otherwise. ::mnet32_wifi_ap_init does handle this.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
  */

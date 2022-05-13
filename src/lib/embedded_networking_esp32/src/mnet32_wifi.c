@@ -113,7 +113,7 @@ struct medium_state_wifi_sta {
  * See
  * [its API documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html#how-to-use-this-library).
  */
-static const char* TAG = "networking";
+static const char* TAG = "mnet32.wifi";
 
 
 /* ***** PROTOTYPES ******************************************************** */
@@ -155,7 +155,7 @@ static esp_err_t mnet32_wifi_sta_init(char **sta_ssid, char **sta_psk);
  *                      (of level ``ERROR`` and ``DEBUG``) for the actual reason
  *                      of failure. **This function does return** ``ESP_OK``
  *                      in case that ``state->mode`` **is not**
- *                      ``NETWORKING_MODE_APPLICABLE``, because it assumes,
+ *                      ``MNET32_MODE_NOT_APPLICABLE``, because it assumes,
  *                      that there has been a previous call to
  *                      ``mnet32_wifi_init``.
  */
