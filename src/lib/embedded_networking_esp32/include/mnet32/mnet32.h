@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileType: SOURCE
 
-#ifndef SRC_LIB_NETWORKING_INCLUDE_NETWORKING_NETWORKING_H_
-#define SRC_LIB_NETWORKING_INCLUDE_NETWORKING_NETWORKING_H_
+#ifndef SRC_LIB_EMBEDDED_NETWORKING_ESP32_INCLUDE_MNET32_MNET32_H_
+#define SRC_LIB_EMBEDDED_NETWORKING_ESP32_INCLUDE_MNET32_MNET32_H_
 
 /* This is ESP-IDF's error handling library.
  * - defines ``esp_err_t``
@@ -168,4 +168,4 @@ void networking_web_attach_handlers(
     int32_t event_id,
     void* event_data);
 
-#endif  // SRC_LIB_NETWORKING_INCLUDE_NETWORKING_NETWORKING_H_
+#endif  // SRC_LIB_EMBEDDED_NETWORKING_ESP32_INCLUDE_MNET32_MNET32_H_

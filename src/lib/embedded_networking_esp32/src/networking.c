@@ -25,7 +25,7 @@
 /* ***** INCLUDES ********************************************************** */
 
 /* This file's header. */
-#include "networking/networking.h"
+#include "mnet32/mnet32.h"
 
 /* C's standard libraries. */
 #include <string.h>
