@@ -195,7 +195,7 @@ static void networking(void *task_parameters) {
             case NETWORKING_NOTIFICATION_EVENT_WIFI_AP_START:
                 /* Handle ``WIFI_EVENT_AP_START`` (received from
                  * ::mnet32_event_handler ).
-                 * The *chain* of ::mnet32_wifi_start, ::wifi_init and ::mnet32_wifi_ap_init
+                 * The *chain* of ::mnet32_wifi_start, ::mnet32_wifi_init and ::mnet32_wifi_ap_init
                  * has set ``state->medium`` and ``state->mode``, so with this
                  * event the access point is assumed to be ready, resulting in
                  * ``state->status = MNET32_STATUS_IDLE``, because no

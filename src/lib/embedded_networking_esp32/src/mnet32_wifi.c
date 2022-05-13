@@ -3,9 +3,9 @@
 // SPDX-FileType: SOURCE
 
 /**
- * WiFi-related functions of the ``networking`` component.
+ * WiFi-related functions of the ``mnet32`` component.
  *
- * @file   networking_wifi.c
+ * @file   mnet32_wifi.c
  * @author Mischback
  * @bug    Bugs are tracked with the
  *         [issue tracker](https://github.com/Mischback/krachkiste_esp32/issues)
@@ -59,7 +59,7 @@
  * IEEE 802.11 says, that the maximum length of an SSID is 32, which is also
  * the value provided in **ESP-IDF**'s ``esp_wifi_types.h``.
  */
-#define NETWORKING_WIFI_SSID_MAX_LEN 32
+#define MNET32_WIFI_SSID_MAX_LEN 32
 
 /**
  * The maximum length of the ``char`` array to store the pre-shared key
@@ -68,7 +68,7 @@
  * IEEE 801.11 says, that the maximum length of an PSK is 64, which is also the
  * value provided in **ESP-IDF**'s ``esp_wifi_types.h``.
  */
-#define NETWORKING_WIFI_PSK_MAX_LEN 64
+#define MNET32_WIFI_PSK_MAX_LEN 64
 
 
 /* ***** TYPES ************************************************************* */
@@ -107,14 +107,14 @@ static const char* TAG = "networking";
 
 /* ***** PROTOTYPES ******************************************************** */
 
-static esp_err_t wifi_init(char *nvs_namespace);
-static esp_err_t wifi_ap_deinit(void);
-static void wifi_ap_timed_shutdown(TimerHandle_t timer);
-static esp_err_t wifi_get_config_from_nvs(
+static esp_err_t mnet32_wifi_init(char *nvs_namespace);
+static esp_err_t mnet32_wifi_ap_deinit(void);
+static void mnet32_wifi_ap_timed_shutdown(TimerHandle_t timer);
+static esp_err_t mnet32_wifi_get_config_from_nvs(
     char *nvs_namespace,
     char **ssid,
     char **psk);
-static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk);
+static esp_err_t mnet32_wifi_sta_init(char **sta_ssid, char **sta_psk);
 
 
 /* ***** FUNCTIONS ********************************************************* */
@@ -129,9 +129,9 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk);
  * optionally available configuration (for station mode) from the non-volatile
  * storage.
  *
- * The actual, *mode-specific* initialization is done in ::wifi_sta_init and
- * ::mnet32_wifi_ap_init, depending on the availability of credentials for station
- * mode.
+ * The actual, *mode-specific* initialization is done in ::mnet32_wifi_sta_init
+ * and ::mnet32_wifi_ap_init, depending on the availability of credentials for
+ * station mode.
  *
  * This function will set ``state->medium`` to ``MNET32_MEDIUM_WIRELESS``
  * (``state->mode`` will be set in the specific initialization function).
@@ -139,16 +139,17 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk);
  * @param nvs_namespace The NVS namespace to read values from.
  * @return esp_err_t    ``ESP_OK`` on success, ``ESP_FAIL`` on failure; This
  *                      function may return ``ESP_FAIL`` by itsself or by the
- *                      specific initialization functions ::wifi_sta_init and
- *                      ::mnet32_wifi_ap_init, see the provided log messages (of
- *                      level ``ERROR`` and ``DEBUG``) for the actual reason
+ *                      specific initialization functions ::mnet32_wifi_sta_init
+ *                      and ::mnet32_wifi_ap_init, see the provided log messages
+ *                      (of level ``ERROR`` and ``DEBUG``) for the actual reason
  *                      of failure. **This function does return** ``ESP_OK``
  *                      in case that ``state->mode`` **is not**
  *                      ``NETWORKING_MODE_APPLICABLE``, because it assumes,
- *                      that there has been a previous call to ``wifi_init``.
+ *                      that there has been a previous call to
+ *                      ``mnet32_wifi_init``.
  */
-static esp_err_t wifi_init(char *nvs_namespace) {
-    ESP_LOGV(TAG, "wifi_init()");
+static esp_err_t mnet32_wifi_init(char *nvs_namespace) {
+    ESP_LOGV(TAG, "mnet32_wifi_init()");
 
     /* Initialization has only be performed once */
     if (mnet32_state_is_mode_set()) {
@@ -196,12 +197,12 @@ static esp_err_t wifi_init(char *nvs_namespace) {
      * If the config can not be read, directly start in access point mode. If
      * there is a config, try station mode first.
      */
-    char nvs_sta_ssid[NETWORKING_WIFI_SSID_MAX_LEN];
-    char nvs_sta_psk[NETWORKING_WIFI_PSK_MAX_LEN];
-    memset(nvs_sta_ssid, 0x00, NETWORKING_WIFI_SSID_MAX_LEN);
-    memset(nvs_sta_psk, 0x00, NETWORKING_WIFI_PSK_MAX_LEN);
+    char nvs_sta_ssid[MNET32_WIFI_SSID_MAX_LEN];
+    char nvs_sta_psk[MNET32_WIFI_PSK_MAX_LEN];
+    memset(nvs_sta_ssid, 0x00, MNET32_WIFI_SSID_MAX_LEN);
+    memset(nvs_sta_psk, 0x00, MNET32_WIFI_PSK_MAX_LEN);
 
-    esp_ret = wifi_get_config_from_nvs(
+    esp_ret = mnet32_wifi_get_config_from_nvs(
         nvs_namespace,
         (char **)&nvs_sta_ssid,
         (char **)&nvs_sta_psk);
@@ -213,7 +214,9 @@ static esp_err_t wifi_init(char *nvs_namespace) {
     ESP_LOGD(TAG, "Retrieved SSID.. '%s'", nvs_sta_ssid);
     ESP_LOGD(TAG, "Retrieved PSK... '%s'", nvs_sta_psk);
 
-    esp_ret = wifi_sta_init((char **)&nvs_sta_ssid, (char **)&nvs_sta_psk);
+    esp_ret = mnet32_wifi_sta_init(
+        (char **)&nvs_sta_ssid,
+        (char **)&nvs_sta_psk);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not start WiFi station mode!");
         ESP_LOGI(TAG, "Starting access point!");
@@ -246,7 +249,7 @@ esp_err_t mnet32_wifi_deinit(void) {
     }
 
     if (mnet32_state_is_mode_ap())
-        wifi_ap_deinit();
+        mnet32_wifi_ap_deinit();
 
     if (mnet32_state_is_mode_sta())
         mnet32_wifi_sta_deinit();
@@ -285,7 +288,7 @@ esp_err_t mnet32_wifi_ap_init(void) {
             pdMS_TO_TICKS(MNET32_WIFI_AP_LIFETIME),
             pdFALSE,
             (void *) 0,
-            wifi_ap_timed_shutdown);
+            mnet32_wifi_ap_timed_shutdown);
 
     /* Setup the configuration for access point mode.
      * These values are based off project-specific settings, that may be
@@ -362,9 +365,9 @@ esp_err_t mnet32_wifi_ap_init(void) {
  *
  * Stops the access point and destroys the ``netif``.
  *
- * This function is meant to be called by ::mnet32_wifi_deinit and performs only the
- * specific deinitialization steps of *access point mode*, e.g. it does **not**
- * unregister ::mnet32_event_handler from ``WIFI_EVENT``.
+ * This function is meant to be called by ::mnet32_wifi_deinit and performs only
+ * the specific deinitialization steps of *access point mode*, e.g. it does
+ * **not** unregister ::mnet32_event_handler from ``WIFI_EVENT``.
  *
  * The function sets ``state->mode`` to ``MNET32_MODE_NOT_APPLICABLE`` and
  * ``state->interface`` to ``NULL``.
@@ -373,8 +376,8 @@ esp_err_t mnet32_wifi_ap_init(void) {
  *                   failing calls are catched and silenced, though log
  *                   messages of level ``ERROR`` and ``DEBUG`` are emitted.
  */
-static esp_err_t wifi_ap_deinit(void) {
-    ESP_LOGV(TAG, "wifi_ap_deinit()");
+static esp_err_t mnet32_wifi_ap_deinit(void) {
+    ESP_LOGV(TAG, "mnet32_wifi_ap_deinit()");
 
     if (!mnet32_state_is_mode_set()) {
         ESP_LOGE(TAG, "WiFi is not initialized!");
@@ -404,8 +407,9 @@ static esp_err_t wifi_ap_deinit(void) {
     return ESP_OK;
 }
 
-static void wifi_ap_timed_shutdown(TimerHandle_t timer) {
-    ESP_LOGV(TAG, "wifi_ap_timed_shutdown()");
+// TODO(mischback) DOCUMENTATION MISSING!
+static void mnet32_wifi_ap_timed_shutdown(TimerHandle_t timer) {
+    ESP_LOGV(TAG, "mnet32_wifi_ap_timed_shutdown()");
 
     if (!mnet32_state_is_status_idle()) {
         ESP_LOGW(TAG, "Access Point is not idle! Skipping shutdown!");
@@ -476,10 +480,10 @@ void mnet32_wifi_ap_timer_stop(void) {
  * @param nvs_namespace The NVS namespace to read values from.
  * @param ssid          A pointer to a *big enough* ``char`` array to store
  *                      the read value to (*big enough* =
- *                      ::NETWORKING_WIFI_SSID_MAX_LEN )
+ *                      ::MNET32_WIFI_SSID_MAX_LEN )
  * @param psk           A pointer to a *big enough* ``char`` array to store
  *                      thr read value to (*big enough* =
- *                      ::NETWORKING_WIFI_PSK_MAX_LEN )
+ *                      ::MNET32_WIFI_PSK_MAX_LEN )
  * @return esp_err_t    ``ESP_OK`` on success, ``ESP_FAIL`` on failure; see the
  *                      provided log messages (of level ``ERROR`` and ``DEBUG``)
  *                      for the actual reason of failure.
@@ -492,11 +496,11 @@ void mnet32_wifi_ap_timer_stop(void) {
  *         ``static char* get_nvs_string(nvs_handle_t handle, char *key)``
  *       - the prototype of this function may be left untouched!
  */
-static esp_err_t wifi_get_config_from_nvs(
+static esp_err_t mnet32_wifi_get_config_from_nvs(
     char *nvs_namespace,
     char **ssid,
     char **psk) {
-    ESP_LOGV(TAG, "wifi_get_config_from_nvs()");
+    ESP_LOGV(TAG, "mnet32_wifi_get_config_from_nvs()");
 
     /* Open NVS storage handle. */
     // FIXME(mischback) Restore implementation once the station mode is working!
@@ -512,7 +516,7 @@ static esp_err_t wifi_get_config_from_nvs(
     //     handle,
     //     NETWORKING_WIFI_NVS_SSID,
     //     (char *)ssid,
-    //     NETWORKING_WIFI_SSID_MAX_LEN);
+    //     MNET32_WIFI_SSID_MAX_LEN);
     // if (esp_ret != ESP_OK)
     //     return esp_ret;
 
@@ -520,7 +524,7 @@ static esp_err_t wifi_get_config_from_nvs(
     //     handle,
     //     NETWORKING_WIFI_NVS_PSK,
     //     (char *)psk,
-    //     NETWORKING_WIFI_PSK_MAX_LEN);
+    //     MNET32_WIFI_PSK_MAX_LEN);
     // if (esp_ret != ESP_OK)
     //     return esp_ret;
 
@@ -549,8 +553,8 @@ static esp_err_t wifi_get_config_from_nvs(
  *                   triggered by ::mnet32_event_handler and performed by
  *                   ::networking .
  */
-static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk) {
-    ESP_LOGV(TAG, "wifi_sta_init()");
+static esp_err_t mnet32_wifi_sta_init(char **sta_ssid, char **sta_psk) {
+    ESP_LOGV(TAG, "mnet32_wifi_sta_init()");
 
     /* Create a network interface for Access Point mode. */
     mnet32_state_set_interface(esp_netif_create_default_wifi_sta());
@@ -684,7 +688,7 @@ void mnet32_wifi_sta_reset_connection_counter(void) {
 esp_err_t mnet32_wifi_start(char *nvs_namespace) {
     ESP_LOGV(TAG, "mnet32_wifi_start()");
 
-    if (wifi_init(nvs_namespace) != ESP_OK) {
+    if (mnet32_wifi_init(nvs_namespace) != ESP_OK) {
         mnet32_wifi_deinit();
         return ESP_FAIL;
     }

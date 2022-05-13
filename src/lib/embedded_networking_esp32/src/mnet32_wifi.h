@@ -35,18 +35,18 @@ esp_err_t mnet32_wifi_ap_init(void);
 /**
  * Start the access point's shutdown timer.
  *
- * The timer is created in ::mnet32_wifi_ap_init and should be available here. There
- * is a basic check of the presence and a log message of level ``WARNING`` is
- * emitted, if the timer (``TimerHandle_t``) is not available.
+ * The timer is created in ::mnet32_wifi_ap_init and should be available here.
+ * There is a basic check of the presence and a log message of level ``WARNING``
+ * is emitted, if the timer (``TimerHandle_t``) is not available.
  */
 void mnet32_wifi_ap_timer_start(void);
 
 /**
  * Stop the access point's shutdown timer.
  *
- * The timer is created in ::mnet32_wifi_ap_init and should be available here. There
- * is a basic check of the presence and a log message of level ``WARNING`` is
- * emitted, if the timer (``TimerHandle_t``) is not available.
+ * The timer is created in ::mnet32_wifi_ap_init and should be available here.
+ * There is a basic check of the presence and a log message of level ``WARNING``
+ * is emitted, if the timer (``TimerHandle_t``) is not available.
  */
 void mnet32_wifi_ap_timer_stop(void);
 
@@ -57,8 +57,8 @@ void mnet32_wifi_ap_timer_stop(void);
  * ``netif``, unregistering ::mnet32_event_handler from ``WIFI_EVENT``
  * and resetting ``state->medium`` to ``MNET32_MEDIUM_UNSPECIFIED``.
  *
- * The function calls ::mnet32_wifi_sta_deinit or ::wifi_ap_deinit, depending on the
- * value of ``state->mode``.
+ * The function calls ::mnet32_wifi_sta_deinit or ::mnet32_wifi_ap_deinit,
+ * depending on the value of ``state->mode``.
  *
  * @return esp_err_t This function always returns ``ESP_OK``, all potentially
  *                   failing calls are catched and silenced, though log
