@@ -13,25 +13,19 @@
  */
 
 /* ***** INCLUDES ********************************************************** */
+
+/* This file's header. */
+#include "networking_wifi.h"
+
 /* ***** DEFINES *********************************************************** */
 /* ***** TYPES ************************************************************* */
 /* ***** VARIABLES ********************************************************* */
 /* ***** PROTOTYPES ******************************************************** */
 
-static esp_err_t wifi_start(char *nvs_namespace);
 static esp_err_t wifi_init(char *nvs_namespace);
-static esp_err_t wifi_deinit(void);
-static esp_err_t wifi_ap_init(void);
 static esp_err_t wifi_ap_deinit(void);
 static void wifi_ap_timed_shutdown(TimerHandle_t timer);
-static int8_t wifi_ap_get_connected_stations(void);
-static void wifi_ap_timer_start(void);
-static void wifi_ap_timer_stop(void);
 static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk);
-static esp_err_t wifi_sta_deinit(void);
-static void wifi_sta_connect(void);
-static int8_t wifi_sta_get_num_connection_attempts(void);
-static void wifi_sta_reset_connection_counter(void);
 
 
 /* ***** FUNCTIONS ********************************************************* */
@@ -144,21 +138,7 @@ static esp_err_t wifi_init(char *nvs_namespace) {
     return ESP_OK;
 }
 
-/**
- * WiFi-specific deinitialization.
- *
- * Clean up for WiFi-related stuff, including deinitialization of the
- * ``netif``, unregistering ::networking_event_handler from ``WIFI_EVENT``
- * and resetting ``state->medium`` to ``NETWORKING_MEDIUM_UNSPECIFIED``.
- *
- * The function calls ::wifi_sta_deinit or ::wifi_ap_deinit, depending on the
- * value of ``state->mode``.
- *
- * @return esp_err_t This function always returns ``ESP_OK``, all potentially
- *                   failing calls are catched and silenced, though log
- *                   messages of level ``ERROR`` and ``DEBUG`` are emitted.
- */
-static esp_err_t wifi_deinit(void) {
+esp_err_t wifi_deinit(void) {
     ESP_LOGV(TAG, "wifi_deinit()");
 
     /* Unregister the WIFI_EVENT event handler. */
@@ -196,22 +176,7 @@ static esp_err_t wifi_deinit(void) {
     return ESP_OK;
 }
 
-/**
- * Initialize the WiFi for access point mode.
- *
- * Basically this creates the access point-specific configuration, applies it
- * to **ESP-IDF**'s wifi module and starts the wifi.
- *
- * It sets ``state->mode`` to ``NETWORKING_MODE_WIFI_AP`` and provides a
- * reference to the ``netif`` in ``state->interface``.
- *
- * @return esp_err_t ``ESP_OK`` on success, ``ESP_FAIL`` on failure.
- *                   On ``ESP_OK`` the calling code may assume that the access
- *                   point is successfully started. Subsequent actions are
- *                   triggered by ::networking_event_handler and performed by
- *                   ::networking .
- */
-static esp_err_t wifi_ap_init(void) {
+esp_err_t wifi_ap_init(void) {
     ESP_LOGV(TAG, "wifi_ap_init()");
 
     /* Create a network interface for access point mode. */
@@ -366,12 +331,7 @@ static void wifi_ap_timed_shutdown(TimerHandle_t timer) {
     networking_notify(NETWORKING_NOTIFICATION_CMD_NETWORKING_STOP);
 }
 
-/**
- * Get the number of connected stations in access point mode.
- *
- * @return int8_t The number of connected stations or ``-1`` in case of error.
- */
-static int8_t wifi_ap_get_connected_stations(void) {
+int8_t wifi_ap_get_connected_stations(void) {
     ESP_LOGV(TAG, "wifi_ap_get_connected_stations()");
 
     wifi_sta_list_t tmp;
@@ -385,14 +345,7 @@ static int8_t wifi_ap_get_connected_stations(void) {
     return tmp.num;
 }
 
-/**
- * Start the access point's shutdown timer.
- *
- * The timer is created in ::wifi_ap_init and should be available here. There
- * is a basic check of the presence and a log message of level ``WARNING`` is
- * emitted, if the timer (``TimerHandle_t``) is not available.
- */
-static void wifi_ap_timer_start(void) {
+void wifi_ap_timer_start(void) {
     ESP_LOGV(TAG, "wifi_ap_timer_start()");
 
     if (((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer == NULL) {  // NOLINT(whitespace/line_length)
@@ -413,14 +366,7 @@ static void wifi_ap_timer_start(void) {
     ESP_LOGD(TAG, "Access point's shutdown timer started!");
 }
 
-/**
- * Stop the access point's shutdown timer.
- *
- * The timer is created in ::wifi_ap_init and should be available here. There
- * is a basic check of the presence and a log message of level ``WARNING`` is
- * emitted, if the timer (``TimerHandle_t``) is not available.
- */
-static void wifi_ap_timer_stop(void) {
+void wifi_ap_timer_stop(void) {
     ESP_LOGV(TAG, "wifi_ap_timer_stop()");
 
     if (((struct medium_state_wifi_ap *)(state->medium_state))->ap_shutdown_timer == NULL) {  // NOLINT(whitespace/line_length)
@@ -535,23 +481,7 @@ static esp_err_t wifi_sta_init(char **sta_ssid, char **sta_psk) {
     return ESP_OK;
 }
 
-/**
- * Deinitialize WiFi (station mode).
- *
- * Disconnects from the WiFi and destroys the ``netif``.
- *
- * This function is meant to be called by ::wifi_deinit and performs only the
- * specific deinitialization steps of *station mode*, e.g. it does **not**
- * unregister ::networking_event_handler from ``WIFI_EVENT``.
- *
- * The function sets ``state->mode`` to ``NETWORKING_MODE_NOT_APPLICABLE`` and
- * ``state->interface`` to ``NULL``.
- *
- * @return esp_err_t This function always returns ``ESP_OK``, all potentially
- *                   failing calls are catched and silenced, though log
- *                   messages of level ``ERROR`` and ``DEBUG`` are emitted.
- */
-static esp_err_t wifi_sta_deinit(void) {
+esp_err_t wifi_sta_deinit(void) {
     ESP_LOGV(TAG, "wifi_sta_deinit()");
 
     if (state->mode == NETWORKING_MODE_NOT_APPLICABLE) {
@@ -579,17 +509,7 @@ static esp_err_t wifi_sta_deinit(void) {
     return ESP_OK;
 }
 
-/**
- * Actually connect to a WiFi access point.
- *
- * This function is called from ::networking to perform the actual connect.
- *
- * Please note: This function simply wraps **ESP-IDF**'s ``esp_wifi_connect()``
- * to catch internal errors. It does not actually track the success of the
- * connection. This has to be done while handling the events raised by
- * **ESP-IDF**'s ``wifi`` module.
- */
-static void wifi_sta_connect(void) {
+void wifi_sta_connect(void) {
     ESP_LOGV(TAG, "wifi_sta_connect()");
 
     ((struct medium_state_wifi_sta *)(state->medium_state))->num_connection_attempts++;  // NOLINT(whitespace/line_length)
@@ -605,34 +525,15 @@ static void wifi_sta_connect(void) {
     }
 }
 
-/**
- * Return the number of failed connection attempts.
- *
- * @return int8_t The number of failed connection attempts.
- */
-static int8_t wifi_sta_get_num_connection_attempts(void) {
+int8_t wifi_sta_get_num_connection_attempts(void) {
     return ((struct medium_state_wifi_sta *)(state->medium_state))->num_connection_attempts;  // NOLINT(whitespace/line_length)
 }
 
-/**
- * Reset the number of failed connection attempts.
- *
- */
-static void wifi_sta_reset_connection_counter(void) {
+void wifi_sta_reset_connection_counter(void) {
     ((struct medium_state_wifi_sta *)(state->medium_state))->num_connection_attempts = 0;  // NOLINT(whitespace/line_length)
 }
 
-/**
- * Starts a WiFi connection.
- *
- * This either connects to a given WiFi network, if credentials are available
- * in the given ``nvs_namespace`` and the specified network is reachable, or
- * launches the local access point.
- *
- * @param nvs_namespace The NVS namespace to read values from.
- * @return esp_err_t    ``ESP_OK`` on success, ``ESP_FAIL`` on failure.
- */
-static esp_err_t wifi_start(char *nvs_namespace) {
+esp_err_t wifi_start(char *nvs_namespace) {
     ESP_LOGV(TAG, "wifi_start()");
 
     if (wifi_init(nvs_namespace) != ESP_OK) {
