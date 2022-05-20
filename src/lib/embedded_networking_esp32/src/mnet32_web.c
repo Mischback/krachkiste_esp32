@@ -165,7 +165,7 @@ static esp_err_t mnet32_web_handler_config_get(httpd_req_t *request) {
 static esp_err_t mnet32_web_handler_config_post(httpd_req_t *request) {
     ESP_LOGV(TAG, "mnet32_web_handler_config_post()");
 
-    char *buf = malloc(request->content_len + 1);
+    char *buf = calloc(sizeof(char), request->content_len + 1);
     size_t off = 0;
 
     while (off < request->content_len) {
@@ -183,8 +183,10 @@ static esp_err_t mnet32_web_handler_config_post(httpd_req_t *request) {
         off += ret;
         ESP_LOGV(TAG, "received %d bytes", ret);
     }
-    buf[off] = '\0';
     ESP_LOGD(TAG, "received [%s]", buf);
+
+    mnet32_web_get_value("ssid", buf, NULL);
+    mnet32_web_get_value("psk", buf, NULL);
 
     free(buf);
 
