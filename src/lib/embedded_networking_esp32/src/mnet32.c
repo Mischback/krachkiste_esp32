@@ -432,7 +432,10 @@ static esp_err_t mnet32_init(char* nvs_namespace) {
     // Set log-level of our own code to VERBOSE
     // TODO(mischback) Now there a dedicated tags for ``wifi`` and ``nvs``
     // FIXME: Final code should not do this, but respect the project's settings
-    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+    esp_log_level_set("mnet32", ESP_LOG_VERBOSE);
+    esp_log_level_set("mnet32.nvs", ESP_LOG_VERBOSE);
+    esp_log_level_set("mnet32.web", ESP_LOG_VERBOSE);
+    esp_log_level_set("mnet32.wifi", ESP_LOG_VERBOSE);
 
     ESP_LOGV(TAG, "mnet32_init()");
 

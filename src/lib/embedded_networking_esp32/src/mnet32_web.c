@@ -39,9 +39,30 @@
  */
 #include "esp_http_server.h"
 
+/* This is ESP-IDF's logging library.
+ * - ESP_LOGE(TAG, "Error");
+ * - ESP_LOGW(TAG, "Warning");
+ * - ESP_LOGI(TAG, "Info");
+ * - ESP_LOGD(TAG, "Debug");
+ * - ESP_LOGV(TAG, "Verbose");
+ */
+#include "esp_log.h"
+
+
+/* ***** VARIABLES ********************************************************* */
+
+/**
+ * Set the module-specific ``TAG`` to be used with ESP-IDF's logging library.
+ *
+ * See
+ * [its API documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html#how-to-use-this-library).
+ */
+static const char* TAG = "mnet32.web";
+
 
 /* ***** PROTOTYPES ******************************************************** */
-static esp_err_t mnet32_web_handler_get_config(httpd_req_t* request);
+static esp_err_t mnet32_web_handler_config_get(httpd_req_t* request);
+static esp_err_t mnet32_web_handler_config_post(httpd_req_t *request);
 
 
 /* ***** URI DEFINITIONS ***************************************************
@@ -50,15 +71,28 @@ static esp_err_t mnet32_web_handler_get_config(httpd_req_t* request);
  */
 
 /**
- * URI definition for the *homepage*, which will be served from ``/``.
+ * URI definition for the configuration page, serving the actual form.
  *
  * @todo Make this configurable (pre-build with ``sdkconfig``)
- * @todo Move this to mnet32/mnet32.h
+ * @todo Move this to mnet32/mnet32.h (only the configuration value!)
  */
-static const httpd_uri_t mnet32_web_uri_get_config = {
+static const httpd_uri_t mnet32_web_uri_config_get = {
     .uri = "/config/wifi",
     .method = HTTP_GET,
-    .handler = mnet32_web_handler_get_config,
+    .handler = mnet32_web_handler_config_get,
+    .user_ctx = NULL
+};
+
+/**
+ * URI definition for the configuration page, processing the actual form.
+ *
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
+ * @todo Keep the processing on the same URL!
+ */
+static const httpd_uri_t mnet32_web_uri_config_post = {
+    .uri = "/config/wifi",
+    .method = HTTP_POST,
+    .handler = mnet32_web_handler_config_post,
     .user_ctx = NULL
 };
 
@@ -74,20 +108,19 @@ void mnet32_web_attach_handlers(
     httpd_handle_t server = *((httpd_handle_t*) event_data);
 
     // Register this component's *URI handlers* with the server instance.
-    httpd_register_uri_handler(
-        server,
-        &mnet32_web_uri_get_config);
+    httpd_register_uri_handler(server, &mnet32_web_uri_config_get);
+    httpd_register_uri_handler(server, &mnet32_web_uri_config_post);
 }
 
 /**
  * Show the WiFi configuration form.
  *
- * The matching *URI definition* is ::mnet32_web_uri_get_config.
+ * The matching *URI definition* is ::mnet32_web_uri_config_get.
  *
  * @param request The request that should be responded to with this function.
  * @return Always returns ``ESP_OK``.
  */
-static esp_err_t mnet32_web_handler_get_config(httpd_req_t* request) {
+static esp_err_t mnet32_web_handler_config_get(httpd_req_t *request) {
     // Access the embedded HTML file.
     // See this component's ``CMakeLists.txt`` for the actual embedding (in
     // ``idf_component_register()``) and see **ESP-IDF**'s documentation on how
@@ -100,4 +133,33 @@ static esp_err_t mnet32_web_handler_get_config(httpd_req_t* request) {
         request,
         (const char*) resource_start,
         resource_size));
+}
+
+static esp_err_t mnet32_web_handler_config_post(httpd_req_t *request) {
+    ESP_LOGV(TAG, "mnet32_web_handler_config_post()");
+
+    char *buf = malloc(request->content_len + 1);
+    size_t off = 0;
+
+    while (off < request->content_len) {
+        int ret = httpd_req_recv(
+            request,
+            buf + off,
+            request->content_len - off);
+        if (ret <= 0) {
+            if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+                httpd_resp_send_408(request);
+            }
+            free(buf);
+            return ESP_FAIL;
+        }
+        off += ret;
+        ESP_LOGV(TAG, "received %d bytes", ret);
+    }
+    buf[off] = '\0';
+    ESP_LOGD(TAG, "received [%s]", buf);
+
+    free(buf);
+
+    return ESP_FAIL;
 }
