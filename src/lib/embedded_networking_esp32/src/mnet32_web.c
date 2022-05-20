@@ -18,6 +18,9 @@
 /* This files header */
 #include "mnet32_web.h"
 
+/* C's standard libraries. */
+#include <string.h>
+
 /* Other headers of the component */
 #include "mnet32/mnet32.h"
 
@@ -104,6 +107,36 @@ void mnet32_web_attach_handlers(
     // Register this component's *URI handlers* with the server instance.
     httpd_register_uri_handler(server, &mnet32_web_uri_config_get);
     httpd_register_uri_handler(server, &mnet32_web_uri_config_post);
+}
+
+static esp_err_t mnet32_web_get_value(char *key, char *raw, char *value) {
+    /* 1. step: find the key... */
+    char *key_offset = strstr(raw, key);
+    if (key_offset == NULL) {
+        ESP_LOGE(TAG, "Could not find '%s' in '%s'!", key, raw);
+        return ESP_FAIL;
+    }
+
+    /* 2. step: move from key to the actual value... */
+    char *value_begin = key_offset + strlen(key) + 1;
+
+    /* 3. step: find the end of the value... */
+    char *value_end = strstr(value_begin, "&");
+    size_t value_len;
+    if (value_end == NULL) {
+        value_len = (raw + strlen(raw)) - value_begin;
+    } else {
+        value_len = value_end - value_begin;
+    }
+    ESP_LOGV(TAG, "value_len: %d", value_len);
+
+    /* 4. step: get the unescaped value... */
+    char *esc_value = calloc(sizeof(char), value_len + 1);
+    strncpy(esc_value, value_begin, value_len);
+    ESP_LOGD(TAG, "Found value '%s' (unescaped) for key '%s'.", esc_value, key);
+
+    free(esc_value);
+    return ESP_OK;
 }
 
 /**
