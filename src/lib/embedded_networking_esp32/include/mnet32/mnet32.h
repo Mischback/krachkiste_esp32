@@ -38,6 +38,13 @@
 #define MNET32_TASK_MONITOR_FREQUENCY 5000
 
 /**
+ * The URI to serve the component's web interface from.
+ *
+ * @todo Make this configurable (pre-build with ``sdkconfig``)
+ */
+#define MNET32_WEB_URL_CONFIG "/config/wifi"
+
+/**
  * The channel to be used while providing the project-specific access point.
  *
  * @todo Is there a nice way to provide a **dynamic** channel?

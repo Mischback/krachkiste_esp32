@@ -72,12 +72,9 @@ static esp_err_t mnet32_web_handler_config_post(httpd_req_t *request);
 
 /**
  * URI definition for the configuration page, serving the actual form.
- *
- * @todo Make this configurable (pre-build with ``sdkconfig``)
- * @todo Move this to mnet32/mnet32.h (only the configuration value!)
  */
 static const httpd_uri_t mnet32_web_uri_config_get = {
-    .uri = "/config/wifi",
+    .uri = MNET32_WEB_URL_CONFIG,
     .method = HTTP_GET,
     .handler = mnet32_web_handler_config_get,
     .user_ctx = NULL
@@ -85,12 +82,9 @@ static const httpd_uri_t mnet32_web_uri_config_get = {
 
 /**
  * URI definition for the configuration page, processing the actual form.
- *
- * @todo Make this configurable (pre-build with ``sdkconfig``)
- * @todo Keep the processing on the same URL!
  */
 static const httpd_uri_t mnet32_web_uri_config_post = {
-    .uri = "/config/wifi",
+    .uri = MNET32_WEB_URL_CONFIG,
     .method = HTTP_POST,
     .handler = mnet32_web_handler_config_post,
     .user_ctx = NULL
