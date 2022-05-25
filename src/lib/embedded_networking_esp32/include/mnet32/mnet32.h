@@ -20,6 +20,13 @@
 
 
 /**
+ * The namespace to store component-specific values in the non-volatile storage.
+ *
+ * @todo Should this be make configurable by ``sdkconfig``?
+ */
+#define MNET32_NVS_NAMESPACE "mnet32"
+
+/**
  * The **freeRTOS**-specific priority for the component's task.
  *
  * @todo Determine a sane (default) value for this! Evaluate other (built-in)
@@ -134,11 +141,10 @@ enum {
  * establish and maintain network connectivity or provide a fallback, providing
  * an access point to keep the configuration web interface accessible.
  *
- * @param nvs_namespace
  * @return esp_err_t
  * @todo Complete the documentation!
  */
-esp_err_t mnet32_start(char* nvs_namespace);
+esp_err_t mnet32_start(void);
 
 /**
  * Stop all networking and free resources.

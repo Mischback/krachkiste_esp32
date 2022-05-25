@@ -39,15 +39,6 @@
 #include "mnet32/mnet32.h"
 
 /**
- * The project-specific namespace to access the non-volatile storage.
- *
- * @todo Make this configurable (pre-build with ``sdkconfig``), consider
- *       ``ESP-IDF``'s ``NVS_KEY_NAME_SIZE``
- *       (https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html#_CPPv48nvs_openPKc15nvs_open_mode_tP12nvs_handle_t)
- */
-#define PROJECT_NVS_STORAGE_NAMESPACE "krachkiste"
-
-/**
  * Set the module-specific ``TAG`` to be used with ESP-IDF's logging library.
  *
  * See :idf_api:`its API documentation <system/log.html#how-to-use-this-library>`.
@@ -123,5 +114,5 @@ void app_main(void) {
         NULL,
         NULL));
 
-    mnet32_start(PROJECT_NVS_STORAGE_NAMESPACE);
+    mnet32_start();
 }

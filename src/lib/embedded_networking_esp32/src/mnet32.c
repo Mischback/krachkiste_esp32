@@ -128,7 +128,7 @@ static const char* TAG = "mnet32";
 static void mnet32_task(void *task_parameters);
 static void mnet32_notify(uint32_t notification);
 static esp_err_t mnet32_deinit(void);
-static esp_err_t mnet32_init(char* nvs_namespace);
+static esp_err_t mnet32_init(void);
 static void mnet32_emit_event(int32_t event_id, void *event_data);
 
 
@@ -136,7 +136,6 @@ static void mnet32_emit_event(int32_t event_id, void *event_data);
 
 static void mnet32_task(void *task_parameters) {
     ESP_LOGV(TAG, "mnet32_task() [the actual task function]");
-    ESP_LOGD(TAG, "task_parameters: %s", (char *)task_parameters);
 
     const TickType_t mon_freq = pdMS_TO_TICKS(
         MNET32_TASK_MONITOR_FREQUENCY);
@@ -168,7 +167,7 @@ static void mnet32_task(void *task_parameters) {
             case MNET32_NOTIFICATION_CMD_WIFI_START:
                 ESP_LOGD(TAG, "CMD: WIFI_START");
 
-                if (mnet32_wifi_start((char *)task_parameters) != ESP_OK) {
+                if (mnet32_wifi_start(MNET32_NVS_NAMESPACE) != ESP_OK) {
                     ESP_LOGE(TAG, "Could not start WiFi!");
                 }
                 break;
@@ -422,13 +421,11 @@ void mnet32_event_handler(
  * internal ``task``, which will handle all further actions of the component
  * (see ::mnet32_task).
  *
- * @param nvs_namespace The name of the namespace to be used to retrieve
- *                      non-volatile configuration options from.
  * @return esp_err_t    ``ESP_OK`` on success, ``ESP_FAIL`` on failure; see the
  *                      provided log messages (of level ``ERROR`` and ``DEBUG``)
  *                      for the actual reason of failure.
  */
-static esp_err_t mnet32_init(char* nvs_namespace) {
+static esp_err_t mnet32_init(void) {
     // Set log-level of our own code to VERBOSE
     // TODO(mischback) Now there a dedicated tags for ``wifi`` and ``nvs``
     // FIXME: Final code should not do this, but respect the project's settings
@@ -501,7 +498,7 @@ static esp_err_t mnet32_init(char* nvs_namespace) {
             mnet32_task,
             "mnet32_task",
             4096,
-            nvs_namespace,
+            NULL,
             MNET32_TASK_PRIORITY,
             mnet32_state_get_task_handle_ptr()) != pdPASS) {
         ESP_LOGE(TAG, "Could not create task!");
@@ -667,10 +664,10 @@ static void mnet32_notify(uint32_t notification) {
         eSetValueWithOverwrite);
 }
 
-esp_err_t mnet32_start(char* nvs_namespace) {
+esp_err_t mnet32_start(void) {
     ESP_LOGV(TAG, "mnet32_start()");
 
-    if (mnet32_init(nvs_namespace) != ESP_OK) {
+    if (mnet32_init() != ESP_OK) {
         mnet32_deinit();
         return ESP_FAIL;
     }
