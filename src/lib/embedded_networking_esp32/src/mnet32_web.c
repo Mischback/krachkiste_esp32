@@ -19,6 +19,7 @@
 #include "mnet32_web.h"
 
 /* C's standard libraries. */
+#include <stdlib.h>
 #include <string.h>
 
 /* Other headers of the component */
@@ -134,6 +135,31 @@ static esp_err_t mnet32_web_get_value(char *key, char *raw, char *value) {
     char *esc_value = calloc(sizeof(char), value_len + 1);
     strncpy(esc_value, value_begin, value_len);
     ESP_LOGD(TAG, "Found value '%s' (unescaped) for key '%s'.", esc_value, key);
+
+    // This is loosely based on
+    // https://github.com/abejfehr/URLDecode/blob/master/urldecode.c
+    int i = 0;
+    char estr[] = "00";
+    int64_t converted;
+    while (esc_value[i] != '\0') {
+        if (esc_value[i] == '%') {
+            if (isxdigit(esc_value[i+1]) && isxdigit(esc_value[i+2])) {
+                estr[0] = esc_value[i+1];
+                estr[1] = esc_value[i+2];
+
+                converted = strtol(estr, NULL, 16);
+                memmove(
+                    &esc_value[i+1],
+                    &esc_value[i+3],
+                    strlen(&esc_value[i+3]) + 1);
+
+                esc_value[i] = converted;
+            }
+        }
+        i++;
+    }
+
+    ESP_LOGD(TAG, "Found value '%s' (escaped) for key '%s'.", esc_value, key);
 
     free(esc_value);
     return ESP_OK;
