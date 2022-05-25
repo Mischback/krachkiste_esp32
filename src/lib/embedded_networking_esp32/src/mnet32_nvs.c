@@ -17,6 +17,9 @@
 /* This file's header. */
 #include "mnet32_nvs.h"
 
+/* Other headers of the component. */
+#include "mnet32/mnet32.h"    // The public header
+
 /* This is ESP-IDF's error handling library. */
 #include "esp_err.h"
 
@@ -47,23 +50,22 @@ static const char* TAG = "mnet32.nvs";
 /* ***** FUNCTIONS ********************************************************* */
 
 esp_err_t mnet32_get_nvs_handle(
-    const char *namespace,
     nvs_open_mode_t mode,
     nvs_handle_t *handle) {
     ESP_LOGV(TAG, "'mnet32_get_nvs_handle()'");
 
-    esp_err_t esp_ret = nvs_open(namespace, mode, handle);
+    esp_err_t esp_ret = nvs_open(MNET32_NVS_NAMESPACE, mode, handle);
 
     if (esp_ret != ESP_OK) {
         /* This might fail for different reasons, e.g. the NVS is not correctly
          * set up or initialized.
          * Assuming that the NVS **is** available, this will fail with
          * ESP_ERR_NVS_NOT_FOUND, which means that there is no namespace of
-         * the name ``nvs_namespace`` (yet).
+         * the name ``MNET32_NVS_NAMESPACE`` (yet).
          * This might happen during first start of the applications, as there
          * is no WiFi config yet, so the namespace was never used before.
          */
-        ESP_LOGE(TAG, "Could not open NVS handle '%s'!", namespace);
+        ESP_LOGE(TAG, "Could not open NVS handle '%s'!", MNET32_NVS_NAMESPACE);
         ESP_LOGD(
             TAG,
             "'nvs_open()' returned %s [%d]",

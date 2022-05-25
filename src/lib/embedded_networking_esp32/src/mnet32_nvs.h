@@ -15,7 +15,6 @@
 
 
 esp_err_t mnet32_get_nvs_handle(
-    const char *namespace,
     nvs_open_mode_t mode,
     nvs_handle_t *handle);
 

@@ -510,7 +510,6 @@ static esp_err_t mnet32_wifi_get_config_from_nvs(char **ssid, char **psk) {
     esp_err_t esp_ret;
 
     esp_ret = mnet32_get_nvs_handle(
-        MNET32_NVS_NAMESPACE,
         NVS_READONLY,
         &handle);
     if (esp_ret != ESP_OK)
