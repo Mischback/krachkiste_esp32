@@ -115,9 +115,8 @@ void mnet32_wifi_sta_reset_connection_counter(void);
  * in the given ``nvs_namespace`` and the specified network is reachable, or
  * launches the local access point.
  *
- * @param nvs_namespace The NVS namespace to read values from.
  * @return esp_err_t    ``ESP_OK`` on success, ``ESP_FAIL`` on failure.
  */
-esp_err_t mnet32_wifi_start(char *nvs_namespace);
+esp_err_t mnet32_wifi_start(void);
 
 #endif  // SRC_LIB_EMBEDDED_NETWORKING_ESP32_SRC_MNET32_WIFI_H_

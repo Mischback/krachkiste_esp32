@@ -167,7 +167,7 @@ static void mnet32_task(void *task_parameters) {
             case MNET32_NOTIFICATION_CMD_WIFI_START:
                 ESP_LOGD(TAG, "CMD: WIFI_START");
 
-                if (mnet32_wifi_start(MNET32_NVS_NAMESPACE) != ESP_OK) {
+                if (mnet32_wifi_start() != ESP_OK) {
                     ESP_LOGE(TAG, "Could not start WiFi!");
                 }
                 break;

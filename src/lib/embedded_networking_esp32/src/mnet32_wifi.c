@@ -125,13 +125,10 @@ static const char* TAG = "mnet32.wifi";
 
 /* ***** PROTOTYPES ******************************************************** */
 
-static esp_err_t mnet32_wifi_init(char *nvs_namespace);
+static esp_err_t mnet32_wifi_init(void);
 static esp_err_t mnet32_wifi_ap_deinit(void);
 static void mnet32_wifi_ap_timed_shutdown(TimerHandle_t timer);
-static esp_err_t mnet32_wifi_get_config_from_nvs(
-    char *nvs_namespace,
-    char **ssid,
-    char **psk);
+static esp_err_t mnet32_wifi_get_config_from_nvs(char **ssid, char **psk);
 static esp_err_t mnet32_wifi_sta_init(char **sta_ssid, char **sta_psk);
 
 
@@ -166,7 +163,7 @@ static esp_err_t mnet32_wifi_sta_init(char **sta_ssid, char **sta_psk);
  *                      that there has been a previous call to
  *                      ``mnet32_wifi_init``.
  */
-static esp_err_t mnet32_wifi_init(char *nvs_namespace) {
+static esp_err_t mnet32_wifi_init(void) {
     ESP_LOGV(TAG, "mnet32_wifi_init()");
 
     /* Initialization has only be performed once */
@@ -221,7 +218,6 @@ static esp_err_t mnet32_wifi_init(char *nvs_namespace) {
     memset(nvs_sta_psk, 0x00, MNET32_WIFI_PSK_MAX_LEN);
 
     esp_ret = mnet32_wifi_get_config_from_nvs(
-        nvs_namespace,
         (char **)&nvs_sta_ssid,
         (char **)&nvs_sta_psk);
     if (esp_ret != ESP_OK) {
@@ -506,20 +502,20 @@ void mnet32_wifi_ap_timer_stop(void) {
  *                      provided log messages (of level ``ERROR`` and ``DEBUG``)
  *                      for the actual reason of failure.
  */
-static esp_err_t mnet32_wifi_get_config_from_nvs(
-    char *nvs_namespace,
-    char **ssid,
-    char **psk) {
+static esp_err_t mnet32_wifi_get_config_from_nvs(char **ssid, char **psk) {
     ESP_LOGV(TAG, "mnet32_wifi_get_config_from_nvs()");
 
     /* Open NVS storage handle. */
     nvs_handle_t handle;
     esp_err_t esp_ret;
 
-    esp_ret = mnet32_get_nvs_handle(nvs_namespace, NVS_READONLY, &handle);
+    esp_ret = mnet32_get_nvs_handle(
+        MNET32_NVS_NAMESPACE,
+        NVS_READONLY,
+        &handle);
     if (esp_ret != ESP_OK)
         return esp_ret;
-    ESP_LOGD(TAG, "Handle '%s' successfully opened!", nvs_namespace);
+    ESP_LOGD(TAG, "Handle '%s' successfully opened!", MNET32_NVS_NAMESPACE);
 
     esp_ret = mnet32_get_string_from_nvs(
         handle,
@@ -694,10 +690,10 @@ void mnet32_wifi_sta_reset_connection_counter(void) {
     ((struct medium_state_wifi_sta *)mnet32_state_get_medium_state())->num_connection_attempts = 0;  // NOLINT(whitespace/line_length)
 }
 
-esp_err_t mnet32_wifi_start(char *nvs_namespace) {
+esp_err_t mnet32_wifi_start(void) {
     ESP_LOGV(TAG, "mnet32_wifi_start()");
 
-    if (mnet32_wifi_init(nvs_namespace) != ESP_OK) {
+    if (mnet32_wifi_init() != ESP_OK) {
         mnet32_wifi_deinit();
         return ESP_FAIL;
     }
