@@ -125,31 +125,29 @@ static const char* TAG = "mnet32";
 
 /* ***** PROTOTYPES ******************************************************** */
 
-static void mnet32_task(void *task_parameters);
+static void mnet32_task(void* task_parameters);
 static void mnet32_notify(uint32_t notification);
 static esp_err_t mnet32_deinit(void);
 static esp_err_t mnet32_init(void);
-static void mnet32_emit_event(int32_t event_id, void *event_data);
+static void mnet32_emit_event(int32_t event_id, void* event_data);
 
 
 /* ***** FUNCTIONS ********************************************************* */
 
-static void mnet32_task(void *task_parameters) {
+static void mnet32_task(void* task_parameters) {
     ESP_LOGV(TAG, "mnet32_task() [the actual task function]");
 
-    const TickType_t mon_freq = pdMS_TO_TICKS(
-        MNET32_TASK_MONITOR_FREQUENCY);
+    const TickType_t mon_freq = pdMS_TO_TICKS(MNET32_TASK_MONITOR_FREQUENCY);
     BaseType_t notify_result;
     uint32_t notify_value = 0;
 
     for (;;) {
         /* Block until notification or ``mon_freq`` reached. */
-        notify_result = xTaskNotifyWaitIndexed(
-            MNET32_TASK_NOTIFICATION_INDEX,
-            pdFALSE,
-            ULONG_MAX,
-            &notify_value,
-            mon_freq);
+        notify_result = xTaskNotifyWaitIndexed(MNET32_TASK_NOTIFICATION_INDEX,
+                                               pdFALSE,
+                                               ULONG_MAX,
+                                               &notify_value,
+                                               mon_freq);
 
         /* Notification or monitoring? */
         if (notify_result == pdPASS) {
@@ -217,9 +215,9 @@ static void mnet32_task(void *task_parameters) {
                 if (mnet32_wifi_ap_get_connected_stations() == 0) {
                     mnet32_state_set_status_idle();
 
-                    ESP_LOGD(
-                        TAG,
-                        "No more stations connected, restarting shutdown timer!");  // NOLINT(whitespace/line_length)
+                    ESP_LOGD(TAG,
+                             "No more stations connected, restarting shutdown "
+                             "timer!");  // NOLINT(whitespace/line_length)
                     mnet32_wifi_ap_timer_start();
                 }
 
@@ -246,12 +244,11 @@ static void mnet32_task(void *task_parameters) {
             case MNET32_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_DISCONNECTED");
 
-                if (mnet32_wifi_sta_get_num_connection_attempts()
-                    > MNET32_WIFI_STA_MAX_CONNECTION_ATTEMPTS) {
+                if (mnet32_wifi_sta_get_num_connection_attempts() >
+                    MNET32_WIFI_STA_MAX_CONNECTION_ATTEMPTS) {
                     mnet32_wifi_sta_deinit();
                     if (mnet32_wifi_ap_init() != ESP_OK)
-                        mnet32_notify(
-                            MNET32_NOTIFICATION_CMD_NETWORKING_STOP);
+                        mnet32_notify(MNET32_NOTIFICATION_CMD_NETWORKING_STOP);
                 } else {
                     mnet32_wifi_sta_connect();
                 }
@@ -277,11 +274,10 @@ static void mnet32_task(void *task_parameters) {
     vTaskDelete(NULL);
 }
 
-void mnet32_event_handler(
-    void* arg,
-    esp_event_base_t event_base,
-    int32_t event_id,
-    void* event_data) {
+void mnet32_event_handler(void* arg,
+                          esp_event_base_t event_base,
+                          int32_t event_id,
+                          void* event_data) {
     ESP_LOGV(TAG, "mnet32_event_handler()");
 
     if (event_base == WIFI_EVENT) {
@@ -321,8 +317,7 @@ void mnet32_event_handler(
              *      point or some other external circumstances, e.g. zombies.
              */
             ESP_LOGD(TAG, "WIFI_EVENT_STA_DISCONNECTED");
-            mnet32_notify(
-                MNET32_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED);
+            mnet32_notify(MNET32_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED);
             break;
         case WIFI_EVENT_STA_AUTHMODE_CHANGE:
             ESP_LOGV(TAG, "WIFI_EVENT_STA_AUTHMODE_CHANGED");
@@ -354,16 +349,14 @@ void mnet32_event_handler(
              * the access point.
              */
             ESP_LOGD(TAG, "WIFI_EVENT_AP_STACONNECTED");
-            mnet32_notify(
-                MNET32_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED);
+            mnet32_notify(MNET32_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED);
             break;
         case WIFI_EVENT_AP_STADISCONNECTED:
             /* This event is emitted by ``esp_wifi`` when a client disconnects
              * from the access point.
              */
             ESP_LOGD(TAG, "WIFI_EVENT_AP_STADISCONNECTED");
-            mnet32_notify(
-                MNET32_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED);
+            mnet32_notify(MNET32_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED);
             break;
         case WIFI_EVENT_AP_PROBEREQRECVED:
             ESP_LOGV(TAG, "WIFI_EVENT_AP_PROBEREQRECVED");
@@ -452,11 +445,10 @@ static esp_err_t mnet32_init(void) {
     esp_ret = esp_netif_init();
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not initialize network stack!");
-        ESP_LOGD(
-            TAG,
-            "'esp_netif_init()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_netif_init()' returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
         return esp_ret;
     }
 
@@ -473,14 +465,13 @@ static esp_err_t mnet32_init(void) {
         ESP_EVENT_ANY_ID,
         mnet32_event_handler,
         NULL,
-        (void **)mnet32_state_get_ip_event_handler_ptr());
+        (void**)mnet32_state_get_ip_event_handler_ptr());
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not attach IP_EVENT event handler!");
-        ESP_LOGD(
-            TAG,
-            "'esp_event_handler_instance_register()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_event_handler_instance_register()' returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
         return esp_ret;
     }
 
@@ -494,13 +485,12 @@ static esp_err_t mnet32_init(void) {
     //                    component may be considered *completed*, this value
     //                    should be minimized (see freeRTOS'
     //                    ``uxTaskGetStackHighWaterMark()``).
-    if (xTaskCreate(
-            mnet32_task,
-            "mnet32_task",
-            4096,
-            NULL,
-            MNET32_TASK_PRIORITY,
-            mnet32_state_get_task_handle_ptr()) != pdPASS) {
+    if (xTaskCreate(mnet32_task,
+                    "mnet32_task",
+                    4096,
+                    NULL,
+                    MNET32_TASK_PRIORITY,
+                    mnet32_state_get_task_handle_ptr()) != pdPASS) {
         ESP_LOGE(TAG, "Could not create task!");
         return ESP_FAIL;
     }
@@ -554,11 +544,10 @@ static esp_err_t mnet32_deinit(void) {
         mnet32_state_get_ip_event_handler());
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not unregister IP_EVENT event handler!");
-        ESP_LOGD(
-            TAG,
-            "'esp_event_handler_instance_unregister()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_event_handler_instance_unregister()' returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
         ESP_LOGW(TAG, "Continuing with de-initialization...");
     }
 
@@ -576,11 +565,11 @@ static esp_err_t mnet32_deinit(void) {
      */
     esp_ret = esp_netif_deinit();
     if (esp_ret != ESP_ERR_NOT_SUPPORTED) {
-        ESP_LOGW(
-            TAG,
-            "'esp_netif_deinit()' returned with an unexpected return code: %s [%d]",  // NOLINT(whitespace/line_length)
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGW(TAG,
+                 "'esp_netif_deinit()' returned with an unexpected return "
+                 "code: %s [%d]",  // NOLINT(whitespace/line_length)
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
     }
 
     return ESP_OK;
@@ -604,36 +593,30 @@ static esp_err_t mnet32_deinit(void) {
  *       be place in the event loop while having other events that may be
  *       discarded?
  */
-static void mnet32_emit_event(int32_t event_id, void *event_data) {
+static void mnet32_emit_event(int32_t event_id, void* event_data) {
     ESP_LOGV(TAG, "mnet32_emit_event()");
 
     esp_err_t esp_ret;
 
     if (event_data == NULL) {
         ESP_LOGV(TAG, "Event without context data!");
-        esp_ret = esp_event_post(
-            MNET32_EVENTS,
-            event_id,
-            NULL,
-            0,
-            (TickType_t) 0);
+        esp_ret =
+            esp_event_post(MNET32_EVENTS, event_id, NULL, 0, (TickType_t)0);
     } else {
         ESP_LOGV(TAG, "Event with context data!");
-        esp_ret = esp_event_post(
-            MNET32_EVENTS,
-            event_id,
-            event_data,
-            sizeof(event_data),
-            (TickType_t) 0);
+        esp_ret = esp_event_post(MNET32_EVENTS,
+                                 event_id,
+                                 event_data,
+                                 sizeof(event_data),
+                                 (TickType_t)0);
     }
 
     if (esp_ret != ESP_OK) {
         ESP_LOGW(TAG, "Could not emit event!");
-        ESP_LOGD(
-            TAG,
-            "esp_event_post() returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "esp_event_post() returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
         ESP_LOGD(TAG, "event_base....... %s", MNET32_EVENTS);
         ESP_LOGD(TAG, "event_id......... %d", event_id);
         ESP_LOGD(TAG, "event_data....... %p", event_data);
@@ -657,11 +640,10 @@ static void mnet32_emit_event(int32_t event_id, void *event_data) {
 static void mnet32_notify(uint32_t notification) {
     ESP_LOGV(TAG, "mnet32_notify()");
 
-    xTaskNotifyIndexed(
-        mnet32_state_get_task_handle(),
-        MNET32_TASK_NOTIFICATION_INDEX,
-        notification,
-        eSetValueWithOverwrite);
+    xTaskNotifyIndexed(mnet32_state_get_task_handle(),
+                       MNET32_TASK_NOTIFICATION_INDEX,
+                       notification,
+                       eSetValueWithOverwrite);
 }
 
 esp_err_t mnet32_start(void) {
