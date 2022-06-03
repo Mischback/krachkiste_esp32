@@ -125,10 +125,7 @@
  */
 ESP_EVENT_DECLARE_BASE(MNET32_EVENTS);
 
-enum {
-    MNET32_EVENT_UNAVAILABLE,
-    MNET32_EVENT_READY
-};
+enum { MNET32_EVENT_UNAVAILABLE, MNET32_EVENT_READY };
 
 
 /**
@@ -174,10 +171,9 @@ esp_err_t mnet32_stop(void);
  *                   provided ``arg`` is an actual ``http_handle_t*`` to the
  *                   http server instance.
  */
-void mnet32_web_attach_handlers(
-    void* arg,
-    esp_event_base_t event_base,
-    int32_t event_id,
-    void* event_data);
+void mnet32_web_attach_handlers(void* arg,
+                                esp_event_base_t event_base,
+                                int32_t event_id,
+                                void* event_data);
 
 #endif  // SRC_LIB_EMBEDDED_NETWORKING_ESP32_INCLUDE_MNET32_MNET32_H_

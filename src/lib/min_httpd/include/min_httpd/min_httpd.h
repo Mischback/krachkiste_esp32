@@ -65,9 +65,7 @@ ESP_EVENT_DECLARE_BASE(MIN_HTTPD_EVENTS);
  *                   to other components that the server is ready to accept
  *                   further *URI handlers*.
  */
-enum {
-    MIN_HTTPD_READY
-};
+enum { MIN_HTTPD_READY };
 
 
 /**
@@ -88,11 +86,10 @@ enum {
  * @param event_data Events might provide a pointer to additional,
  *                   event-related data.
  */
-void min_httpd_external_event_handler_start(
-    void* arg,
-    esp_event_base_t event_base,
-    int32_t event_id,
-    void* event_data);
+void min_httpd_external_event_handler_start(void* arg,
+                                            esp_event_base_t event_base,
+                                            int32_t event_id,
+                                            void* event_data);
 
 /**
  * Handle external events that should cause the HTTP server to stop.
@@ -112,11 +109,10 @@ void min_httpd_external_event_handler_start(
  * @param event_data Events might provide a pointer to additional,
  *                   event-related data.
  */
-void min_httpd_external_event_handler_stop(
-    void* arg,
-    esp_event_base_t event_base,
-    int32_t event_id,
-    void* event_data);
+void min_httpd_external_event_handler_stop(void* arg,
+                                           esp_event_base_t event_base,
+                                           int32_t event_id,
+                                           void* event_data);
 
 /**
  * Provide a simple log message.

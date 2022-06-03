@@ -46,7 +46,7 @@
 static const char* TAG = "krachkiste.main";
 
 // grabbed this from https://github.com/tonyp7/esp32-wifi-manager/blob/master/examples/default_demo/main/user_main.c
-void monitoring_task(void *pvParameter) {
+void monitoring_task(void* pvParameter) {
     for (;;) {
         ESP_LOGI(TAG, "free heap: %d", esp_get_free_heap_size());
         vTaskDelay(pdMS_TO_TICKS(10000));
@@ -82,14 +82,13 @@ void app_main(void) {
     /* your code should go here. Here we simply create a task on core 2 that
      * monitors free heap memory
      */
-    xTaskCreatePinnedToCore(
-        &monitoring_task,
-        "monitoring_task",
-        2048,
-        NULL,
-        1,
-        NULL,
-        1);
+    xTaskCreatePinnedToCore(&monitoring_task,
+                            "monitoring_task",
+                            2048,
+                            NULL,
+                            1,
+                            NULL,
+                            1);
 
     // Start ``min_httpd`` as soon as the network becomes ready!
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
@@ -107,12 +106,12 @@ void app_main(void) {
         NULL));
     // Register *URI handlers* of ``mnet32`` component when ``min_httpd`` is
     // ready!
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        MIN_HTTPD_EVENTS,
-        MIN_HTTPD_READY,
-        &mnet32_web_attach_handlers,
-        NULL,
-        NULL));
+    ESP_ERROR_CHECK(
+        esp_event_handler_instance_register(MIN_HTTPD_EVENTS,
+                                            MIN_HTTPD_READY,
+                                            &mnet32_web_attach_handlers,
+                                            NULL,
+                                            NULL));
 
     mnet32_start();
 }
