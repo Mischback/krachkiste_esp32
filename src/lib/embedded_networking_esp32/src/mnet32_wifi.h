@@ -9,6 +9,23 @@
 #include "esp_err.h"
 
 /**
+ * The maximum length of the ``char`` array to store SSID.
+ *
+ * IEEE 802.11 says, that the maximum length of an SSID is 32, which is also
+ * the value provided in **ESP-IDF**'s ``esp_wifi_types.h``.
+ */
+#define MNET32_WIFI_SSID_MAX_LEN 32
+
+/**
+ * The maximum length of the ``char`` array to store the pre-shared key
+ * for a WiFi connection.
+ *
+ * IEEE 801.11 says, that the maximum length of an PSK is 64, which is also the
+ * value provided in **ESP-IDF**'s ``esp_wifi_types.h``.
+ */
+#define MNET32_WIFI_PSK_MAX_LEN 64
+
+/**
  * Get the number of connected stations in access point mode.
  *
  * @return int8_t The number of connected stations or ``-1`` in case of error.

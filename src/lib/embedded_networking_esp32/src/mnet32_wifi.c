@@ -71,23 +71,6 @@
  */
 #define MNET32_WIFI_NVS_PSK "net_psk"
 
-/**
- * The maximum length of the ``char`` array to store SSID.
- *
- * IEEE 802.11 says, that the maximum length of an SSID is 32, which is also
- * the value provided in **ESP-IDF**'s ``esp_wifi_types.h``.
- */
-#define MNET32_WIFI_SSID_MAX_LEN 32
-
-/**
- * The maximum length of the ``char`` array to store the pre-shared key
- * for a WiFi connection.
- *
- * IEEE 801.11 says, that the maximum length of an PSK is 64, which is also the
- * value provided in **ESP-IDF**'s ``esp_wifi_types.h``.
- */
-#define MNET32_WIFI_PSK_MAX_LEN 64
-
 
 /* ***** TYPES ************************************************************* */
 
