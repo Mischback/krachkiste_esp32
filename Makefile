@@ -49,6 +49,12 @@ doc: sphinx/serve/html
 .PHONY : doc
 
 
+## Run "clang-format" on all files
+## @category Code Quality
+util/clang-format : | $(STAMP_TOX_UTIL)
+	$(MAKE) util/pre-commit pre-commit_id="clang-format" pre-commit_files="--all-files"
+.PHONY : util/clang-format
+
 ## Run "cpplint" on all files
 ## @category Code Quality
 util/cpplint : | $(STAMP_TOX_UTIL)

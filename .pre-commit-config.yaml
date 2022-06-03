@@ -7,6 +7,11 @@ fail_fast: true
 minimum_pre_commit_version: "2.16.0"
 
 repos:
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v14.0.3
+    hooks:
+      - id: clang-format
+        'types_or': [c]
   # cpplint (Google's C/C++ linter)
   - repo: https://github.com/cpplint/cpplint
     rev: 1.6.0
