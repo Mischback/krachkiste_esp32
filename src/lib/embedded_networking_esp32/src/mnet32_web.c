@@ -195,6 +195,7 @@ static esp_err_t mnet32_web_handler_config_get(httpd_req_t *request) {
 static esp_err_t mnet32_web_handler_config_post(httpd_req_t *request) {
     ESP_LOGV(TAG, "mnet32_web_handler_config_post()");
 
+    /* Receive POST body */
     char *buf = calloc(sizeof(char), request->content_len + 1);
     size_t off = 0;
 
@@ -215,6 +216,7 @@ static esp_err_t mnet32_web_handler_config_post(httpd_req_t *request) {
     }
     ESP_LOGD(TAG, "received [%s]", buf);
 
+    /* Parse POST body */
     char ssid[MNET32_WIFI_SSID_MAX_LEN];
     char psk[MNET32_WIFI_PSK_MAX_LEN];
     memset(ssid, 0x00, MNET32_WIFI_SSID_MAX_LEN);
@@ -227,5 +229,13 @@ static esp_err_t mnet32_web_handler_config_post(httpd_req_t *request) {
     ESP_LOGD(TAG, "SSID: %s", ssid);
     ESP_LOGD(TAG, "PSK:  %s", psk);
 
-    return ESP_FAIL;
+    /* Write new credentials to NVS */
+    // TODO(mischback) Write credentials to NVS
+
+    /* Trigger restart of WiFi */
+    // TODO(mischback) Actually restart WiFi to apply new credentials
+
+    /* Provide a HTTP response */
+    httpd_resp_set_status(request, "204 No Response");
+    return httpd_resp_send(request, "", HTTPD_RESP_USE_STRLEN);
 }
