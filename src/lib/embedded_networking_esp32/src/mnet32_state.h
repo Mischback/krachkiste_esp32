@@ -34,18 +34,18 @@ bool mnet32_state_is_mode_set(void);
 bool mnet32_state_is_mode_sta(void);
 bool mnet32_state_is_status_idle(void);
 
-esp_netif_t *mnet32_state_get_interface(void);
+esp_netif_t* mnet32_state_get_interface(void);
 esp_event_handler_t mnet32_state_get_ip_event_handler(void);
-esp_event_handler_t *mnet32_state_get_ip_event_handler_ptr(void);
+esp_event_handler_t* mnet32_state_get_ip_event_handler_ptr(void);
 esp_event_handler_t mnet32_state_get_medium_event_handler(void);
-esp_event_handler_t *mnet32_state_get_medium_event_handler_ptr(void);
-void *mnet32_state_get_medium_state(void);
+esp_event_handler_t* mnet32_state_get_medium_event_handler_ptr(void);
+void* mnet32_state_get_medium_state(void);
 uint8_t mnet32_state_get_mode(void);
 TaskHandle_t mnet32_state_get_task_handle(void);
-TaskHandle_t *mnet32_state_get_task_handle_ptr(void);
+TaskHandle_t* mnet32_state_get_task_handle_ptr(void);
 
 void mnet32_state_clear_interface(void);
-void mnet32_state_set_interface(esp_netif_t *interface);
+void mnet32_state_set_interface(esp_netif_t* interface);
 void mnet32_state_clear_medium(void);
 void mnet32_state_set_medium_wireless(void);
 void mnet32_state_clear_mode(void);

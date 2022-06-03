@@ -28,10 +28,9 @@
  * @todo When ``ethernet`` networking is implemented, the related events must
  *       be included here!
  */
-void mnet32_event_handler(
-    void* arg,
-    esp_event_base_t event_base,
-    int32_t event_id,
-    void* event_data);
+void mnet32_event_handler(void* arg,
+                          esp_event_base_t event_base,
+                          int32_t event_id,
+                          void* event_data);
 
 #endif  // SRC_LIB_EMBEDDED_NETWORKING_ESP32_SRC_MNET32_INTERNAL_H_

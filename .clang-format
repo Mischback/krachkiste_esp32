@@ -55,7 +55,7 @@ BinPackParameters: false  # See AllowAllParametersOfDeclarationOnNextLine
 # BreakAfterJavaFieldAnnotations: false  # This is no JAVA
 # BreakStringLiterals: true  # Keep this!
 # ColumnLimit:     80  # TODO Evaluate this! May be set to 0 and leave line-break decisions to other rules. May fix (unwanted) line-breaks in comments.
-# CommentPragmas:  '^ IWYU pragma:'  # TODO Evaluate this!
+# CommentPragmas:  '^ CLANG-SKIP pragma:'  # TODO Evaluate this!
 # CompactNamespaces: false  # No namespaces in pure C!
 # ConstructorInitializerAllOnOneLineOrOnePerLine: true  # No constructors in pure C!
 # ConstructorInitializerIndentWidth: 4  # No constructors in pure C!

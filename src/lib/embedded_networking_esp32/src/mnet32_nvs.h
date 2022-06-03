@@ -14,12 +14,9 @@
 #include "nvs_flash.h"
 
 
-esp_err_t mnet32_get_nvs_handle(
-    nvs_open_mode_t mode,
-    nvs_handle_t *handle);
+esp_err_t mnet32_get_nvs_handle(nvs_open_mode_t mode, nvs_handle_t* handle);
 
-esp_err_t mnet32_get_string_from_nvs(
-    nvs_handle_t handle,
-    const char *key,
-    char *ret_buffer,
-    const size_t max_buf_size);
+esp_err_t mnet32_get_string_from_nvs(nvs_handle_t handle,
+                                     const char* key,
+                                     char* ret_buffer,
+                                     const size_t max_buf_size);

@@ -88,14 +88,14 @@ typedef enum {
  * (``TaskHandle_t task``) and the required event handler instances.
  */
 struct mnet32_state {
-    mnet32_medium       medium;
-    mnet32_mode         mode;
-    mnet32_status       status;
-    esp_netif_t         *interface;
-    TaskHandle_t        task;
+    mnet32_medium medium;
+    mnet32_mode mode;
+    mnet32_status status;
+    esp_netif_t* interface;
+    TaskHandle_t task;
     esp_event_handler_t ip_event_handler;
     esp_event_handler_t medium_event_handler;
-    void                *medium_state;
+    void* medium_state;
 };
 
 
@@ -104,7 +104,7 @@ struct mnet32_state {
 /**
  * Track the internal state of the component.
  */
-static struct mnet32_state *state = NULL;
+static struct mnet32_state* state = NULL;
 
 
 /* ***** FUNCTIONS ********************************************************* */
@@ -161,7 +161,7 @@ bool mnet32_state_is_status_idle(void) {
     return state->status == MNET32_STATUS_IDLE;
 }
 
-esp_netif_t *mnet32_state_get_interface(void) {
+esp_netif_t* mnet32_state_get_interface(void) {
     return state->interface;
 }
 
@@ -169,7 +169,7 @@ esp_event_handler_t mnet32_state_get_ip_event_handler(void) {
     return state->ip_event_handler;
 }
 
-esp_event_handler_t *mnet32_state_get_ip_event_handler_ptr(void) {
+esp_event_handler_t* mnet32_state_get_ip_event_handler_ptr(void) {
     return &(state->ip_event_handler);
 }
 
@@ -177,11 +177,11 @@ esp_event_handler_t mnet32_state_get_medium_event_handler(void) {
     return state->medium_event_handler;
 }
 
-esp_event_handler_t *mnet32_state_get_medium_event_handler_ptr(void) {
+esp_event_handler_t* mnet32_state_get_medium_event_handler_ptr(void) {
     return &(state->medium_event_handler);
 }
 
-void *mnet32_state_get_medium_state(void) {
+void* mnet32_state_get_medium_state(void) {
     return state->medium_state;
 }
 
@@ -193,7 +193,7 @@ TaskHandle_t mnet32_state_get_task_handle(void) {
     return state->task;
 }
 
-TaskHandle_t *mnet32_state_get_task_handle_ptr(void) {
+TaskHandle_t* mnet32_state_get_task_handle_ptr(void) {
     return &(state->task);
 }
 
@@ -201,7 +201,7 @@ void mnet32_state_clear_interface(void) {
     state->interface = NULL;
 }
 
-void mnet32_state_set_interface(esp_netif_t *interface) {
+void mnet32_state_set_interface(esp_netif_t* interface) {
     state->interface = interface;
 }
 

@@ -111,8 +111,8 @@ static const char* TAG = "mnet32.wifi";
 static esp_err_t mnet32_wifi_init(void);
 static esp_err_t mnet32_wifi_ap_deinit(void);
 static void mnet32_wifi_ap_timed_shutdown(TimerHandle_t timer);
-static esp_err_t mnet32_wifi_get_config_from_nvs(char **ssid, char **psk);
-static esp_err_t mnet32_wifi_sta_init(char **sta_ssid, char **sta_psk);
+static esp_err_t mnet32_wifi_get_config_from_nvs(char** ssid, char** psk);
+static esp_err_t mnet32_wifi_sta_init(char** sta_ssid, char** sta_psk);
 
 
 /* ***** FUNCTIONS ********************************************************* */
@@ -162,11 +162,10 @@ static esp_err_t mnet32_wifi_init(void) {
     esp_ret = esp_wifi_init(&init_cfg);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not initialize WiFi!");
-        ESP_LOGD(
-            TAG,
-            "'esp_wifi_init()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_wifi_init()' returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
         return esp_ret;
     }
     mnet32_state_set_medium_wireless();
@@ -180,14 +179,13 @@ static esp_err_t mnet32_wifi_init(void) {
         ESP_EVENT_ANY_ID,
         mnet32_event_handler,
         NULL,
-        (void **)mnet32_state_get_medium_event_handler_ptr());
+        (void**)mnet32_state_get_medium_event_handler_ptr());
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not attach WIFI_EVENT event handler!");
-        ESP_LOGD(
-            TAG,
-            "'esp_event_handler_instance_register()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_event_handler_instance_register()' returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
         return esp_ret;
     }
 
@@ -200,9 +198,8 @@ static esp_err_t mnet32_wifi_init(void) {
     memset(nvs_sta_ssid, 0x00, MNET32_WIFI_SSID_MAX_LEN);
     memset(nvs_sta_psk, 0x00, MNET32_WIFI_PSK_MAX_LEN);
 
-    esp_ret = mnet32_wifi_get_config_from_nvs(
-        (char **)&nvs_sta_ssid,
-        (char **)&nvs_sta_psk);
+    esp_ret = mnet32_wifi_get_config_from_nvs((char**)&nvs_sta_ssid,
+                                              (char**)&nvs_sta_psk);
     if (esp_ret != ESP_OK) {
         ESP_LOGI(TAG, "Could not read credentials, starting access point!");
         return mnet32_wifi_ap_init();
@@ -211,9 +208,7 @@ static esp_err_t mnet32_wifi_init(void) {
     ESP_LOGD(TAG, "Retrieved SSID.. '%s'", nvs_sta_ssid);
     ESP_LOGD(TAG, "Retrieved PSK... '%s'", nvs_sta_psk);
 
-    esp_ret = mnet32_wifi_sta_init(
-        (char **)&nvs_sta_ssid,
-        (char **)&nvs_sta_psk);
+    esp_ret = mnet32_wifi_sta_init((char**)&nvs_sta_ssid, (char**)&nvs_sta_psk);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not start WiFi station mode!");
         ESP_LOGI(TAG, "Starting access point!");
@@ -237,11 +232,10 @@ esp_err_t mnet32_wifi_deinit(void) {
         mnet32_state_get_medium_event_handler());
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not unregister WIFI_EVENT event handler!");
-        ESP_LOGD(
-            TAG,
-            "'esp_event_handler_instance_unregister()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_event_handler_instance_unregister()' returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
         ESP_LOGW(TAG, "Continuing with de-initialization...");
     }
 
@@ -254,11 +248,10 @@ esp_err_t mnet32_wifi_deinit(void) {
     esp_ret = esp_wifi_deinit();
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Deinitialization of WiFi failed!");
-        ESP_LOGD(
-            TAG,
-            "'esp_wifi_deinit() returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_wifi_deinit() returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
     }
     mnet32_state_clear_medium();
 
@@ -279,19 +272,20 @@ esp_err_t mnet32_wifi_ap_init(void) {
     mnet32_state_medium_state_init(sizeof(struct medium_state_wifi_ap));
 
     /* Create the timer to eventually shut down the access point. */
-    ((struct medium_state_wifi_ap *)mnet32_state_get_medium_state())->ap_shutdown_timer =  // NOLINT(whitespace/line_length)
-        xTimerCreate(
-            NULL,
-            pdMS_TO_TICKS(MNET32_WIFI_AP_LIFETIME),
-            pdFALSE,
-            (void *) 0,
-            mnet32_wifi_ap_timed_shutdown);
+    ((struct medium_state_wifi_ap*)mnet32_state_get_medium_state())
+        ->ap_shutdown_timer =  // NOLINT(whitespace/line_length)
+        xTimerCreate(NULL,
+                     pdMS_TO_TICKS(MNET32_WIFI_AP_LIFETIME),
+                     pdFALSE,
+                     (void*)0,
+                     mnet32_wifi_ap_timed_shutdown);
 
     /* Setup the configuration for access point mode.
      * These values are based off project-specific settings, that may be
      * changed by ``menuconfig`` / ``sdkconfig`` during building the
      * application. They can not be changed through the webinterface.
      */
+    // clang-format off
     wifi_config_t ap_config = {
         .ap = {
             .ssid = MNET32_WIFI_AP_SSID,
@@ -302,6 +296,7 @@ esp_err_t mnet32_wifi_ap_init(void) {
             .authmode = WIFI_AUTH_WPA_WPA2_PSK,
         },
     };
+    // clang-format on
     /* esp_wifi requires PSKs to be at least 8 characters. Just switch to
      * an **open** WiFi, if the provided PSK has less than 8 characters.
      * TODO(mischback): Verify how that minimal password length is set. Is this
@@ -324,11 +319,10 @@ esp_err_t mnet32_wifi_ap_init(void) {
     esp_ret = esp_wifi_set_mode(WIFI_MODE_AP);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not set wifi mode to AP!");
-        ESP_LOGD(
-            TAG,
-            "'esp_wifi_set_mode() returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_wifi_set_mode() returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
         return esp_ret;
     }
     mnet32_state_set_mode_ap();
@@ -336,21 +330,19 @@ esp_err_t mnet32_wifi_ap_init(void) {
     esp_ret = esp_wifi_set_config(WIFI_IF_AP, &ap_config);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not set wifi config for AP!");
-        ESP_LOGD(
-            TAG,
-            "'esp_wifi_set_config()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_wifi_set_config()' returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
         return esp_ret;
     }
     esp_ret = esp_wifi_start();
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not start wifi in AP mode!");
-        ESP_LOGD(
-            TAG,
-            "'esp_wifi_start()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_wifi_start()' returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
         return esp_ret;
     }
 
@@ -385,11 +377,10 @@ static esp_err_t mnet32_wifi_ap_deinit(void) {
     esp_err_t esp_ret = esp_wifi_stop();
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not stop WiFi (AP mode)!");
-        ESP_LOGD(
-            TAG,
-            "'esp_wifi_stop()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_wifi_stop()' returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
         ESP_LOGW(TAG, "Continuing with de-initialization...");
     }
 
@@ -413,8 +404,8 @@ static void mnet32_wifi_ap_timed_shutdown(TimerHandle_t timer) {
         return;
     }
 
-    xTimerStop(timer, (TickType_t) 0);
-    xTimerDelete(timer, (TickType_t) 0);
+    xTimerStop(timer, (TickType_t)0);
+    xTimerDelete(timer, (TickType_t)0);
 
     mnet32_stop();
 }
@@ -436,7 +427,7 @@ int8_t mnet32_wifi_ap_get_connected_stations(void) {
 void mnet32_wifi_ap_timer_start(void) {
     ESP_LOGV(TAG, "mnet32_wifi_ap_timer_start()");
 
-    struct medium_state_wifi_ap *tmp = mnet32_state_get_medium_state();
+    struct medium_state_wifi_ap* tmp = mnet32_state_get_medium_state();
 
     if (tmp->ap_shutdown_timer == NULL) {
         ESP_LOGW(TAG, "The ap_shutdown_timer is not available!");
@@ -448,14 +439,14 @@ void mnet32_wifi_ap_timer_start(void) {
         return;  // fail silently
     }
 
-    xTimerStart(tmp->ap_shutdown_timer, (TickType_t) 0);
+    xTimerStart(tmp->ap_shutdown_timer, (TickType_t)0);
     ESP_LOGD(TAG, "Access point's shutdown timer started!");
 }
 
 void mnet32_wifi_ap_timer_stop(void) {
     ESP_LOGV(TAG, "mnet32_wifi_ap_timer_stop()");
 
-    struct medium_state_wifi_ap *tmp = mnet32_state_get_medium_state();
+    struct medium_state_wifi_ap* tmp = mnet32_state_get_medium_state();
 
     if (tmp->ap_shutdown_timer == NULL) {
         ESP_LOGW(TAG, "The ap_shutdown_timer is not available!");
@@ -467,7 +458,7 @@ void mnet32_wifi_ap_timer_stop(void) {
         return;  // fail silently
     }
 
-    xTimerStop(tmp->ap_shutdown_timer, (TickType_t) 0);
+    xTimerStop(tmp->ap_shutdown_timer, (TickType_t)0);
     ESP_LOGD(TAG, "Access point's shutdown timer stopped!");
 }
 
@@ -485,33 +476,29 @@ void mnet32_wifi_ap_timer_stop(void) {
  *                      provided log messages (of level ``ERROR`` and ``DEBUG``)
  *                      for the actual reason of failure.
  */
-static esp_err_t mnet32_wifi_get_config_from_nvs(char **ssid, char **psk) {
+static esp_err_t mnet32_wifi_get_config_from_nvs(char** ssid, char** psk) {
     ESP_LOGV(TAG, "mnet32_wifi_get_config_from_nvs()");
 
     /* Open NVS storage handle. */
     nvs_handle_t handle;
     esp_err_t esp_ret;
 
-    esp_ret = mnet32_get_nvs_handle(
-        NVS_READONLY,
-        &handle);
+    esp_ret = mnet32_get_nvs_handle(NVS_READONLY, &handle);
     if (esp_ret != ESP_OK)
         return esp_ret;
     ESP_LOGD(TAG, "Handle '%s' successfully opened!", MNET32_NVS_NAMESPACE);
 
-    esp_ret = mnet32_get_string_from_nvs(
-        handle,
-        MNET32_WIFI_NVS_SSID,
-        (char *)ssid,
-        MNET32_WIFI_SSID_MAX_LEN);
+    esp_ret = mnet32_get_string_from_nvs(handle,
+                                         MNET32_WIFI_NVS_SSID,
+                                         (char*)ssid,
+                                         MNET32_WIFI_SSID_MAX_LEN);
     if (esp_ret != ESP_OK)
         return esp_ret;
 
-    esp_ret = mnet32_get_string_from_nvs(
-        handle,
-        MNET32_WIFI_NVS_PSK,
-        (char *)psk,
-        MNET32_WIFI_PSK_MAX_LEN);
+    esp_ret = mnet32_get_string_from_nvs(handle,
+                                         MNET32_WIFI_NVS_PSK,
+                                         (char*)psk,
+                                         MNET32_WIFI_PSK_MAX_LEN);
     if (esp_ret != ESP_OK)
         return esp_ret;
 
@@ -540,7 +527,7 @@ static esp_err_t mnet32_wifi_get_config_from_nvs(char **ssid, char **psk) {
  *                   triggered by ::mnet32_event_handler and performed by
  *                   ::mnet32_task .
  */
-static esp_err_t mnet32_wifi_sta_init(char **sta_ssid, char **sta_psk) {
+static esp_err_t mnet32_wifi_sta_init(char** sta_ssid, char** sta_psk) {
     ESP_LOGV(TAG, "mnet32_wifi_sta_init()");
 
     /* Create a network interface for Access Point mode. */
@@ -559,6 +546,7 @@ static esp_err_t mnet32_wifi_sta_init(char **sta_ssid, char **sta_psk) {
      * the ``SSID`` and ``PSK`` are read from the non-volatile storage (NVS) and
      * passed into this function.
      */
+    // clang-format off
     wifi_config_t sta_config = {
         .sta = {
             .scan_method = WIFI_FAST_SCAN,
@@ -567,16 +555,11 @@ static esp_err_t mnet32_wifi_sta_init(char **sta_ssid, char **sta_psk) {
             .threshold.authmode = MNET32_WIFI_STA_THRESHOLD_AUTH,
         },
     };
+    // clang-format on
     // Inject the SSID / PSK as fetched from the NVS.
     // ``memcpy`` feels like *force*, but it works.
-    memcpy(
-        sta_config.sta.ssid,
-        (char *)sta_ssid,
-        strlen((char *)sta_ssid));
-    memcpy(
-        sta_config.sta.password,
-        (char *)sta_psk,
-        strlen((char *)sta_psk));
+    memcpy(sta_config.sta.ssid, (char*)sta_ssid, strlen((char*)sta_ssid));
+    memcpy(sta_config.sta.password, (char*)sta_psk, strlen((char*)sta_psk));
 
     esp_err_t esp_ret;
 
@@ -584,11 +567,10 @@ static esp_err_t mnet32_wifi_sta_init(char **sta_ssid, char **sta_psk) {
     esp_ret = esp_wifi_set_mode(WIFI_MODE_STA);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not set wifi mode to STA!");
-        ESP_LOGD(
-            TAG,
-            "'esp_wifi_set_mode() returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_wifi_set_mode() returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
         return esp_ret;
     }
     mnet32_state_set_mode_sta();
@@ -596,21 +578,19 @@ static esp_err_t mnet32_wifi_sta_init(char **sta_ssid, char **sta_psk) {
     esp_ret = esp_wifi_set_config(WIFI_IF_STA, &sta_config);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not set wifi config for station mode!");
-        ESP_LOGD(
-            TAG,
-            "'esp_wifi_set_config()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_wifi_set_config()' returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
         return esp_ret;
     }
     esp_ret = esp_wifi_start();
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not start wifi in station mode!");
-        ESP_LOGD(
-            TAG,
-            "'esp_wifi_start()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_wifi_start()' returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
         return esp_ret;
     }
 
@@ -629,11 +609,10 @@ esp_err_t mnet32_wifi_sta_deinit(void) {
     esp_err_t esp_ret = esp_wifi_stop();
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not stop WiFi (station mode)!");
-        ESP_LOGD(
-            TAG,
-            "'esp_wifi_stop()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_wifi_stop()' returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
         ESP_LOGW(TAG, "Continuing with de-initialization...");
     }
 
@@ -651,25 +630,27 @@ esp_err_t mnet32_wifi_sta_deinit(void) {
 void mnet32_wifi_sta_connect(void) {
     ESP_LOGV(TAG, "mnet32_wifi_sta_connect()");
 
-    ((struct medium_state_wifi_sta *)mnet32_state_get_medium_state())->num_connection_attempts++;  // NOLINT(whitespace/line_length)
+    ((struct medium_state_wifi_sta*)mnet32_state_get_medium_state())
+        ->num_connection_attempts++;  // NOLINT(whitespace/line_length)
 
     esp_err_t esp_ret = esp_wifi_connect();
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Connect command failed!");
-        ESP_LOGD(
-            TAG,
-            "'esp_wifi_connect()' returned %s [%d]",
-            esp_err_to_name(esp_ret),
-            esp_ret);
+        ESP_LOGD(TAG,
+                 "'esp_wifi_connect()' returned %s [%d]",
+                 esp_err_to_name(esp_ret),
+                 esp_ret);
     }
 }
 
 int8_t mnet32_wifi_sta_get_num_connection_attempts(void) {
-    return ((struct medium_state_wifi_sta *)mnet32_state_get_medium_state())->num_connection_attempts;  // NOLINT(whitespace/line_length)
+    return ((struct medium_state_wifi_sta*)mnet32_state_get_medium_state())
+        ->num_connection_attempts;  // NOLINT(whitespace/line_length)
 }
 
 void mnet32_wifi_sta_reset_connection_counter(void) {
-    ((struct medium_state_wifi_sta *)mnet32_state_get_medium_state())->num_connection_attempts = 0;  // NOLINT(whitespace/line_length)
+    ((struct medium_state_wifi_sta*)mnet32_state_get_medium_state())
+        ->num_connection_attempts = 0;  // NOLINT(whitespace/line_length)
 }
 
 esp_err_t mnet32_wifi_start(void) {
