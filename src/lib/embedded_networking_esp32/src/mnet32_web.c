@@ -24,6 +24,7 @@
 
 /* Other headers of the component */
 #include "mnet32/mnet32.h"
+#include "mnet32_wifi.h"
 
 /* This is ESP-IDF's error handling library.
  * - defines the type ``esp_err_t``
@@ -110,7 +111,7 @@ void mnet32_web_attach_handlers(
     httpd_register_uri_handler(server, &mnet32_web_uri_config_post);
 }
 
-static esp_err_t mnet32_web_get_value(char *key, char *raw, char *value) {
+static esp_err_t mnet32_web_get_value(char *key, char *raw, char **value) {
     /* 1. step: find the key... */
     char *key_offset = strstr(raw, key);
     if (key_offset == NULL) {
@@ -160,6 +161,9 @@ static esp_err_t mnet32_web_get_value(char *key, char *raw, char *value) {
     }
 
     ESP_LOGD(TAG, "Found value '%s' (escaped) for key '%s'.", esc_value, key);
+
+    /* 5. step: Write the value back and clean up. */
+    strcpy((char *)value, esc_value);  // NOLINT(runtime/printf)
 
     free(esc_value);
     return ESP_OK;
@@ -211,10 +215,17 @@ static esp_err_t mnet32_web_handler_config_post(httpd_req_t *request) {
     }
     ESP_LOGD(TAG, "received [%s]", buf);
 
-    mnet32_web_get_value("ssid", buf, NULL);
-    mnet32_web_get_value("psk", buf, NULL);
+    char ssid[MNET32_WIFI_SSID_MAX_LEN];
+    char psk[MNET32_WIFI_PSK_MAX_LEN];
+    memset(ssid, 0x00, MNET32_WIFI_SSID_MAX_LEN);
+    memset(psk, 0x00, MNET32_WIFI_PSK_MAX_LEN);
 
+    mnet32_web_get_value("ssid", buf, (char **)&ssid);
+    mnet32_web_get_value("psk", buf, (char **)&psk);
     free(buf);
+
+    ESP_LOGD(TAG, "SSID: %s", ssid);
+    ESP_LOGD(TAG, "PSK:  %s", psk);
 
     return ESP_FAIL;
 }
