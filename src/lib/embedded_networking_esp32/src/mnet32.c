@@ -535,7 +535,7 @@ static esp_err_t mnet32_deinit(void) {
 
     esp_err_t esp_ret;
     if (mnet32_state_is_medium_wireless())
-        esp_ret = mnet32_wifi_deinit();
+        mnet32_wifi_deinit();
 
     /* Unregister the IP_EVENT event handler. */
     esp_ret = esp_event_handler_instance_unregister(

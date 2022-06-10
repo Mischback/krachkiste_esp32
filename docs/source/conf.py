@@ -89,14 +89,19 @@ extlinks = {
         "",
     ),
     # ESP-IDF
-    "idf_api": ("https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/%s", "ESP-IDF: "),
+    "idf_api": (
+        "https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/%s",
+        "ESP-IDF: ",
+    ),
     # will show "Wikipedia: [title]"
     "wiki": ("https://en.wikipedia.org/wiki/%s", "Wikipedia: "),
 }
 
 # ##### breath
 breathe_projects = {
-    "Krachkiste_ESP32": os.path.join(os.path.abspath(os.path.dirname(__file__)), "doxygen", "xml")
+    "Krachkiste_ESP32": os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), "doxygen", "xml"
+    )
 }
 breathe_default_project = "Krachkiste_ESP32"
 

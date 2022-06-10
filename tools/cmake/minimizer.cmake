@@ -51,7 +51,7 @@ if (NOT MINIMIZER_PYTHON)
 
   create_python_venv(
     minimizer_venv
-    REQUIREMENTS_FILE ${PROJECT_DIR}/.python-requirements/minimizer.txt
+    REQUIREMENTS_FILE ${PROJECT_DIR}/requirements/python/minimizer.txt
     OUT_PYTHON_EXE VENV_PYTHON_EXE
   )
 

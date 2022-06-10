@@ -56,7 +56,7 @@ void monitoring_task(void* pvParameter) {
 /**
  * The application's main entry point.
  */
-void app_main(void) {
+void app_main(void) {  // cppcheck-suppress unusedFunction
     // set log-level of our own code to DEBUG (sdkconfig.defaults sets the
     // default log-level to INFO)
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
