@@ -20,13 +20,20 @@ repos:
         # readability/casting: Prohibits *C-style* casting; not desired, as
         #                      this project is a C code base, not C++
         args: ["--filter=-build/include_subdir,-readability/casting"]
+  # These hooks are run from the development machine, as of now a Debian
+  # Bullseye.
+  # There are matching pre-commit hooks available (e.g.
+  # https://github.com/Takishima/cmake-pre-commit-hooks), but these hooks are
+  # wrapping the local installations of the corresponding tools aswell.
   - repo: local
     hooks:
+      # Development machine: Debian Bullseye with cppcheck 2.3
+      # This version of cppcheck is simply run without a compile_commands.json!
       - id: local-cppcheck
         name: cppcheck
         language: system
         types: [c]
-        entry: /usr/bin/cppcheck --error-exitcode=1
+        entry: /usr/bin/cppcheck --error-exitcode=1 -q --enable=all --suppress=unusedFunction:src/app/main.c
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0
     hooks:
