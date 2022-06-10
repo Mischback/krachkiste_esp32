@@ -33,9 +33,7 @@ if __name__ == "__main__":
         print("Could not open INPUT '{}' (file not found)!".format(input_file))
         sys.exit(1)
     except PermissionError:
-        print(
-            "Could not read INPUT '{}' (missing permission)!".format(input_file)
-        )
+        print("Could not read INPUT '{}' (missing permission)!".format(input_file))
         sys.exit(1)
 
     # run through minify_html
@@ -51,7 +49,7 @@ if __name__ == "__main__":
         minify_css=True,
         minify_js=True,
         remove_bangs=True,
-        remove_processing_instructions=True
+        remove_processing_instructions=True,
     )
 
     # write to output_file
@@ -59,11 +57,7 @@ if __name__ == "__main__":
         with open(output_file, "w") as f_out:
             f_out.write(result)
     except PermissionError:
-        print(
-            "Could not write to OUTPUT '{}' (missing permission)".format(
-                output_file
-            )
-        )
+        print("Could not write to OUTPUT '{}' (missing permission)".format(output_file))
         sys.exit(1)
 
     # return "0" = SUCCESS
