@@ -73,6 +73,12 @@ util/cpplint : | $(STAMP_TOX_UTIL)
 	$(MAKE) util/pre-commit pre-commit_id="cpplint" pre-commit_files="--all-files"
 .PHONY : util/cpplint
 
+## Run "flake8" on all files
+## @category Code Quality
+util/flake8 : | $(STAMP_TOX_UTIL)
+	$(MAKE) util/pre-commit pre-commit_id="flake8" pre-commit_files="--all-files"
+.PHONY : util/flake8
+
 ## Run "isort" on all files
 ## @category Code Quality
 util/isort : | $(STAMP_TOX_UTIL)
