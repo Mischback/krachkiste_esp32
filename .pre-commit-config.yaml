@@ -33,7 +33,7 @@ repos:
         name: cppcheck
         language: system
         types: [c]
-        entry: /usr/bin/cppcheck --error-exitcode=1 -q --enable=all --suppress=unusedFunction:src/app/main.c
+        entry: /usr/bin/cppcheck --error-exitcode=1 -q --enable=warning,style,information --inline-suppr --template "{file}({line})_ {severity} ({id})_ {message}"
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0
     hooks:

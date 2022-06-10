@@ -171,7 +171,9 @@ static esp_err_t min_httpd_handler_favicon(httpd_req_t* request) {
     // to access it: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#embedding-binary-data
     extern const uint8_t favicon_ico_start[] asm("_binary_favicon_ico_start");
     extern const uint8_t favicon_ico_end[] asm("_binary_favicon_ico_end");
-    const size_t favicon_ico_size = favicon_ico_end - favicon_ico_start;
+    const size_t favicon_ico_size =
+        favicon_ico_end -  // cppcheck-suppress comparePointers
+        favicon_ico_start;
 
     esp_err_t return_value = httpd_resp_send(request,
                                              (const char*)favicon_ico_start,
@@ -196,7 +198,8 @@ static esp_err_t min_httpd_handler_home(httpd_req_t* request) {
     // to access it: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#embedding-binary-data
     extern const uint8_t home_html_start[] asm("_binary_home_html_start");
     extern const uint8_t home_html_end[] asm("_binary_home_html_end");
-    const size_t home_html_length = home_html_end - home_html_start;
+    const size_t home_html_length =
+        home_html_end - home_html_start;  // cppcheck-suppress comparePointers
 
     esp_err_t return_value = httpd_resp_send(request,
                                              (const char*)home_html_start,

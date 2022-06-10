@@ -180,7 +180,8 @@ static esp_err_t mnet32_web_handler_config_get(httpd_req_t* request) {
     // to access it: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#embedding-binary-data
     extern const uint8_t resource_start[] asm("_binary_wifi_config_html_start");
     extern const uint8_t resource_end[] asm("_binary_wifi_config_html_end");
-    const size_t resource_size = resource_end - resource_start;
+    const size_t resource_size =
+        resource_end - resource_start;  // cppcheck-suppress comparePointers
 
     return (
         httpd_resp_send(request, (const char*)resource_start, resource_size));
