@@ -49,6 +49,9 @@ doc: sphinx/serve/html
 .PHONY : doc
 
 
+util/black : | $(STAMP_TOX_UTIL)
+	$(MAKE) util/pre-commit pre-commit_id="black" pre-commit_files="--all-files"
+.PHONY : util/black
 ## Run "clang-format" on all files
 ## @category Code Quality
 util/clang-format : | $(STAMP_TOX_UTIL)
