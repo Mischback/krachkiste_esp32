@@ -55,6 +55,10 @@ util/clang-format : | $(STAMP_TOX_UTIL)
 	$(MAKE) util/pre-commit pre-commit_id="clang-format" pre-commit_files="--all-files"
 .PHONY : util/clang-format
 
+util/cppcheck : | $(STAMP_TOX_UTIL)
+	$(MAKE) util/pre-commit pre-commit_id="local-cppcheck" pre-commit_files="--all-files"
+.PHONY : util/cppcheck
+
 ## Run "cpplint" on all files
 ## @category Code Quality
 util/cpplint : | $(STAMP_TOX_UTIL)

@@ -20,6 +20,13 @@ repos:
         # readability/casting: Prohibits *C-style* casting; not desired, as
         #                      this project is a C code base, not C++
         args: ["--filter=-build/include_subdir,-readability/casting"]
+  - repo: local
+    hooks:
+      - id: local-cppcheck
+        name: cppcheck
+        language: system
+        types_or: [c]
+        entry: cppcheck
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0
     hooks:
