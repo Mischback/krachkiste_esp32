@@ -49,9 +49,12 @@ doc: sphinx/serve/html
 .PHONY : doc
 
 
+## Run "black" on all files
+## @category Code Quality
 util/black : | $(STAMP_TOX_UTIL)
 	$(MAKE) util/pre-commit pre-commit_id="black" pre-commit_files="--all-files"
 .PHONY : util/black
+
 ## Run "clang-format" on all files
 ## @category Code Quality
 util/clang-format : | $(STAMP_TOX_UTIL)
@@ -69,6 +72,12 @@ util/cppcheck : | $(STAMP_TOX_UTIL)
 util/cpplint : | $(STAMP_TOX_UTIL)
 	$(MAKE) util/pre-commit pre-commit_id="cpplint" pre-commit_files="--all-files"
 .PHONY : util/cpplint
+
+## Run "isort" on all files
+## @category Code Quality
+util/isort : | $(STAMP_TOX_UTIL)
+	$(MAKE) util/pre-commit pre-commit_id="isort" pre-commit_files="--all-files"
+.PHONY : util/isort
 
 pre-commit_id ?= ""
 pre-commit_files ?= ""

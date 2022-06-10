@@ -39,6 +39,11 @@ repos:
     rev: 22.3.0
     hooks:
       - id: black
+  # isort (automatically sort import statements, Python)
+  - repo: https://github.com/timothycrosley/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0
     hooks:
