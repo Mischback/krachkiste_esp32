@@ -49,8 +49,8 @@ repos:
     hooks:
       # check JSON files
       - id: check-json
-    #   # check TOML files
-    #   - id: check-toml
+      # check TOML files
+      - id: check-toml
       # check YAML files
       - id: check-yaml
       # let all files end with a single new line (this *should be ensured by
