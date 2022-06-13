@@ -70,10 +70,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-/* This is ESP-IDF's library to interface the non-volatile storage (NVS). */
-// TODO(mischback) Verify that this include is obsolete!
-// #include "nvs_flash.h"
-
 
 /* ***** DEFINES *********************************************************** */
 
@@ -492,16 +488,6 @@ static esp_err_t mnet32_init(void) {
         ESP_LOGE(TAG, "Could not create task!");
         return ESP_FAIL;
     }
-
-    // TODO(mischback) This may be moved to mnet32_state.c
-    //                 Might even be part of the monitoring event payload
-    // ESP_LOGI(TAG, "Successfully initialized mnet32 component.");
-    // ESP_LOGD(TAG, "state->medium.............. %d", state->medium);
-    // ESP_LOGD(TAG, "state->mode................ %d", state->mode);
-    // ESP_LOGD(TAG, "state->status.............. %d", state->status);
-    // ESP_LOGD(TAG, "state->task................ %p", state->task);
-    // ESP_LOGD(TAG, "state->ip_event_handler.... %p", state->ip_event_handler);
-    // ESP_LOGD(TAG, "state->medium_event_handler.. %p", state->medium_event_handler);  // NOLINT(whitespace/line_length)
 
     /* Place the first command for the dedicated mnet32_task. */
     mnet32_notify(MNET32_NOTIFICATION_CMD_WIFI_START);
