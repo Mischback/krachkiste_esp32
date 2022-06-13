@@ -384,7 +384,15 @@ static esp_err_t mnet32_wifi_ap_deinit(void) {
     return ESP_OK;
 }
 
-// TODO(mischback) DOCUMENTATION MISSING!
+/**
+ * Stop the networking after a given timespan in access point mode.
+ *
+ * This function is the actual callback that triggers stopping of all networking
+ * related stuff, if the component is in access point mode and no station is
+ * connected for a given timespan.
+ *
+ * @param timer The timer object this function is attached to.
+ */
 static void mnet32_wifi_ap_timed_shutdown(TimerHandle_t timer) {
     ESP_LOGV(TAG, "mnet32_wifi_ap_timed_shutdown()");
 
@@ -490,11 +498,6 @@ static esp_err_t mnet32_wifi_get_config_from_nvs(char** ssid, char** psk) {
                                     MNET32_WIFI_PSK_MAX_LEN);
     if (esp_ret != ESP_OK)
         return esp_ret;
-
-    // FIXME(mischback) This is just for temporary testing!
-    //                  And no, these are not my actual credentials!
-    // strcpy((char *)ssid, "WiFi_SSID");
-    // strcpy((char *)psk, "WiFi_PSK");
 
     return ESP_OK;
 }
