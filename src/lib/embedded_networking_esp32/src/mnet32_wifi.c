@@ -472,22 +472,22 @@ static esp_err_t mnet32_wifi_get_config_from_nvs(char** ssid, char** psk) {
     nvs_handle_t handle;
     esp_err_t esp_ret;
 
-    esp_ret = mnet32_get_nvs_handle(NVS_READONLY, &handle);
+    esp_ret = mnet32_nvs_get_handle(NVS_READONLY, &handle);
     if (esp_ret != ESP_OK)
         return esp_ret;
     ESP_LOGD(TAG, "Handle '%s' successfully opened!", MNET32_NVS_NAMESPACE);
 
-    esp_ret = mnet32_get_string_from_nvs(handle,
-                                         MNET32_WIFI_NVS_SSID,
-                                         (char*)ssid,
-                                         MNET32_WIFI_SSID_MAX_LEN);
+    esp_ret = mnet32_nvs_get_string(handle,
+                                    MNET32_WIFI_NVS_SSID,
+                                    (char*)ssid,
+                                    MNET32_WIFI_SSID_MAX_LEN);
     if (esp_ret != ESP_OK)
         return esp_ret;
 
-    esp_ret = mnet32_get_string_from_nvs(handle,
-                                         MNET32_WIFI_NVS_PSK,
-                                         (char*)psk,
-                                         MNET32_WIFI_PSK_MAX_LEN);
+    esp_ret = mnet32_nvs_get_string(handle,
+                                    MNET32_WIFI_NVS_PSK,
+                                    (char*)psk,
+                                    MNET32_WIFI_PSK_MAX_LEN);
     if (esp_ret != ESP_OK)
         return esp_ret;
 

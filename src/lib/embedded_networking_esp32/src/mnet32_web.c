@@ -250,7 +250,7 @@ static esp_err_t mnet32_web_write_config_to_nvs(char* ssid, char* psk) {
     nvs_handle_t handle;
     esp_err_t esp_ret;
 
-    esp_ret = mnet32_get_nvs_handle(NVS_READWRITE, &handle);
+    esp_ret = mnet32_nvs_get_handle(NVS_READWRITE, &handle);
     if (esp_ret != ESP_OK)
         return esp_ret;
     ESP_LOGD(TAG, "Handle '%s' successfully opened!", MNET32_NVS_NAMESPACE);

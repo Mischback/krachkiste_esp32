@@ -14,18 +14,18 @@
 #include "nvs_flash.h"
 
 
-esp_err_t mnet32_get_nvs_handle(nvs_open_mode_t mode, nvs_handle_t* handle);
+esp_err_t mnet32_nvs_get_handle(nvs_open_mode_t mode, nvs_handle_t* handle);
 
-esp_err_t mnet32_get_string_from_nvs(nvs_handle_t handle,
-                                     const char* key,
-                                     char* ret_buffer,
-                                     const size_t max_buf_size);
+esp_err_t mnet32_nvs_get_string(nvs_handle_t handle,
+                                const char* key,
+                                char* ret_buffer,
+                                const size_t max_buf_size);
 
 /**
  * Write a given ``value`` to the non-volatile storage.
  *
  * The NVS must be opened before calling this function to retrieve a handle,
- * see ::mnet32_get_nvs_handle .
+ * see ::mnet32_nvs_get_handle .
  *
  * @param handle The handle to be used, see ::mnet32_get_nbs_handle.
  * @param key    The key to store the value to.
