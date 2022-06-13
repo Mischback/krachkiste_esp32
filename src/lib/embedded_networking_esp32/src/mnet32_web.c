@@ -24,6 +24,7 @@
 
 /* Other headers of the component */
 #include "mnet32/mnet32.h"
+#include "mnet32_internal.h"
 #include "mnet32_nvs.h"
 #include "mnet32_wifi.h"
 
@@ -238,7 +239,7 @@ static esp_err_t mnet32_web_handler_config_post(httpd_req_t* request) {
     }
 
     /* Trigger restart of WiFi */
-    // TODO(mischback) Actually restart WiFi to apply new credentials
+    mnet32_notify(MNET32_NOTIFICATION_CMD_WIFI_RESTART);
 
     /* Provide a HTTP response */
     httpd_resp_set_status(request, "204 No Response");

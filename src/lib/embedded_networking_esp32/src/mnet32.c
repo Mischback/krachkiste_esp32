@@ -96,21 +96,6 @@
 /* Define the component-specific event base. */
 ESP_EVENT_DEFINE_BASE(MNET32_EVENTS);
 
-/**
- * This is the list of accepted notifications.
- */
-typedef enum {
-    MNET32_NOTIFICATION_BASE,
-    MNET32_NOTIFICATION_CMD_NETWORKING_STOP,
-    MNET32_NOTIFICATION_CMD_WIFI_START,
-    MNET32_NOTIFICATION_EVENT_WIFI_AP_START,
-    MNET32_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED,
-    MNET32_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED,
-    MNET32_NOTIFICATION_EVENT_WIFI_STA_START,
-    MNET32_NOTIFICATION_EVENT_WIFI_STA_CONNECTED,
-    MNET32_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED,
-} mnet32_task_notification;
-
 
 /* ***** VARIABLES ********************************************************* */
 
@@ -126,7 +111,6 @@ static const char* TAG = "mnet32";
 /* ***** PROTOTYPES ******************************************************** */
 
 static void mnet32_task(void* task_parameters);
-static void mnet32_notify(uint32_t notification);
 static esp_err_t mnet32_deinit(void);
 static esp_err_t mnet32_init(void);
 static void mnet32_emit_event(int32_t event_id, void* event_data);
@@ -167,6 +151,20 @@ static void mnet32_task(void* task_parameters) {
 
                 if (mnet32_wifi_start() != ESP_OK) {
                     ESP_LOGE(TAG, "Could not start WiFi!");
+                }
+                break;
+            case MNET32_NOTIFICATION_CMD_WIFI_RESTART:
+                ESP_LOGD(TAG, "CMD: WIFI_RESTART");
+
+                /* Emit the corresponding event *before* actually shutting down
+                 * the networking. This might give other components some time
+                 * to handle the unavailability of networking.
+                 */
+                mnet32_emit_event(MNET32_EVENT_UNAVAILABLE, NULL);
+
+                mnet32_wifi_deinit();
+                if (mnet32_wifi_start() != ESP_OK) {
+                    ESP_LOGE(TAG, "Could not restart WiFi!");
                 }
                 break;
             case MNET32_NOTIFICATION_EVENT_WIFI_AP_START:
@@ -624,20 +622,7 @@ static void mnet32_emit_event(int32_t event_id, void* event_data) {
     }
 }
 
-/**
- * Send a notification to the component's internal ``task``.
- *
- * Technically, this sends a notification to the task as specified by
- * ::mnet32_task , unblocking the task and triggering some action.
- *
- * The function sends a notification on the index specified by
- * ``MNET32_TASK_NOTIFICATION_INDEX`` with ``eAction`` set to
- * ``eSetValueWithOverwrite``, meaning: if the task was already notified, that
- * notification will be overwritten.
- *
- * @param notification
- */
-static void mnet32_notify(uint32_t notification) {
+void mnet32_notify(uint32_t notification) {
     ESP_LOGV(TAG, "mnet32_notify()");
 
     xTaskNotifyIndexed(mnet32_state_get_task_handle(),
