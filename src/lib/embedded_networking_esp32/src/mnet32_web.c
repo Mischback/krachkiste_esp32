@@ -228,7 +228,14 @@ static esp_err_t mnet32_web_handler_config_post(httpd_req_t* request) {
     ESP_LOGD(TAG, "PSK:  %s", psk);
 
     /* Write new credentials to NVS */
-    mnet32_web_write_config_to_nvs(ssid, psk);
+    esp_err_t esp_ret;
+    esp_ret = mnet32_web_write_config_to_nvs(ssid, psk);
+    if (esp_ret != ESP_OK) {
+        httpd_resp_set_status(request, "500 Internal Server Error");
+        return httpd_resp_send(request,
+                               "Could not write to storage",
+                               HTTPD_RESP_USE_STRLEN);
+    }
 
     /* Trigger restart of WiFi */
     // TODO(mischback) Actually restart WiFi to apply new credentials
