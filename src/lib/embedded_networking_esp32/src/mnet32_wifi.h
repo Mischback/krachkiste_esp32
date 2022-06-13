@@ -8,6 +8,18 @@
 /* This is ESP-IDF's error handling library. */
 #include "esp_err.h"
 
+
+/**
+ * The component-specific key to access the NVS to set/get the stored SSID.
+ */
+#define MNET32_WIFI_NVS_SSID "net_ssid"
+
+/**
+ * The component-specific key to access the NVS to set/get the stored WiFi
+ * password.
+ */
+#define MNET32_WIFI_NVS_PSK "net_psk"
+
 /**
  * The maximum length of the ``char`` array to store SSID.
  *

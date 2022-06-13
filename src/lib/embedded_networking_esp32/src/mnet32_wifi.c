@@ -60,17 +60,6 @@
 
 /* ***** DEFINES *********************************************************** */
 
-/**
- * The component-specific key to access the NVS to set/get the stored SSID.
- */
-#define MNET32_WIFI_NVS_SSID "net_ssid"
-
-/**
- * The component-specific key to access the NVS to set/get the stored WiFi
- * password.
- */
-#define MNET32_WIFI_NVS_PSK "net_psk"
-
 
 /* ***** TYPES ************************************************************* */
 

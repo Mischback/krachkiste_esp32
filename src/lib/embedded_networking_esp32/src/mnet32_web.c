@@ -24,6 +24,7 @@
 
 /* Other headers of the component */
 #include "mnet32/mnet32.h"
+#include "mnet32_nvs.h"
 #include "mnet32_wifi.h"
 
 /* This is ESP-IDF's error handling library.
@@ -53,6 +54,9 @@
  */
 #include "esp_log.h"
 
+/* This is ESP-IDF's library to interface the non-volatile storage (NVS). */
+#include "nvs_flash.h"
+
 
 /* ***** VARIABLES ********************************************************* */
 
@@ -68,6 +72,7 @@ static const char* TAG = "mnet32.web";
 /* ***** PROTOTYPES ******************************************************** */
 static esp_err_t mnet32_web_handler_config_get(httpd_req_t* request);
 static esp_err_t mnet32_web_handler_config_post(httpd_req_t* request);
+static esp_err_t mnet32_web_write_config_to_nvs(char* ssid, char* psk);
 
 
 /* ***** URI DEFINITIONS ***************************************************
@@ -223,7 +228,7 @@ static esp_err_t mnet32_web_handler_config_post(httpd_req_t* request) {
     ESP_LOGD(TAG, "PSK:  %s", psk);
 
     /* Write new credentials to NVS */
-    // TODO(mischback) Write credentials to NVS
+    mnet32_web_write_config_to_nvs(ssid, psk);
 
     /* Trigger restart of WiFi */
     // TODO(mischback) Actually restart WiFi to apply new credentials
@@ -231,4 +236,32 @@ static esp_err_t mnet32_web_handler_config_post(httpd_req_t* request) {
     /* Provide a HTTP response */
     httpd_resp_set_status(request, "204 No Response");
     return httpd_resp_send(request, "", HTTPD_RESP_USE_STRLEN);
+}
+
+/**
+ * Write SSID and PSK to the non-volatile storage.
+ *
+ * @param ssid The SSID to store.
+ * @param psk  The PSK to store.
+ * @return ``ESP_OK`` if the credentials are successfully stored or an error
+ *         code as provided by the NVS library.
+ */
+static esp_err_t mnet32_web_write_config_to_nvs(char* ssid, char* psk) {
+    nvs_handle_t handle;
+    esp_err_t esp_ret;
+
+    esp_ret = mnet32_get_nvs_handle(NVS_READWRITE, &handle);
+    if (esp_ret != ESP_OK)
+        return esp_ret;
+    ESP_LOGD(TAG, "Handle '%s' successfully opened!", MNET32_NVS_NAMESPACE);
+
+    esp_ret = mnet32_nvs_write_string(handle, MNET32_WIFI_NVS_SSID, ssid);
+    if (esp_ret != ESP_OK)
+        return esp_ret;
+
+    esp_ret = mnet32_nvs_write_string(handle, MNET32_WIFI_NVS_PSK, psk);
+    if (esp_ret != ESP_OK)
+        return esp_ret;
+
+    return ESP_OK;
 }

@@ -111,3 +111,11 @@ esp_err_t mnet32_get_string_from_nvs(nvs_handle_t handle,
 
     return ESP_OK;
 }
+
+esp_err_t mnet32_nvs_write_string(nvs_handle_t handle,
+                                  const char* key,
+                                  const char* value) {
+    ESP_LOGV(TAG, "mnet32_nvs_write_string()");
+
+    return nvs_set_str(handle, key, value);
+}
