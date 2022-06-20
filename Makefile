@@ -24,9 +24,12 @@ STAMP_DIR := .make-stamps
 
 STAMP_TOX_UTIL := $(STAMP_DIR)/tox-util
 STAMP_TOX_SPHINX := $(STAMP_DIR)/tox-sphinx
+STAMP_DOXYGEN := $(STAMP_DIR)/doxygen
 
-UTIL_REQUIREMENTS := .python-requirements/util.txt
-DOCUMENTATION_REQUIREMENTS := .python-requirements/documentation.txt
+UTIL_REQUIREMENTS := requirements/python/util.txt
+DOCUMENTATION_REQUIREMENTS := requirements/python/documentation.txt
+SOURCE_ALL_FILES := $(shell find src -type f)
+DOXYGEN_CONFIG := docs/source/Doxyfile
 
 # some make settings
 .SILENT :
@@ -46,11 +49,41 @@ doc: sphinx/serve/html
 .PHONY : doc
 
 
+## Run "black" on all files
+## @category Code Quality
+util/black : | $(STAMP_TOX_UTIL)
+	$(MAKE) util/pre-commit pre-commit_id="black" pre-commit_files="--all-files"
+.PHONY : util/black
+
+## Run "clang-format" on all files
+## @category Code Quality
+util/clang-format : | $(STAMP_TOX_UTIL)
+	$(MAKE) util/pre-commit pre-commit_id="clang-format" pre-commit_files="--all-files"
+.PHONY : util/clang-format
+
+## Run "cppcheck" on all files
+## @category Code Quality
+util/cppcheck : | $(STAMP_TOX_UTIL)
+	$(MAKE) util/pre-commit pre-commit_id="local-cppcheck" pre-commit_files="--all-files"
+.PHONY : util/cppcheck
+
 ## Run "cpplint" on all files
 ## @category Code Quality
 util/cpplint : | $(STAMP_TOX_UTIL)
 	$(MAKE) util/pre-commit pre-commit_id="cpplint" pre-commit_files="--all-files"
 .PHONY : util/cpplint
+
+## Run "flake8" on all files
+## @category Code Quality
+util/flake8 : | $(STAMP_TOX_UTIL)
+	$(MAKE) util/pre-commit pre-commit_id="flake8" pre-commit_files="--all-files"
+.PHONY : util/flake8
+
+## Run "isort" on all files
+## @category Code Quality
+util/isort : | $(STAMP_TOX_UTIL)
+	$(MAKE) util/pre-commit pre-commit_id="isort" pre-commit_files="--all-files"
+.PHONY : util/isort
 
 pre-commit_id ?= ""
 pre-commit_files ?= ""
@@ -75,7 +108,7 @@ util/pre-commit/update : $(STAMP_TOX_UTIL)
 ## Use "tree" to list project files
 ## @category Utility
 util/tree/project :
-	tree -alI ".git|build|.tox" --dirsfirst
+	tree -alI ".git|build|.tox|doxygen" --dirsfirst
 .PHONY : util/tree/project
 
 
@@ -83,7 +116,7 @@ util/tree/project :
 
 ## Build the documentation using "Sphinx"
 ## @category Documentation
-sphinx/build/html : $(STAMP_TOX_SPHINX)
+sphinx/build/html : $(STAMP_DOXYGEN) | $(STAMP_TOX_SPHINX)
 	tox -q -e sphinx
 .PHONY : sphinx/build/html
 
@@ -95,9 +128,20 @@ sphinx/serve/html : sphinx/build/html
 
 ## Check documentation's external links
 ## @category Documentation
-sphinx/linkcheck : $(STAMP_TOX_SPHINX)
+sphinx/linkcheck : | $(STAMP_TOX_SPHINX)
 	tox -q -e sphinx -- make linkcheck
 .PHONY : sphinx/linkcheck
+
+## Serve doxygen's generated documentation locally on port 8082
+## @category Documentation
+doxygen/serve/html : $(STAMP_DOXYGEN) | $(STAMP_TOX_SPHINX)
+	tox -q -e doxygen-html-serve
+.PHONY : doxygen/serve/html
+
+$(STAMP_DOXYGEN) : $(SOURCE_ALL_FILES) $(DOXYGEN_CONFIG)
+	$(create_dir)
+	doxygen $(DOXYGEN_CONFIG)
+	touch $@
 
 
 # ### INTERNAL RECIPES

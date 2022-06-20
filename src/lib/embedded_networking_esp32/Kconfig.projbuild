@@ -1,0 +1,72 @@
+menu "Embedded Networking ESP32"
+
+    config MNET32_WEB_URL_CONFIG
+        string "The URL to make the configuration interface available"
+        default "/config/wifi"
+        help
+            The component will provide its configuration web interface under
+            this URI. It MUST start with a /
+
+    config MNET32_MAX_CON_ATTEMPTS
+        int "Maximum number of connection attempts"
+        range 1 10
+        default 3
+        help
+            The maximum number of connection attempts while in station mode. If
+            no connection could be established after this many retries, the
+            internal Access Point will be started.
+
+    config MNET32_WIFI_AP_SSID
+        string "The SSID of the internal Access Point"
+        default "krachkiste_ap"
+        help
+            The internal Access Point will be reachable with this SSID.
+
+    config MNET32_WIFI_AP_PSK
+        string "The pre-shared key of the internal Access Point"
+        default "foobar"
+        help
+            If the length of the given value is smaller than 8 characters, the
+            Access Point will be launched without password.
+
+    config MNET32_WIFI_AP_CHANNEL
+        int "Channel of internal Access Point"
+        range 1 14
+        default 5
+        help
+            The WiFi channel of the internal Access Point. This is a fixed value.
+
+    config MNET32_WIFI_AP_MAX_CONNS
+        int "Maximum number of stations of internal Access Point"
+        range 1 5
+        default 3
+        help
+            The maximum number of parallelly connected stations for the internal
+            Access Point. This may be set to a low number, as the AP mode is
+            only used as fallback for network provisioning.
+
+    config MNET32_WIFI_AP_LIFETIME
+        int "Lifetime of the Access Point"
+        range 10000 1000000
+        default 60000
+        help
+            The Access Point will be shutdown, if no stations connects, after
+            this timespan; given in milliseconds.
+
+    config MNET32_NVS_NAMESPACE
+        string "The namespace to store settings in the non-volatile storage"
+        default "mnet32"
+        help
+            This is the name of the NVS namespace to store component's configuration
+            values in. You may adjust this, i.e. to have all your project's
+            settings in one namespace, but be aware, that the actual keys for
+            the configuration values are not configurable, so you have to
+            deconflict them youself. However, this may be left untouched.
+
+    config MNET32_TASK_MONITOR_FREQUENCY
+        int "Monitor Frequency"
+        range 1000 1000000
+        default 5000
+        help
+            The milliseconds between publishing of the internal status.
+endmenu

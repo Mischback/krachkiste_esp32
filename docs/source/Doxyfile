@@ -1,0 +1,86 @@
+# This is stripped-down, project-specific configuration file for Doxygen.
+# It only provides the settings, that
+#   a) deviate from Doxygen's defaults
+#   b) need direct control
+
+# The title of this project
+PROJECT_NAME           = "Krachkiste_ESP32"
+
+# Put Doxygen's output in the docs' source directory
+# The actual documentation will be generated using Sphinx / Breathe, so the
+# Doxygen output is considered *source* rather than *build*.
+OUTPUT_DIRECTORY       = docs/source/doxygen
+
+# Take the first sentence as @brief automatically
+JAVADOC_AUTOBRIEF      = YES
+
+# The project is strictly C
+OPTIMIZE_OUTPUT_FOR_C  = YES
+
+# Extract everything...
+EXTRACT_ALL            = YES
+
+# ... and especially **do** extract static stuff from *.c files
+EXTRACT_STATIC         = YES
+
+# OS-dependent, ``YES`` for linux
+CASE_SENSE_NAMES       = YES
+
+# Generate a list of TODOs
+# While this is the default value, include this setting here for control.
+GENERATE_TODOLIST      = YES
+
+# Do **not** generate a list of TESTs
+GENERATE_TESTLIST      = NO
+
+# Do **not** generate a list of BUGs
+# Bugs should be tracked in **Issues** in the GitHub respository.
+GENERATE_BUGLIST       = NO
+
+# Generate a list of DEPRECATIONS
+# While this is the default value, include this setting here for control.
+GENERATE_DEPRECATEDLIST= YES
+
+# All source files, including headers, are here...
+INPUT                  = src
+
+# ... or more specifically: in subdirectories.
+RECURSIVE              = YES
+
+# This should be ensured by the project's ``.editorconfig``
+INPUT_ENCODING         = UTF-8
+
+# The project consists of *.c source and *.h header files only
+FILE_PATTERNS          = *.c \
+                         *.h
+
+# Actually the HTML output is not required, but is great for debugging
+# See the project's ``Makefile`` (or ``make help``) for the recipe
+# ``doxygen/serve/html``, which generates the documentation and serves it using
+# Python's built-in webserver
+GENERATE_HTML          = YES
+
+# Where to put HTML output (docs/source/doxygen/html)
+HTML_OUTPUT            = html
+
+# TODO: Test this out!
+GENERATE_TREEVIEW      = NO
+
+# Do **not** generate LaTeX sources
+GENERATE_LATEX         = NO
+
+# XML output is required for Sphinx / Breathe
+GENERATE_XML           = YES
+
+# Where to put XML output (docs/source/doxygen/xml)
+# **Must** be provided in Sphinx's ``conf.py`` in the Breathe-related settings
+XML_OUTPUT             = xml
+
+# Do **not** generate class diagrams (the codebase is not OO)
+CLASS_DIAGRAMS         = NO
+
+# Do **not** provide a dot library
+# TODO: This *might* change, if we include ``graphviz``-based diagrams in our
+#       Sphinx-/rST-based documentation. But even then, it is not mandatory for
+#       Doxygen.
+HAVE_DOT               = NO

@@ -11,5 +11,9 @@ sdkconfig.old
 # obviously don't track the build directory
 build/
 
+# do not track generated documentation (and intermediate files)
+docs/build/
+docs/source/doxygen/
+
 # just for internal use and learning...
 build_stats.log

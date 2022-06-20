@@ -1,6 +1,10 @@
 ###############################################################################
-``main.c``
+``networking``
 ###############################################################################
 
-.. doxygenfile:: src/app/main.c
-    :sections: briefdescription define typedef var func
+.. toctree::
+
+    networking_h
+    networking_c
+    wifi_ap_h
+    wifi_ap_c

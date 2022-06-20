@@ -38,7 +38,7 @@ extensions = [
     # provide links to other, sphinx-generated, documentation
     "sphinx.ext.intersphinx",
     # generate documentation for C sources
-    "hawkmoth",
+    "breathe",
     # use the RTD theme
     # configuration is provided in the HTML Output section
     "sphinx_rtd_theme",
@@ -89,19 +89,21 @@ extlinks = {
         "",
     ),
     # ESP-IDF
-    "idf_api": ("https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/%s", "ESP-IDF: "),
+    "idf_api": (
+        "https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/%s",
+        "ESP-IDF: ",
+    ),
     # will show "Wikipedia: [title]"
     "wiki": ("https://en.wikipedia.org/wiki/%s", "Wikipedia: "),
 }
 
-# ##### hawkmoth
-cautodoc_root = os.path.abspath("../../src")
-cautodoc_transformations = {
-    None: None,
+# ##### breath
+breathe_projects = {
+    "Krachkiste_ESP32": os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), "doxygen", "xml"
+    )
 }
-
-from clang.cindex import Config
-Config.set_library_file("/usr/lib/llvm-11/lib/libclang.so")
+breathe_default_project = "Krachkiste_ESP32"
 
 # ### HTML Output
 

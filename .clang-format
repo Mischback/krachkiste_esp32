@@ -1,0 +1,181 @@
+---
+Language:        Cpp
+BasedOnStyle:  Google
+# AccessModifierOffset: -1  # Keep this!
+# AlignAfterOpenBracket: Align  # Keep this!
+# AlignConsecutiveMacros: false
+# AlignConsecutiveAssignments: false
+# AlignConsecutiveBitFields: false
+# AlignConsecutiveDeclarations: false
+# AlignEscapedNewlines: Left  # Keep this!
+# AlignOperands:   Align  # Keep this!
+# AlignTrailingComments: true  # Keep this!
+AllowAllArgumentsOnNextLine: false  # See BinPackArguments
+# AllowAllConstructorInitializersOnNextLine: true  # DEPRECATED!
+AllowAllParametersOfDeclarationOnNextLine: false  # See BinPackParameters
+# AllowShortEnumsOnASingleLine: true  # TODO Evaluate this again!
+# AllowShortBlocksOnASingleLine: Never  # Keep this!
+# AllowShortCaseLabelsOnASingleLine: false  # Keep this!
+AllowShortFunctionsOnASingleLine: Empty  # basically means: Don't do this!
+# AllowShortLambdasOnASingleLine: All  # TODO Evaluate this again!
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+# AlwaysBreakAfterDefinitionReturnType: None  # DEPRECATED!
+# AlwaysBreakAfterReturnType: None  # Keep this!
+# AlwaysBreakBeforeMultilineStrings: true  # Keep this! See ContinuationIndentWidth
+# AlwaysBreakTemplateDeclarations: Yes  # TODO Evaluate this (no templates in pure C)!
+BinPackArguments: false  # See AllowAllArgumentsOnNextLine
+BinPackParameters: false  # See AllowAllParametersOfDeclarationOnNextLine
+# BraceWrapping:  # Keep this!
+#   AfterCaseLabel:  false  # Keep this!
+#   AfterClass:      false  # No classes in pure C!
+#   AfterControlStatement: Never  # Keep this!
+#   AfterEnum:       false  # Keep this!
+#   AfterFunction:   false  # Keep this!
+#   AfterNamespace:  false  # No namespaces in pure C!
+#   AfterObjCDeclaration: false  # No object declarations in pure C!
+#   AfterStruct:     false  # Keep this!
+#   AfterUnion:      false  # Keep this!
+#   AfterExternBlock: false  # Keep this!
+#   BeforeCatch:     false  # Keep this!
+#   BeforeElse:      false  # Keep this!
+#   BeforeLambdaBody: false  # Keep this!
+#   BeforeWhile:     false  # Keep this!
+#   IndentBraces:    false  # Keep this!
+#   SplitEmptyFunction: true  # TODO Evaluate this again. Should be working, as it is only applied in very rare cases!
+#   SplitEmptyRecord: true  # TODO Evaluate this again. Should be working, as it is only applied in very rare cases!
+#   SplitEmptyNamespace: true  # No namespaces in pure C!
+# BreakBeforeBinaryOperators: None  # Keep this!
+# BreakBeforeBraces: Attach  # Keep this!
+# BreakBeforeInheritanceComma: false  # NOT IN DOCUMENTATION!
+# BreakInheritanceList: BeforeColon  # No inheritance in pure C!
+# BreakBeforeTernaryOperators: true  # Keep this!
+# BreakConstructorInitializersBeforeComma: false  # No constructors in pure C!
+# BreakConstructorInitializers: BeforeColon  # No constructors in pure C!
+# BreakAfterJavaFieldAnnotations: false  # This is no JAVA
+# BreakStringLiterals: true  # Keep this!
+# ColumnLimit:     80  # TODO Evaluate this! May be set to 0 and leave line-break decisions to other rules. May fix (unwanted) line-breaks in comments.
+# CommentPragmas:  '^ CLANG-SKIP pragma:'  # TODO Evaluate this!
+# CompactNamespaces: false  # No namespaces in pure C!
+# ConstructorInitializerAllOnOneLineOrOnePerLine: true  # No constructors in pure C!
+# ConstructorInitializerIndentWidth: 4  # No constructors in pure C!
+# ContinuationIndentWidth: 4  # Keep this!
+# Cpp11BracedListStyle: true  # TODO Evaluate again, should not be relevant for pure C!
+DeriveLineEnding: false  # .editorconfig should take care of this! See UseCRLF!
+DerivePointerAlignment: false  # See PointerAlignment
+# DisableFormat:   false  # Keep this! Obviously!
+# ExperimentalAutoDetectBinPacking: false  # Keep this!
+# FixNamespaceComments: true  # No namepsaces in pure C!
+# ForEachMacros:  # TODO Evaluate again, but as of now not relevant for our codebase
+#   - foreach
+#   - Q_FOREACH
+#   - BOOST_FOREACH
+# IncludeBlocks:   Regroup  # Keep this! TODO Is this working with our coding style of commenting the includes?!
+# IncludeCategories:  # Keep this! TODO Evaluate this together with IncludeBlocks
+#   - Regex:           '^<ext/.*\.h>'
+#     Priority:        2
+#     SortPriority:    0
+#   - Regex:           '^<.*\.h>'
+#     Priority:        1
+#     SortPriority:    0
+#   - Regex:           '^<.*'
+#     Priority:        2
+#     SortPriority:    0
+#   - Regex:           '.*'
+#     Priority:        3
+#     SortPriority:    0
+# IncludeIsMainRegex: '([-_](test|unittest))?$'  # Keep this!
+# IncludeIsMainSourceRegex: ''  # Keep this!
+IndentCaseLabels: false
+# IndentCaseBlocks: false  # Keep this!
+# IndentGotoLabels: true  # Keep this!
+# IndentPPDirectives: None  # Keep this! TODO Evaluate this again!
+IndentExternBlock: Indent
+IndentWidth:     4
+# IndentWrappedFunctionNames: false  # Keep this!
+# InsertTrailingCommas: None  # Keep this! Not relevant for C!
+JavaScriptQuotes: Double  # Only relevant for JavaScript
+# JavaScriptWrapImports: true  # Keep this! Only relevant for JavaScript!
+# KeepEmptyLinesAtTheStartOfBlocks: false  # Keep this!
+# MacroBlockBegin: ''  # Keep this!
+# MacroBlockEnd:   ''  # Keep this!
+MaxEmptyLinesToKeep: 2  # Was '1', basically to allow visual styling in the source files
+# NamespaceIndentation: None  # No namespaces in pure C!
+# ObjCBinPackProtocolList: Never  # Keep this, no ObjectiveC in our codebase!
+# ObjCBlockIndentWidth: 2  # Keep this, no ObjectiveC in our codebase!
+# ObjCBreakBeforeNestedBlockParam: true  # Keep this, no ObjectiveC in our codebase!
+# ObjCSpaceAfterProperty: false  # Keep this, no ObjectiveC in our codebase!
+# ObjCSpaceBeforeProtocolList: true  # Keep this, no ObjectiveC in our codebase!
+# PenaltyBreakAssignment: 2  # Keep this!
+# PenaltyBreakBeforeFirstCallParameter: 1  # Keep this!
+# PenaltyBreakComment: 300  # Keep this! See ReflowComments, bascially this is deactivated!
+# PenaltyBreakFirstLessLess: 120  # Keep this!
+# PenaltyBreakString: 1000  # Keep this!
+# PenaltyBreakTemplateDeclaration: 10  # Keep this!
+# PenaltyExcessCharacter: 1000000  # Keep this!
+# PenaltyReturnTypeOnItsOwnLine: 200  # Keep this!
+# PointerAlignment: Left  # Keep this! See DerivePointerAlignment
+# RawStringFormats:  # Keep this!
+#   - Language:        Cpp
+#     Delimiters:
+#       - cc
+#       - CC
+#       - cpp
+#       - Cpp
+#       - CPP
+#       - 'c++'
+#       - 'C++'
+#     CanonicalDelimiter: ''
+#     BasedOnStyle:    google
+#   - Language:        TextProto
+#     Delimiters:
+#       - pb
+#       - PB
+#       - proto
+#       - PROTO
+#     EnclosingFunctions:
+#       - EqualsProto
+#       - EquivToProto
+#       - PARSE_PARTIAL_TEXT_PROTO
+#       - PARSE_TEST_PROTO
+#       - PARSE_TEXT_PROTO
+#       - ParseTextOrDie
+#       - ParseTextProtoOrDie
+#       - ParseTestProto
+#       - ParsePartialTestProto
+#     CanonicalDelimiter: ''
+#     BasedOnStyle:    google
+ReflowComments:  false
+# SortIncludes:    true  # Keep this!
+# SortUsingDeclarations: true  # Keep this, no "using" in pure C!
+# SpaceAfterCStyleCast: false  # Keep this!
+# SpaceAfterLogicalNot: false  # Keep this!
+# SpaceAfterTemplateKeyword: true  # Keep this, no "templates" in pure C!
+# SpaceBeforeAssignmentOperators: true  # Keep this!
+# SpaceBeforeCpp11BracedList: false  # Keep this, no C++ codebase
+# SpaceBeforeCtorInitializerColon: true  # Keep this, no "constructor" in pure C!
+# SpaceBeforeInheritanceColon: true  # keep this, no inheritance in pure C!
+# SpaceBeforeParens: ControlStatements  # Keep this!
+# SpaceBeforeRangeBasedForLoopColon: true  # Keep this!
+# SpaceInEmptyBlock: false  # Keep this!
+# SpaceInEmptyParentheses: false  # Keep this!
+# SpacesBeforeTrailingComments: 2  # Keep this!
+# SpacesInAngles:  false  # Keep this!
+# SpacesInConditionalStatement: false  # Keep this!
+# SpacesInContainerLiterals: true  # Keep this!
+# SpacesInCStyleCastParentheses: false  # Keep this!
+# SpacesInParentheses: false  # Keep this!
+# SpacesInSquareBrackets: false  # Keep this!
+# SpaceBeforeSquareBrackets: false  # Keep this!
+# Standard:        Auto  # Keep this, but this is no C++ codebase
+# StatementMacros:  # Keep this!
+#   - Q_UNUSED
+#   - QT_REQUIRE_VERSION
+# TabWidth:        8  # Keep this, but there should be no tabs (.editorconfig)
+# UseCRLF:         false  # Keep this! Should be handled by .editorconfig and other pre-commit hooks
+# UseTab:          Never  # Keep this, but there should be no tabs (.editorconfig)
+# WhitespaceSensitiveMacros:  # Keep this!
+#   - STRINGIZE
+#   - PP_STRINGIZE
+#   - BOOST_PP_STRINGIZE
+...

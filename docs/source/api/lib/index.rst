@@ -1,6 +1,7 @@
 ###############################################################################
-``main.c``
+``lib`` (project-specific libraries)
 ###############################################################################
 
-.. doxygenfile:: src/app/main.c
-    :sections: briefdescription define typedef var func
+.. toctree::
+
+    networking/index

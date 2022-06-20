@@ -1,25 +1,63 @@
-default_language_version:
-  python: python3.9
-
-exclude: "^.*/migrations/.*$"
 fail_fast: true
 
 minimum_pre_commit_version: "2.16.0"
 
 repos:
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v14.0.3
+    hooks:
+      - id: clang-format
+        types: [c]
   # cpplint (Google's C/C++ linter)
   - repo: https://github.com/cpplint/cpplint
     rev: 1.6.0
     hooks:
       - id: cpplint
-        # args: [--filter=-build/include_subdir]
+        # build/include_subdir: Requires to always specify the subdir in
+        #                       include statements; not required for this
+        #                       project's CMake config, because the components'
+        #                       CMakeList files provide the fitting include dir
+        # readability/casting: Prohibits *C-style* casting; not desired, as
+        #                      this project is a C code base, not C++
+        args: ["--filter=-build/include_subdir,-readability/casting"]
+  # These hooks are run from the development machine, as of now a Debian
+  # Bullseye.
+  # There are matching pre-commit hooks available (e.g.
+  # https://github.com/Takishima/cmake-pre-commit-hooks), but these hooks are
+  # wrapping the local installations of the corresponding tools aswell.
+  - repo: local
+    hooks:
+      # Development machine: Debian Bullseye with cppcheck 2.3
+      # This version of cppcheck is simply run without a compile_commands.json!
+      - id: local-cppcheck
+        name: cppcheck
+        language: system
+        types: [c]
+        entry: /usr/bin/cppcheck --error-exitcode=1 -q --enable=warning,style,information --inline-suppr --template "{file}({line})_ {severity} ({id})_ {message}"
+  # black (code formatting, Python)
+  - repo: https://github.com/psf/black
+    rev: 22.3.0
+    hooks:
+      - id: black
+  # isort (automatically sort import statements, Python)
+  - repo: https://github.com/timothycrosley/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+  # flake8 (linting)
+  - repo: https://github.com/PyCQA/flake8
+    rev: 4.0.1
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          [flake8-bugbear, flake8-docstrings]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0
     hooks:
       # check JSON files
       - id: check-json
-    #   # check TOML files
-    #   - id: check-toml
+      # check TOML files
+      - id: check-toml
       # check YAML files
       - id: check-yaml
       # let all files end with a single new line (this *should be ensured by

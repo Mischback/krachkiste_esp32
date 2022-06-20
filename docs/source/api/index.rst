@@ -1,9 +1,8 @@
-#########################
-Source Code Documentation
-#########################
+###############################
+Source Code / API documentation
+###############################
 
 .. toctree::
-    :maxdepth: 2
-    :caption: Contents:
 
     app/index
+    lib/index
