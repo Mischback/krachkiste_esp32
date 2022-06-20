@@ -276,15 +276,21 @@ void mnet32_event_handler(void* arg,
 
     if (event_base == WIFI_EVENT) {
         /* All WIFI_EVENT event_ids
-         * See [ESP-IDF documentation link]
+         * See
+         * [ESP-IDF WiFi Events](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/wifi.html#esp32-wi-fi-event-description)
+         *
+         * While all possible EVENT_IDs are listed here, the unused ones are
+         * commented out. Manual testing reveals, that this saves some byte in
+         * the actual build size. However, they are kept for reference and
+         * possible future use.
          */
         switch (event_id) {
-        case WIFI_EVENT_WIFI_READY:
-            ESP_LOGV(TAG, "WIFI_EVENT_WIFI_READY");
-            break;
-        case WIFI_EVENT_SCAN_DONE:
-            ESP_LOGV(TAG, "WIFI_EVENT_SCAN_DONE");
-            break;
+        // case WIFI_EVENT_WIFI_READY:
+        //     ESP_LOGV(TAG, "WIFI_EVENT_WIFI_READY");
+        //     break;
+        // case WIFI_EVENT_SCAN_DONE:
+        //     ESP_LOGV(TAG, "WIFI_EVENT_SCAN_DONE");
+        //     break;
         case WIFI_EVENT_STA_START:
             /* This event is emitted by ``esp_wifi`` when the interface is
              * successfully started in station mode.
@@ -292,9 +298,9 @@ void mnet32_event_handler(void* arg,
             ESP_LOGD(TAG, "WIFI_EVENT_STA_START");
             mnet32_notify(MNET32_NOTIFICATION_EVENT_WIFI_STA_START);
             break;
-        case WIFI_EVENT_STA_STOP:
-            ESP_LOGV(TAG, "WIFI_EVENT_STA_STOP");
-            break;
+        // case WIFI_EVENT_STA_STOP:
+        //     ESP_LOGV(TAG, "WIFI_EVENT_STA_STOP");
+        //     break;
         case WIFI_EVENT_STA_CONNECTED:
             ESP_LOGD(TAG, "WIFI_EVENT_STA_CONNECTED");
             mnet32_notify(MNET32_NOTIFICATION_EVENT_WIFI_STA_CONNECTED);
@@ -313,21 +319,21 @@ void mnet32_event_handler(void* arg,
             ESP_LOGD(TAG, "WIFI_EVENT_STA_DISCONNECTED");
             mnet32_notify(MNET32_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED);
             break;
-        case WIFI_EVENT_STA_AUTHMODE_CHANGE:
-            ESP_LOGV(TAG, "WIFI_EVENT_STA_AUTHMODE_CHANGED");
-            break;
-        case WIFI_EVENT_STA_WPS_ER_SUCCESS:
-            ESP_LOGV(TAG, "WIFI_EVENT_WPS_ER_SUCCESS");
-            break;
-        case WIFI_EVENT_STA_WPS_ER_FAILED:
-            ESP_LOGV(TAG, "WIFI_EVENT_WPS_ER_FAILED");
-            break;
-        case WIFI_EVENT_STA_WPS_ER_TIMEOUT:
-            ESP_LOGV(TAG, "WIFI_EVENT_WPS_ER_TIMEOUT");
-            break;
-        case WIFI_EVENT_STA_WPS_ER_PIN:
-            ESP_LOGV(TAG, "WIFI_EVENT_WPS_ER_PIN");
-            break;
+        // case WIFI_EVENT_STA_AUTHMODE_CHANGE:
+        //     ESP_LOGV(TAG, "WIFI_EVENT_STA_AUTHMODE_CHANGED");
+        //     break;
+        // case WIFI_EVENT_STA_WPS_ER_SUCCESS:
+        //     ESP_LOGV(TAG, "WIFI_EVENT_WPS_ER_SUCCESS");
+        //     break;
+        // case WIFI_EVENT_STA_WPS_ER_FAILED:
+        //     ESP_LOGV(TAG, "WIFI_EVENT_WPS_ER_FAILED");
+        //     break;
+        // case WIFI_EVENT_STA_WPS_ER_TIMEOUT:
+        //     ESP_LOGV(TAG, "WIFI_EVENT_WPS_ER_TIMEOUT");
+        //     break;
+        // case WIFI_EVENT_STA_WPS_ER_PIN:
+        //     ESP_LOGV(TAG, "WIFI_EVENT_WPS_ER_PIN");
+        //     break;
         case WIFI_EVENT_AP_START:
             /* This event is emitted by ``esp_wifi`` when the access point is
              * successfully started.
@@ -335,9 +341,9 @@ void mnet32_event_handler(void* arg,
             ESP_LOGD(TAG, "WIFI_EVENT_AP_START");
             mnet32_notify(MNET32_NOTIFICATION_EVENT_WIFI_AP_START);
             break;
-        case WIFI_EVENT_AP_STOP:
-            ESP_LOGV(TAG, "WIFI_EVENT_AP_STOP");
-            break;
+        // case WIFI_EVENT_AP_STOP:
+        //     ESP_LOGV(TAG, "WIFI_EVENT_AP_STOP");
+        //     break;
         case WIFI_EVENT_AP_STACONNECTED:
             /* This event is emitted by ``esp_wifi`` when a client connects to
              * the access point.
@@ -352,9 +358,9 @@ void mnet32_event_handler(void* arg,
             ESP_LOGD(TAG, "WIFI_EVENT_AP_STADISCONNECTED");
             mnet32_notify(MNET32_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED);
             break;
-        case WIFI_EVENT_AP_PROBEREQRECVED:
-            ESP_LOGV(TAG, "WIFI_EVENT_AP_PROBEREQRECVED");
-            break;
+        // case WIFI_EVENT_AP_PROBEREQRECVED:
+        //     ESP_LOGV(TAG, "WIFI_EVENT_AP_PROBEREQRECVED");
+        //     break;
         default:
             ESP_LOGW(TAG, "Got unhandled WIFI_EVENT: '%d'", event_id);
             break;
@@ -363,12 +369,12 @@ void mnet32_event_handler(void* arg,
 
     if (event_base == IP_EVENT) {
         switch (event_id) {
-        case IP_EVENT_STA_GOT_IP:
-            ESP_LOGV(TAG, "IP_EVENT_STA_GOT_IP");
-            break;
-        case IP_EVENT_STA_LOST_IP:
-            ESP_LOGV(TAG, "IP_EVENT_STA_LOST_IP");
-            break;
+        // case IP_EVENT_STA_GOT_IP:
+        //     ESP_LOGV(TAG, "IP_EVENT_STA_GOT_IP");
+        //     break;
+        // case IP_EVENT_STA_LOST_IP:
+        //     ESP_LOGV(TAG, "IP_EVENT_STA_LOST_IP");
+        //     break;
         case IP_EVENT_AP_STAIPASSIGNED:
             /* This event is emitted whenever a client connects to the access
              * point and receives an IP by DHCP.
@@ -380,15 +386,15 @@ void mnet32_event_handler(void* arg,
             //                 LONG STORY SHORT: This case may be removed!
             ESP_LOGV(TAG, "IP_EVENT_AP_STAIPASSIGNED");
             break;
-        case IP_EVENT_GOT_IP6:
-            ESP_LOGV(TAG, "IP_EVENT_GOT_IP6");
-            break;
-        case IP_EVENT_ETH_GOT_IP:
-            ESP_LOGV(TAG, "IP_EVENT_ETH_GOT_IP");
-            break;
-        case IP_EVENT_ETH_LOST_IP:
-            ESP_LOGV(TAG, "IP_EVENT_ETH_LOST_IP");
-            break;
+        // case IP_EVENT_GOT_IP6:
+        //     ESP_LOGV(TAG, "IP_EVENT_GOT_IP6");
+        //     break;
+        // case IP_EVENT_ETH_GOT_IP:
+        //     ESP_LOGV(TAG, "IP_EVENT_ETH_GOT_IP");
+        //     break;
+        // case IP_EVENT_ETH_LOST_IP:
+        //     ESP_LOGV(TAG, "IP_EVENT_ETH_LOST_IP");
+        //     break;
         default:
             ESP_LOGW(TAG, "Got unhandled IP_EVENT: '%d'", event_id);
             break;

@@ -33,15 +33,6 @@ typedef enum {
  * @param event_data
  *
  * @todo Complete this documentation block!
- * @todo The current implementation defines ``case`` statements for all events,
- *       that *might* happen. Probably many of them are not acutally required
- *       for the component to work. All ``case`` statements do provide a log
- *       message of level ``VERBOSE``.
- *       a) Can this code be kept without impacting the build size? Or in other
- *          words: Will these statements be *optimized away* if the minimum
- *          log level is greater than ``VERBOSE``?
- *       b) For actual *events in use* by the component, switch to log level
- *          ``DEBUG``.
  */
 void mnet32_event_handler(void* arg,
                           esp_event_base_t event_base,
