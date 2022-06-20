@@ -376,10 +376,20 @@ void mnet32_event_handler(void* arg,
         //     ESP_LOGV(TAG, "IP_EVENT_STA_LOST_IP");
         //     break;
         case IP_EVENT_AP_STAIPASSIGNED:
+            // clang-format: off
+            {}  // empty statement required to enable variable declaration!
+            //  clang-format: on
             /* This event is emitted whenever a client connects to the access
              * point and receives an IP by DHCP.
+             *
+             * The assigned IP address is logged here, because the component
+             * silences the logging of ``esp_netif_lwip``, which would normally
+             * provide this message.
              */
             ESP_LOGD(TAG, "IP_EVENT_AP_STAIPASSIGNED");
+
+            ip4_addr_t* tmp = (ip4_addr_t*)event_data;
+            ESP_LOGI(TAG, "Station connected, " IPSTR " assigned", IP2STR(tmp));
             break;
         // case IP_EVENT_GOT_IP6:
         //     ESP_LOGV(TAG, "IP_EVENT_GOT_IP6");
