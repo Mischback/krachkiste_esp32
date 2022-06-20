@@ -362,7 +362,7 @@ void mnet32_event_handler(void* arg,
         //     ESP_LOGV(TAG, "WIFI_EVENT_AP_PROBEREQRECVED");
         //     break;
         default:
-            ESP_LOGW(TAG, "Got unhandled WIFI_EVENT: '%d'", event_id);
+            ESP_LOGD(TAG, "Got unhandled WIFI_EVENT: '%d'", event_id);
             break;
         }
     }
@@ -379,12 +379,7 @@ void mnet32_event_handler(void* arg,
             /* This event is emitted whenever a client connects to the access
              * point and receives an IP by DHCP.
              */
-            // TODO(mischback) As of now, this event is not used, instead all
-            //                 of the component's actions are taken in the
-            //                 (corresponding) WIFI_EVENT_AP_STACONNECTED and,
-            //                 more relevant, WIFI_EVENT_AP_STADISCONNECTED.
-            //                 LONG STORY SHORT: This case may be removed!
-            ESP_LOGV(TAG, "IP_EVENT_AP_STAIPASSIGNED");
+            ESP_LOGD(TAG, "IP_EVENT_AP_STAIPASSIGNED");
             break;
         // case IP_EVENT_GOT_IP6:
         //     ESP_LOGV(TAG, "IP_EVENT_GOT_IP6");
@@ -396,7 +391,7 @@ void mnet32_event_handler(void* arg,
         //     ESP_LOGV(TAG, "IP_EVENT_ETH_LOST_IP");
         //     break;
         default:
-            ESP_LOGW(TAG, "Got unhandled IP_EVENT: '%d'", event_id);
+            ESP_LOGD(TAG, "Got unhandled IP_EVENT: '%d'", event_id);
             break;
         }
     }
@@ -419,13 +414,25 @@ void mnet32_event_handler(void* arg,
  *                      for the actual reason of failure.
  */
 static esp_err_t mnet32_init(void) {
-    // Set log-level of our own code to VERBOSE
-    // TODO(mischback) Now there a dedicated tags for ``wifi`` and ``nvs``
-    // FIXME: Final code should not do this, but respect the project's settings
-    esp_log_level_set("mnet32", ESP_LOG_VERBOSE);
-    esp_log_level_set("mnet32.nvs", ESP_LOG_VERBOSE);
-    esp_log_level_set("mnet32.web", ESP_LOG_VERBOSE);
-    esp_log_level_set("mnet32.wifi", ESP_LOG_VERBOSE);
+    /* Adjust log settings!
+     * The component's logging is based on **ESP-IDF**'s logging library,
+     * meaning it will behave exactly like specified by the settings specified
+     * in ``sdkconfig``/``menuconfig``.
+     *
+     * However, during development it may be desirable to activate a MAXIMUM log
+     * level of VERBOSE, while keeping the DEFAULT log level to INFO. In this
+     * case, the component's logging may be set to VERBOSE manually here!
+     *
+     * Additionally, **ESP-IDF**'s internal components, that are related to
+     * networking, are silenced here.
+     */
+    // esp_log_level_set("mnet32", ESP_LOG_VERBOSE);
+    // esp_log_level_set("mnet32.nvs", ESP_LOG_VERBOSE);
+    // esp_log_level_set("mnet32.web", ESP_LOG_VERBOSE);
+    // esp_log_level_set("mnet32.wifi", ESP_LOG_VERBOSE);
+    esp_log_level_set("wifi", ESP_LOG_ERROR);
+    esp_log_level_set("wifi_init", ESP_LOG_ERROR);
+    esp_log_level_set("esp_netif_lwip", ESP_LOG_ERROR);
 
     ESP_LOGV(TAG, "mnet32_init()");
 
@@ -568,6 +575,10 @@ static esp_err_t mnet32_deinit(void) {
 /**
  * Emit component-specific events.
  *
+ * The events will be queued in the default system event loop. If the event
+ * loop is already filled, the function will **not block**, effectively losing
+ * the event.
+ *
  * @param event_id   The actual events are defined in mnet32.h and may be
  *                   referenced by their human-readable name in the ``enum``.
  * @param event_data Optional pointer to event-specific context data. This
@@ -578,10 +589,6 @@ static esp_err_t mnet32_deinit(void) {
  *                   function returned, because **ESP-IDF**'s event loop will
  *                   manage a copy of this data, once the event is posted to the
  *                   loop.
- *
- * @todo Should ``time_to_wait`` be configurable? Are there events that **MUST**
- *       be place in the event loop while having other events that may be
- *       discarded?
  */
 static void mnet32_emit_event(int32_t event_id, void* event_data) {
     ESP_LOGV(TAG, "mnet32_emit_event()");
