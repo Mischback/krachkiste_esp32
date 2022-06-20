@@ -112,7 +112,6 @@
 
 /**
  * Declare the component-specific event base.
- *
  */
 ESP_EVENT_DECLARE_BASE(MNET32_EVENTS);
 
@@ -129,8 +128,8 @@ enum { MNET32_EVENT_UNAVAILABLE, MNET32_EVENT_READY };
  * establish and maintain network connectivity or provide a fallback, providing
  * an access point to keep the configuration web interface accessible.
  *
- * @return esp_err_t
- * @todo Complete the documentation!
+ * @return esp_err_t ``ESP_OK`` if the network could be initialized,
+ *                   ``ESP_FAIL`` in all other cases.
  */
 esp_err_t mnet32_start(void);
 
