@@ -62,7 +62,7 @@ void mnet32_event_handler(void* arg,
  * ``eSetValueWithOverwrite``, meaning: if the task was already notified, that
  * notification will be overwritten.
  *
- * @param notification
+ * @param notification As specified in ::mnet32_task_notification.
  */
 void mnet32_notify(uint32_t notification);
 
