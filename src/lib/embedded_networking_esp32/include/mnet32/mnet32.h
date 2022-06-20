@@ -39,10 +39,9 @@
  * The component will automatically provide status information to other
  * components with this frequency.
  *
- * @todo Determine a sane (default) value for this! Currently: 5 seconds.
- * @todo Make this configurable (pre-build with ``sdkconfig``)
+ * The value is given in milliseconds.
  */
-#define MNET32_TASK_MONITOR_FREQUENCY 5000
+#define MNET32_TASK_MONITOR_FREQUENCY CONFIG_MNET32_TASK_MONITOR_FREQUENCY
 
 /**
  * The URI to serve the component's web interface from.
@@ -53,55 +52,41 @@
 
 /**
  * The channel to be used while providing the project-specific access point.
- *
- * @todo Is there a nice way to provide a **dynamic** channel?
- * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
-#define MNET32_WIFI_AP_CHANNEL 5
+#define MNET32_WIFI_AP_CHANNEL CONFIG_MNET32_WIFI_AP_CHANNEL
 
 /**
  * The maximum number of allowed clients while providing the project-specific
  * access point.
- *
- * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
-#define MNET32_WIFI_AP_MAX_CONNS 3
+#define MNET32_WIFI_AP_MAX_CONNS CONFIG_MNET32_WIFI_AP_MAX_CONNS
 
 /**
  * Timespan to keep the project-specific access point available.
  *
- * The value is specified in milliseconds, default value of ``60000`` are
- * *60 seconds*.
- *
- * @todo Make this configurable (pre-build with ``sdkconfig``)
+ * The value is given in milliseconds.
  */
-#define MNET32_WIFI_AP_LIFETIME 60000
+#define MNET32_WIFI_AP_LIFETIME CONFIG_MNET32_WIFI_AP_LIFETIME
 
 /**
  * The password to access the project-specific access point.
  *
  * The component ``esp_wifi`` requires the password to be at least 8
  * characters! It fails badly otherwise. ::mnet32_wifi_ap_init does handle this.
- *
- * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
-#define MNET32_WIFI_AP_PSK "foobar"
+#define MNET32_WIFI_AP_PSK CONFIG_MNET32_WIFI_AP_PSK
 
 /**
  * The actual SSID of the project-specific access point.
- *
- * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
-#define MNET32_WIFI_AP_SSID "krachkiste_ap"
+#define MNET32_WIFI_AP_SSID CONFIG_MNET32_WIFI_AP_SSID
 
 /**
  * The maximum number of connection attempts for station mode.
  *
  * After this number is reached, the component will launch the access point.
- *
- * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
-#define MNET32_WIFI_STA_MAX_CONNECTION_ATTEMPTS 3
+#define MNET32_WIFI_STA_MAX_CONNECTION_ATTEMPTS CONFIG_MNET32_MAX_CON_ATTEMPTS
 
 /**
  * Set a minimum required WiFi security while scanning for networks.
