@@ -260,6 +260,10 @@ static void mnet32_task(void* task_parameters) {
                     if (mnet32_wifi_ap_init() != ESP_OK)
                         mnet32_notify(MNET32_NOTIFICATION_CMD_NETWORKING_STOP);
                 } else {
+                    ESP_LOGI(TAG,
+                             "Got disconnected, trying to reconnect (%d/%d)",
+                             mnet32_wifi_sta_get_num_connection_attempts(),
+                             MNET32_WIFI_STA_MAX_CONNECTION_ATTEMPTS);
                     mnet32_wifi_sta_connect();
                 }
                 break;
