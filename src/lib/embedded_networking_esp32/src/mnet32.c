@@ -130,6 +130,26 @@ static void mnet32_emit_event(int32_t event_id, void* event_data);
 
 /* ***** FUNCTIONS ********************************************************* */
 
+/**
+ * Run the component's specific task.
+ *
+ * This function is the actual dedicated task of the component. It blocks until
+ * some external event (in most cases provided by **ESP-IDF**'s internal
+ * modules) requires some reaction.
+ *
+ * There is a timeout to this blocking. After this timeout is reached, the
+ * function will emit a component-specific event, publishing its internal state
+ * to other components.
+ *
+ * ``freeRTOS``-tasks are not meant to terminate, so this function basically
+ * implements an infinite loop.
+ *
+ * @param task_parameters As per ``freeRTOS`` prototype, currently not used.
+ *
+ * @todo The function's implementation has several spots marked to be considered
+ *       when #16 is implemented. #16 is the issue which tracks publishing of
+ *       the internal state of the component.
+ */
 static void mnet32_task(void* task_parameters) {
     ESP_LOGV(TAG, "mnet32_task() [the actual task function]");
 
@@ -195,11 +215,7 @@ static void mnet32_task(void* task_parameters) {
 
                 mnet32_emit_event(MNET32_EVENT_READY, NULL);
                 // TODO(mischback) Should the *status event* be emitted here
-                //                 automatically?
-
-                // TODO(mischback) Determine which of access point-specific
-                //                 information should be included in the
-                //                 component's *status* event (e.g. AP SSID?)!
+                //                 automatically (#16)?
                 break;
             case MNET32_NOTIFICATION_EVENT_WIFI_AP_STACONNECTED:
                 /* A client connected to the access point.
@@ -214,10 +230,7 @@ static void mnet32_task(void* task_parameters) {
                 mnet32_state_set_status_busy();
                 mnet32_wifi_ap_timer_stop();
 
-                // TODO(mischback) Determine which of the access point-specific
-                //                 information should be included in the
-                //                 components *status* event (e.g. number of
-                //                 connected clients?)
+                // TODO(mischback) Emit *status event* (#16)!
                 break;
             case MNET32_NOTIFICATION_EVENT_WIFI_AP_STADISCONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_AP_STADISCONNECTED");
@@ -231,10 +244,7 @@ static void mnet32_task(void* task_parameters) {
                     mnet32_wifi_ap_timer_start();
                 }
 
-                // TODO(mischback) Determine which of the access point-specific
-                //                 information should be included in the
-                //                 components *status* event (e.g. number of
-                //                 connected clients?)
+                // TODO(mischback) Emit *status event* (#16)!
                 break;
             case MNET32_NOTIFICATION_EVENT_WIFI_STA_START:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_START");
@@ -248,8 +258,7 @@ static void mnet32_task(void* task_parameters) {
                 mnet32_state_set_status_ready();
                 mnet32_wifi_sta_reset_connection_counter();
                 mnet32_emit_event(MNET32_EVENT_READY, NULL);
-                // TODO(mischback) Should the *status event* be emitted here
-                //                 automatically?
+                // TODO(mischback) Emit *status event* (#16)!
                 break;
             case MNET32_NOTIFICATION_EVENT_WIFI_STA_DISCONNECTED:
                 ESP_LOGD(TAG, "EVENT: WIFI_EVENT_STA_DISCONNECTED");
@@ -272,11 +281,8 @@ static void mnet32_task(void* task_parameters) {
                 break;
             }
         } else {
-            // TODO(mischback) The component should kind of *publish* relevant
-            //                 informations of its internal state using
-            //                 **EPS-IDF**'s event system. This will be the
-            //                 place to actually emit the *event*.
             ESP_LOGV(TAG, "'mon_freq' reached...");
+            // TODO(mischback) Emit *status event* (#16)!
 
             /* The following statement is just used for development / debugging
              * and logs the (minimum) free stack size of this task in bytes.
