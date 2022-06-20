@@ -5,8 +5,6 @@
 #ifndef SRC_LIB_EMBEDDED_NETWORKING_ESP32_SRC_MNET32_NVS_H_
 #define SRC_LIB_EMBEDDED_NETWORKING_ESP32_SRC_MNET32_NVS_H_
 
-#endif  // SRC_LIB_EMBEDDED_NETWORKING_ESP32_SRC_MNET32_NVS_H_
-
 /* This is ESP-IDF's error handling library. */
 #include "esp_err.h"
 
@@ -63,3 +61,5 @@ esp_err_t mnet32_nvs_get_string(nvs_handle_t handle,
 esp_err_t mnet32_nvs_write_string(nvs_handle_t handle,
                                   const char* key,
                                   const char* value);
+
+#endif  // SRC_LIB_EMBEDDED_NETWORKING_ESP32_SRC_MNET32_NVS_H_
