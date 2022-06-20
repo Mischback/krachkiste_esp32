@@ -1,5 +1,12 @@
 menu "Embedded Networking ESP32"
 
+    config MNET32_WEB_URL_CONFIG
+        string "The URL to make the configuration interface available"
+        default "/config/wifi"
+        help
+            The component will provide its configuration web interface under
+            this URI. It MUST start with a /
+
     config MNET32_MAX_CON_ATTEMPTS
         int "Maximum number of connection attempts"
         range 1 10

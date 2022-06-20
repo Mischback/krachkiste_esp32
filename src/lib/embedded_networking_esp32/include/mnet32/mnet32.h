@@ -42,10 +42,8 @@
 
 /**
  * The URI to serve the component's web interface from.
- *
- * @todo Make this configurable (pre-build with ``sdkconfig``)
  */
-#define MNET32_WEB_URL_CONFIG "/config/wifi"
+#define MNET32_WEB_URL_CONFIG CONFIG_MNET32_WEB_URL_CONFIG
 
 /**
  * The channel to be used while providing the project-specific access point.
