@@ -288,9 +288,6 @@ esp_err_t mnet32_wifi_ap_init(void) {
     // clang-format on
     /* esp_wifi requires PSKs to be at least 8 characters. Just switch to
      * an **open** WiFi, if the provided PSK has less than 8 characters.
-     * TODO(mischback): Verify how that minimal password length is set. Is this
-     *                  an ``#define`` that may be picked up in our code or is
-     *                  it really hardcoded in the esp_wifi library/component?
      */
     if (strlen(MNET32_WIFI_AP_PSK) <= 8) {
         ap_config.ap.authmode = WIFI_AUTH_OPEN;
