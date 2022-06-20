@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Basic, WiFi-based networking implemented (``mnet32``, #5)
+- Basic, WiFi-based networking implemented (``mnet32``, [#5](https://github.com/Mischback/krachkiste_esp32/issues/5))
   - ESP32 launches Access Point, if there are no (stored) WiFi credentials or
     the (stored) WiFi network is unreachable
   - ESP32 connects to available (stored) WiFi network
