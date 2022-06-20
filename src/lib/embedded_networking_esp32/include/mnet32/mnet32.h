@@ -31,7 +31,6 @@
  *
  * @todo Determine a sane (default) value for this! Evaluate other (built-in)
  *       task priorities.
- * @todo Should this be make configurable by ``sdkconfig``?
  */
 #define MNET32_TASK_PRIORITY 10
 
@@ -91,15 +90,26 @@
 /**
  * Set a minimum required WiFi security while scanning for networks.
  *
- * @todo Make this configurable (pre-build with ``sdkconfig``)
- * @todo Include a dedicated warning about security!
+ * This has to be a valid value of ``wifi_auth_mode_t``, as specified in
+ * **ESP-IDF**'s ``esp_wifi_types.h``:
+ *   - WIFI_AUTH_OPEN
+ *   - WIFI_AUTH_WEP
+ *   - WIFI_AUTH_WPA_PSK
+ *   - WIFI_AUTH_WPA2_PSK
+ *   - WIFI_AUTH_WPA_WPA2_PSK
+ *   - WIFI_AUTH_WPA2_ENTERPRISE
+ *   - WIFI_AUTH_WPA3_PSK
+ *   - WIFI_AUTH_WPA2_WPA3_PSK
+ *   - WIFI_AUTH_WAPI_PSK
+ *   - WIFI_AUTH_MAX
  */
 #define MNET32_WIFI_STA_THRESHOLD_AUTH WIFI_AUTH_WPA_PSK
 
 /**
  * Set a minimum required WiFi signal strength while scanning for networks.
  *
- * @todo Make this configurable (pre-build with ``sdkconfig``)
+ * Internally, **ESP-IDF** handle the RSSI as a *signed int8*, so ``-127`` is
+ * the minimally available signal quality.
  */
 #define MNET32_WIFI_STA_THRESHOLD_RSSI -127
 
