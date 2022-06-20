@@ -25,14 +25,26 @@ typedef enum {
 /**
  * Handle ``IP_EVENT`` and ``WIFI_EVENT`` occurences.
  *
- * @param arg
+ * Main purpose of this event handler is to make the system's events, as
+ * provided by **ESP-IDF**'s modules/components, available to this component.
+ *
+ * Basically it *translates* the events to actions by using ::mnet32_notify and
+ *  that are to be taken by ::mnet32_task and are executed within this
+ * component's specific task/thread.
+ *
+ * @param arg        Arguments to be passed to the event handler. This is a
+ *                   ``void *`` to the arguments, the event handler is
+ *                   responsible for making any sense of this.
+ *                   As of now, the function does not use / process this
+ *                   argument.
  * @param event_base The base of the actual event. The handler *can handle*
  *                   occurences of ``IP_EVENT`` and ``WIFI_EVENT``.
  * @param event_id   The actual event, as specified by its ``base`` and its
  *                   ``id``.
- * @param event_data
- *
- * @todo Complete this documentation block!
+ * @param event_data Additional data of the event, provided as a ``void *``. The
+ *                   event handler is responsible for making any sense of this.
+ *                   As of now, the function does not use / process this
+ *                   argument.
  */
 void mnet32_event_handler(void* arg,
                           esp_event_base_t event_base,
