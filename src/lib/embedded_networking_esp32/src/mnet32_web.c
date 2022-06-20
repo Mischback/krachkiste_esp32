@@ -102,6 +102,8 @@ static const httpd_uri_t mnet32_web_uri_config_post = {
 
 /* ***** FUNCTIONS ********************************************************* */
 
+// This function is part of the component's public interface and documented in
+// ``include/mnet32/mnet32.h``
 void mnet32_web_attach_handlers(void* arg,
                                 esp_event_base_t event_base,
                                 int32_t event_id,
@@ -114,6 +116,20 @@ void mnet32_web_attach_handlers(void* arg,
     httpd_register_uri_handler(server, &mnet32_web_uri_config_post);
 }
 
+/**
+ * Get a value from a POST payload.
+ *
+ * The function searches for a given ``key`` in the provided ``raw`` POST
+ * payload and returns its value. As this function is meant to work with
+ * POST payloads, URL encoding is decoded.
+ *
+ * @param key   The key to be searched for.
+ * @param raw   The actual POST body to be searched for the ``key``.
+ * @param value The retrieved value will be stored to this memory location. The
+ *              calling code is responsible for allocating the required memory.
+ * @return esp_err_t ``ESP_OK`` if the value of ``key`` could be retrieved,
+ *                   ``ESP_FAIL`` if ``key`` was not found.
+ */
 static esp_err_t mnet32_web_get_value(char* key, char* raw, char** value) {
     /* 1. step: find the key... */
     char* key_offset = strstr(raw, key);
@@ -176,6 +192,9 @@ static esp_err_t mnet32_web_get_value(char* key, char* raw, char** value) {
  *
  * The matching *URI definition* is ::mnet32_web_uri_config_get.
  *
+ * The configuration form is provided by ``wifi_config.html``, which is embedded
+ * into the binary and generated from ``wifi_config.src.html``.
+ *
  * @param request The request that should be responded to with this function.
  * @return Always returns ``ESP_OK``.
  */
@@ -193,6 +212,25 @@ static esp_err_t mnet32_web_handler_config_get(httpd_req_t* request) {
         httpd_resp_send(request, (const char*)resource_start, resource_size));
 }
 
+/**
+ * Process the WiFi configuration form.
+ *
+ * The matching URI definition is ::mnet32_web_uri_config_post.
+ *
+ * This request handler processes the form POST body to retrieve the provided
+ * WiFi credentials, stores them to the non-volatile storage and restarts the
+ * WiFi connection. During this restart, the new credentials are picked up and
+ * used to establish a WiFi connection to the specified access point.
+ *
+ * Technically this provides a HTTP 204 on success, but as the WiFi connection
+ * will get reset during the operation, this response will never be received by
+ * the client.
+ *
+ * If there is an error, a HTTP 500 is returned.
+ *
+ * @param request The request that should be responded to with this function.
+ * @return esp_err_t
+ */
 static esp_err_t mnet32_web_handler_config_post(httpd_req_t* request) {
     ESP_LOGV(TAG, "mnet32_web_handler_config_post()");
 
@@ -211,9 +249,8 @@ static esp_err_t mnet32_web_handler_config_post(httpd_req_t* request) {
             return ESP_FAIL;
         }
         off += ret;
-        ESP_LOGV(TAG, "received %d bytes", ret);
     }
-    ESP_LOGD(TAG, "received [%s]", buf);
+    ESP_LOGV(TAG, "received [%s]", buf);
 
     /* Parse POST body */
     char ssid[MNET32_WIFI_SSID_MAX_LEN];
@@ -225,6 +262,7 @@ static esp_err_t mnet32_web_handler_config_post(httpd_req_t* request) {
     mnet32_web_get_value("psk", buf, (char**)&psk);
     free(buf);
 
+    ESP_LOGD(TAG, "Found credentials in POST body:");
     ESP_LOGD(TAG, "SSID: %s", ssid);
     ESP_LOGD(TAG, "PSK:  %s", psk);
 
