@@ -86,6 +86,22 @@
  */
 #define MNET32_TASK_NOTIFICATION_INDEX 0
 
+/**
+ * The stack size to allocate for this component's task / thread.
+ *
+ * @todo The actually required stack size is dependent on various other
+ *       settings, e.g. the configured log level. As of now, the value has to be
+ *       adjusted by modifying this constant.
+ *       Using ``uxTaskGetStackHighWaterMark()`` the stack size can be
+ *       evaluated:
+ *         - stack size: 4096, maximum log level INFO :    2224 bytes;
+ *         - stack size: 2048, maximum log level INFO :     188 bytes;
+ *         - stack size: 2048, maximum log level VERBOSE : PANIC, Stack Overflow
+ *         - stack size: 3072, maximum log level VERBOSE :  772 bytes;
+ *         - stack size: 3072, maximum log level INFO :    1212 bytes;
+ */
+#define MNET32_TASK_STACK_SIZE 3072
+
 
 /* ***** TYPES ************************************************************* */
 
@@ -257,6 +273,13 @@ static void mnet32_task(void* task_parameters) {
             //                 **EPS-IDF**'s event system. This will be the
             //                 place to actually emit the *event*.
             ESP_LOGV(TAG, "'mon_freq' reached...");
+
+            /* The following statement is just used for development / debugging
+             * and logs the (minimum) free stack size of this task in bytes.
+             */
+            // ESP_LOGW(TAG,
+            //          "Stack High Water Mark: %d",
+            //          uxTaskGetStackHighWaterMark(NULL));
         }
     }
 
@@ -493,18 +516,9 @@ static esp_err_t mnet32_init(void) {
     }
 
     /* Create the actual dedicated task for the component. */
-    // TODO(mischback) Determine a usable ``usStackDepth``!
-    //                 a) In **ESP-IDF** the ``usStackDepth`` is not based on
-    //                    the actual stack width, but ``StackType_t`` is
-    //                    ``uint_8`` (one byte).
-    //                 b) Verify configMINIMAL_STACK_SIZE (``freeRTOS.h``)!
-    //                 c) 4096 byte = 4KB. This seems quite high. Before this
-    //                    component may be considered *completed*, this value
-    //                    should be minimized (see freeRTOS'
-    //                    ``uxTaskGetStackHighWaterMark()``).
     if (xTaskCreate(mnet32_task,
                     "mnet32_task",
-                    4096,
+                    MNET32_TASK_STACK_SIZE,
                     NULL,
                     MNET32_TASK_PRIORITY,
                     mnet32_state_get_task_handle_ptr()) != pdPASS) {
