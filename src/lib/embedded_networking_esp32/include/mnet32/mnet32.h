@@ -21,10 +21,8 @@
 
 /**
  * The namespace to store component-specific values in the non-volatile storage.
- *
- * @todo Should this be make configurable by ``sdkconfig``?
  */
-#define MNET32_NVS_NAMESPACE "mnet32"
+#define MNET32_NVS_NAMESPACE CONFIG_MNET32_NVS_NAMESPACE
 
 /**
  * The **freeRTOS**-specific priority for the component's task.

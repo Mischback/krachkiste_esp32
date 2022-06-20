@@ -46,6 +46,16 @@ menu "Embedded Networking ESP32"
             The Access Point will be shutdown, if no stations connects, after
             this timespan; given in milliseconds.
 
+    config MNET32_NVS_NAMESPACE
+        string "The namespace to store settings in the non-volatile storage"
+        default "mnet32"
+        help
+            This is the name of the NVS namespace to store component's configuration
+            values in. You may adjust this, i.e. to have all your project's
+            settings in one namespace, but be aware, that the actual keys for
+            the configuration values are not configurable, so you have to
+            deconflict them youself. However, this may be left untouched.
+
     config MNET32_TASK_MONITOR_FREQUENCY
         int "Monitor Frequency"
         range 1000 1000000
