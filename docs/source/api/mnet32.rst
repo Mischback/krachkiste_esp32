@@ -6,6 +6,9 @@ embedded_networking_esp32
 General Description
 *******************
 
+.. include:: ../../../src/lib/embedded_networking_esp32/README.rst
+
+
 **********
 Public API
 **********
