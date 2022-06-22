@@ -10,8 +10,14 @@ General Description
 Public API
 **********
 
-Defines
-=======
+Component Configuration
+=======================
+
+The component's configuration is implemented as ``#define`` statements in the
+main header file. Most of these configuration values can be adjusted / modified
+by using **ESP-IDF**'s ``menuconfig`` tool. However, some are only adjustable
+by modifying the actual header file ``mnet32.h``
+
 
 .. doxygendefine:: MNET32_NVS_NAMESPACE
 
@@ -36,6 +42,16 @@ Defines
 .. doxygendefine:: MNET32_WIFI_STA_THRESHOLD_AUTH
 
 .. doxygendefine:: MNET32_WIFI_STA_THRESHOLD_RSSI
+
+
+Events
+======
+
+The component emits several specific events to **ESP-IDF**'s default event
+loop. The component's **event base** is ``MNET32_EVENTS`` and the following
+**events** are defined:
+
+.. doxygenenum:: mnet32_events
 
 
 Functions
