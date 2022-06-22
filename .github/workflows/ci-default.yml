@@ -24,7 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements/python/tox.txt
       - name: Run cpplint
-        run: util/cpplint
+        run: make util/cpplint
       - name: Run black
         run: make util/black
       - name: Run flake8
