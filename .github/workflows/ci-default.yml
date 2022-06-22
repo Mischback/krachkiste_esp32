@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MIT
+
+name: CI Default Branch
+
+on:
+  push:
+    branches: [development]
+  pull_request:
+    branches: [development]
+
+jobs:
+  documentation:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          sudo apt-get install doxygen
+          python -m pip install --upgrade pip
+          pip install -r requirements/tox.txt
+      - name: Run Sphinx's linkcheck
+        run: make sphinx/linkcheck
+      - name: Build HTML Documentation
+        run: make sphinx/build/html
