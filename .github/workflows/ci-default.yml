@@ -23,7 +23,7 @@ jobs:
         run: |
           sudo apt-get install doxygen
           python -m pip install --upgrade pip
-          pip install -r requirements/tox.txt
+          pip install -r requirements/python/tox.txt
       - name: Run Sphinx's linkcheck
         run: make sphinx/linkcheck
       - name: Build HTML Documentation
