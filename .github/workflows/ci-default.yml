@@ -13,7 +13,7 @@ jobs:
     name: Linting
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v2
       - name: Setup Python
         uses: actions/setup-python@v2
@@ -30,11 +30,23 @@ jobs:
       - name: Run flake8
         run: make util/flake8
 
+  building:
+    name: Building
+    needs: linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      - name: Build with ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v4.4
+
   documentation:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v2
       - name: Setup Python
         uses: actions/setup-python@v2
