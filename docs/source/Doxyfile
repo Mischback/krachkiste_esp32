@@ -6,6 +6,9 @@
 # The title of this project
 PROJECT_NAME           = "Krachkiste_ESP32"
 
+# Make doxygen fail if there are warnings
+WARN_AS_ERROR          = FAIL_ON_WARNINGS
+
 # Put Doxygen's output in the docs' source directory
 # The actual documentation will be generated using Sphinx / Breathe, so the
 # Doxygen output is considered *source* rather than *build*.
