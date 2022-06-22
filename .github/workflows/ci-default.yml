@@ -41,7 +41,7 @@ jobs:
         uses: espressif/esp-idf-ci-action@v1
         with:
           esp_idf_version: v4.4
-          command: apt-get install python3.8-venv && idf.py build
+          command: apt-get install python-venv && idf.py build
 
   documentation:
     name: Documentation
