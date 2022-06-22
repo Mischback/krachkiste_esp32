@@ -9,6 +9,27 @@ on:
     branches: [development]
 
 jobs:
+  linting:
+    name: Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements/python/tox.txt
+      - name: Run cpplint
+        run: util/cpplint
+      - name: Run black
+        run: make util/black
+      - name: Run flake8
+        run: make util/flake8
+
   documentation:
     name: Documentation
     runs-on: ubuntu-latest
