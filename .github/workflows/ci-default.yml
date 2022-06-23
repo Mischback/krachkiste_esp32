@@ -37,11 +37,40 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
-      - name: Build with ESP-IDF
-        uses: espressif/esp-idf-ci-action@v1
+      - name: Setup Python
+        uses: action/setup-python@v2
         with:
-          esp_idf_version: v4.4
-          command: apt-get install python-venv && idf.py build
+          python-version: 3.9
+      - name: Install System Dependencies
+        # as per https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html#for-linux-users
+        run: |
+          sudo apt-get install \
+            git \
+            wget \
+            flex \
+            bison \
+            gperf \
+            cmake \
+            ninja-build \
+            ccache \
+            libffi-dev \
+            libssl-dev \
+            dfu-util \
+            libusb-1.0-0
+      - name: Get ESP-IDF
+        uses: actions/checkout@v2
+        with:
+          repository: espressif/esp-idf
+          path: ~/esp
+          submodules: recursive
+          ref: v4.4.1
+      - name: Set up the Tools
+        run: |
+          ~/esp/esp-idf/install.sh esp32
+          ~/esp/esp-idf/export.sh
+      - name: Build the Project
+        run: |
+          idf.py build
 
   documentation:
     name: Documentation
