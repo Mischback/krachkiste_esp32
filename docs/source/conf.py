@@ -22,7 +22,7 @@ def generate_doxygen_xml(app):
         return
 
     try:
-        retcode = subprocess.call("cd ../../ && doxygen docs/source/Doxyfile")
+        retcode = subprocess.call("doxygen docs/source/Doxyfile")
         if retcode < 0:
             sys.stderr.write("[FAIL] doxygen terminated by signal %s".format(-retcode))
     except OSError as e:
