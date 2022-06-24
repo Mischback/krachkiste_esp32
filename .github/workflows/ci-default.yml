@@ -57,17 +57,22 @@ jobs:
             libssl-dev \
             dfu-util \
             libusb-1.0-0
+      - name: Setting Internal Variables
+        run: |
+          __REPO_DIR=`pwd`
+          __IDF="${__REPO_DIR}/esp"
+          echo "__IDF=${__IDF}" >> ${GITHUB_ENV}
       - name: Get ESP-IDF
         uses: actions/checkout@v2
         with:
           repository: espressif/esp-idf
-          path: ~/esp
+          path: esp
           submodules: recursive
           ref: v4.4.1
       - name: Set up the Tools
         run: |
-          ~/esp/esp-idf/install.sh esp32
-          ~/esp/esp-idf/export.sh
+          ${__IDF}/esp-idf/install.sh esp32
+          ${__IDF}/esp-idf/export.sh
       - name: Build the Project
         run: |
           idf.py build
