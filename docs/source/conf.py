@@ -24,9 +24,11 @@ def generate_doxygen_xml(app):
     try:
         retcode = subprocess.call("doxygen docs/source/Doxyfile")
         if retcode < 0:
-            sys.stderr.write("[FAIL] doxygen terminated by signal %s".format(-retcode))
+            sys.stderr.write(
+                "[FAIL] doxygen terminated by signal {}\n".format(-retcode)
+            )
     except OSError as e:
-        sys.stderr.write("[FAIL] doxygen execution failed: %s".format(e))
+        sys.stderr.write("[FAIL] doxygen execution failed: {}\n".format(e))
 
 
 def read_version_from_file():
