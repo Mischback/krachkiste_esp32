@@ -1,9 +1,0 @@
-# During the build process, some *source* files are generated in this
-# directory, e.g. the actual minified HTML files.
-# These are considered **intermediate build fragments** and are to be ignored
-# by VCS.
-
-# Ignore all HTML files...
-*.html
-# ... but not the actual HTML source files (unminified sources)
-!*.src.html

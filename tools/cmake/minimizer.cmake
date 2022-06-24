@@ -17,7 +17,7 @@ set(MINIMIZER_STAMP ${CMAKE_BINARY_DIR}/minimizer.stamp)
 #
 # @param MIN_SOURCE      The filename of the source (HTML) file
 # @param MIN_DESTINATION The filename of the minified result
-function(minimizeHTML MIN_SOURCE MIN_DESTINATION)
+function(minimize_html MIN_SOURCE MIN_DESTINATION)
   # Please note that this whole block is wrapped in an ``if()`` statement.
   #
   # Though the referenced variable starts with ``CMAKE_``, it is not a CMake
@@ -30,8 +30,8 @@ function(minimizeHTML MIN_SOURCE MIN_DESTINATION)
   # https://github.com/espressif/esp-idf/issues/4540)
   if(NOT CMAKE_BUILD_EARLY_EXPANSION)
     add_custom_command(
-      OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${MIN_DESTINATION}
-      COMMAND ${MINIMIZER_PYTHON} ${MINIMIZER_SCRIPT_HTML} ${CMAKE_CURRENT_SOURCE_DIR}/${MIN_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/${MIN_DESTINATION}
+      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${MIN_DESTINATION}
+      COMMAND ${MINIMIZER_PYTHON} ${MINIMIZER_SCRIPT_HTML} ${CMAKE_CURRENT_SOURCE_DIR}/${MIN_SOURCE} ${CMAKE_CURRENT_BINARY_DIR}/${MIN_DESTINATION}
       DEPENDS ${MINIMIZER_STAMP} ${CMAKE_CURRENT_SOURCE_DIR}/${MIN_SOURCE}
     )
   endif()
