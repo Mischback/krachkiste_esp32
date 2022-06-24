@@ -61,7 +61,7 @@ jobs:
         run: |
           __REPO_DIR=`pwd`
           __IDF="${__REPO_DIR}/esp"
-          echo "IDF_PATH=${__IDF}" >> ${GITHUB_ENV}
+          echo "__IDF=${__IDF}" >> ${GITHUB_ENV}
       - name: Get ESP-IDF
         uses: actions/checkout@v2
         with:
@@ -69,15 +69,19 @@ jobs:
           path: esp
           submodules: recursive
           ref: v4.4.1
-      - name: Run idf_tools.py install
+    #   - name: Run idf_tools.py install
+    #     run: |
+    #       ${IDF_PATH}/tools/idf_tools.py install
+    #   - name: Run idf_tools.py install-python-env
+    #     run: |
+    #       ${IDF_PATH}/tools/idf_tools.py install-python-env
+      - name: Setup ESP-IDF
         run: |
-          ${IDF_PATH}/tools/idf_tools.py install
-      - name: Run idf_tools.py install-python-env
-        run: |
-          ${IDF_PATH}/tools/idf_tools.py install-python-env
+          ${__IDF}/install.sh
       - name: Build the Project
         run: |
-          ${IDF_PATH}/tools/idf.py build
+          . ${__IDF}/export.sh
+          idf.py build
 
 #   documentation:
     # name: Documentation
