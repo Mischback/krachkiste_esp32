@@ -9,30 +9,30 @@ on:
     branches: [development]
 
 jobs:
-  linting:
-    name: Linting
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.9
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements/python/tox.txt
-      - name: Run cpplint
-        run: make util/cpplint
-      - name: Run black
-        run: make util/black
-      - name: Run flake8
-        run: make util/flake8
+#   linting:
+#     name: Linting
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v2
+#       - name: Setup Python
+#         uses: actions/setup-python@v2
+#         with:
+#           python-version: 3.9
+#       - name: Install dependencies
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install -r requirements/python/tox.txt
+#       - name: Run cpplint
+#         run: make util/cpplint
+#       - name: Run black
+#         run: make util/black
+#       - name: Run flake8
+#         run: make util/flake8
 
   building:
     name: Building
-    needs: linting
+    # needs: linting
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -77,22 +77,22 @@ jobs:
         run: |
           idf.py build
 
-  documentation:
-    name: Documentation
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.9
-      - name: Install dependencies
-        run: |
-          sudo apt-get install doxygen
-          python -m pip install --upgrade pip
-          pip install -r requirements/python/tox.txt
-      - name: Run Sphinx's linkcheck
-        run: make sphinx/linkcheck
-      - name: Build HTML Documentation
-        run: make sphinx/build/html
+#   documentation:
+    # name: Documentation
+    # runs-on: ubuntu-latest
+    # steps:
+    #   - name: Checkout Code
+    #     uses: actions/checkout@v2
+    #   - name: Setup Python
+    #     uses: actions/setup-python@v2
+    #     with:
+    #       python-version: 3.9
+    #   - name: Install dependencies
+    #     run: |
+    #       sudo apt-get install doxygen
+    #       python -m pip install --upgrade pip
+    #       pip install -r requirements/python/tox.txt
+    #   - name: Run Sphinx's linkcheck
+    #     run: make sphinx/linkcheck
+    #   - name: Build HTML Documentation
+    #     run: make sphinx/build/html
