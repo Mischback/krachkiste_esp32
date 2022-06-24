@@ -71,8 +71,8 @@ jobs:
           ref: v4.4.1
       - name: Set up the Tools
         run: |
-          ${__IDF}/esp-idf/install.sh esp32
-          ${__IDF}/esp-idf/export.sh
+          ${__IDF}/install.sh esp32
+          ${__IDF}/export.sh
       - name: Build the Project
         run: |
           idf.py build
