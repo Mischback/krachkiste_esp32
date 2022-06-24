@@ -25,6 +25,8 @@ jobs:
           pip install -r requirements/python/tox.txt
       - name: Run cpplint
         run: make util/cpplint
+      - name: Run cmake-lint
+        run: make util/cmake-lint
       - name: Run black
         run: make util/black
       - name: Run flake8
