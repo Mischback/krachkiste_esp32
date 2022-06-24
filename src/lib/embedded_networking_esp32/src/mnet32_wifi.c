@@ -458,7 +458,6 @@ void mnet32_wifi_ap_timer_stop(void) {
 /**
  * Retrieve SSID and PSK for station mode from non-volatile storage.
  *
- * @param nvs_namespace The NVS namespace to read values from.
  * @param ssid          A pointer to a *big enough* ``char`` array to store
  *                      the read value to (*big enough* =
  *                      ::MNET32_WIFI_SSID_MAX_LEN )
