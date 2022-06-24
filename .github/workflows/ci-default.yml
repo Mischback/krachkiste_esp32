@@ -75,6 +75,8 @@ jobs:
         run: |
           . ${__IDF}/export.sh
           idf.py build
+          idf.py size
+          idf.py size-components
 
   documentation:
     name: Documentation
