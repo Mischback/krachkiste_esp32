@@ -21,11 +21,28 @@
 
 /**
  * The namespace to store component-specific values in the non-volatile storage.
+ *
+ * The component will store some internal configuration values (e.g. the
+ * actual SSID and PSK of the configured WiFi network) to the non-volatile
+ * storage (NVS) of the ESP32.
+ *
+ * The component uses a dedicated namespace by default to ensure that there are
+ * no conflicts of the actual key names.
+ *
+ * This is part of the component's configuration and can be adjusted using
+ * **ESP-IDF**'s ``menuconfig`` or editing the ``sdkconfig`` file.
  */
 #define MNET32_NVS_NAMESPACE CONFIG_MNET32_NVS_NAMESPACE
 
 /**
  * The **freeRTOS**-specific priority for the component's task.
+ *
+ * The component launches a dedicated task with the given priority to establish
+ * and maintain the network connectivity. The default value is suitable for
+ * general purposes, but may be adjusted for specific projects.
+ *
+ * This is part of the component's configuration, but can only be adjusted by
+ * modifying the actual header file ``mnet32.h``.
  *
  * @todo Determine a sane (default) value for this! Evaluate other (built-in)
  *       task priorities.
@@ -37,22 +54,34 @@
  * components with this frequency.
  *
  * The value is given in milliseconds.
+ *
+ * This is part of the component's configuration and can be adjusted using
+ * **ESP-IDF**'s ``menuconfig`` or editing the ``sdkconfig`` file.
  */
 #define MNET32_TASK_MONITOR_FREQUENCY CONFIG_MNET32_TASK_MONITOR_FREQUENCY
 
 /**
  * The URI to serve the component's web interface from.
+ *
+ * This is part of the component's configuration and can be adjusted using
+ * **ESP-IDF**'s ``menuconfig`` or editing the ``sdkconfig`` file.
  */
 #define MNET32_WEB_URL_CONFIG CONFIG_MNET32_WEB_URL_CONFIG
 
 /**
  * The channel to be used while providing the project-specific access point.
+ *
+ * This is part of the component's configuration and can be adjusted using
+ * **ESP-IDF**'s ``menuconfig`` or editing the ``sdkconfig`` file.
  */
 #define MNET32_WIFI_AP_CHANNEL CONFIG_MNET32_WIFI_AP_CHANNEL
 
 /**
  * The maximum number of allowed clients while providing the project-specific
  * access point.
+ *
+ * This is part of the component's configuration and can be adjusted using
+ * **ESP-IDF**'s ``menuconfig`` or editing the ``sdkconfig`` file.
  */
 #define MNET32_WIFI_AP_MAX_CONNS CONFIG_MNET32_WIFI_AP_MAX_CONNS
 
@@ -60,6 +89,9 @@
  * Timespan to keep the project-specific access point available.
  *
  * The value is given in milliseconds.
+ *
+ * This is part of the component's configuration and can be adjusted using
+ * **ESP-IDF**'s ``menuconfig`` or editing the ``sdkconfig`` file.
  */
 #define MNET32_WIFI_AP_LIFETIME CONFIG_MNET32_WIFI_AP_LIFETIME
 
@@ -67,12 +99,19 @@
  * The password to access the project-specific access point.
  *
  * The component ``esp_wifi`` requires the password to be at least 8
- * characters! It fails badly otherwise. ::mnet32_wifi_ap_init does handle this.
+ * characters! It fails badly otherwise. The (internal) function
+ * ::mnet32_wifi_ap_init does handle this.
+ *
+ * This is part of the component's configuration and can be adjusted using
+ * **ESP-IDF**'s ``menuconfig`` or editing the ``sdkconfig`` file.
  */
 #define MNET32_WIFI_AP_PSK CONFIG_MNET32_WIFI_AP_PSK
 
 /**
  * The actual SSID of the project-specific access point.
+ *
+ * This is part of the component's configuration and can be adjusted using
+ * **ESP-IDF**'s ``menuconfig`` or editing the ``sdkconfig`` file.
  */
 #define MNET32_WIFI_AP_SSID CONFIG_MNET32_WIFI_AP_SSID
 
@@ -80,6 +119,9 @@
  * The maximum number of connection attempts for station mode.
  *
  * After this number is reached, the component will launch the access point.
+ *
+ * This is part of the component's configuration and can be adjusted using
+ * **ESP-IDF**'s ``menuconfig`` or editing the ``sdkconfig`` file.
  */
 #define MNET32_WIFI_STA_MAX_CONNECTION_ATTEMPTS CONFIG_MNET32_MAX_CON_ATTEMPTS
 
@@ -98,6 +140,9 @@
  *   - WIFI_AUTH_WPA2_WPA3_PSK
  *   - WIFI_AUTH_WAPI_PSK
  *   - WIFI_AUTH_MAX
+ *
+ * This is part of the component's configuration, but can only be adjusted by
+ * modifying the actual header file ``mnet32.h``.
  */
 #define MNET32_WIFI_STA_THRESHOLD_AUTH WIFI_AUTH_WPA_PSK
 
@@ -106,6 +151,9 @@
  *
  * Internally, **ESP-IDF** handle the RSSI as a *signed int8*, so ``-127`` is
  * the minimally available signal quality.
+ *
+ * This is part of the component's configuration, but can only be adjusted by
+ * modifying the actual header file ``mnet32.h``.
  */
 #define MNET32_WIFI_STA_THRESHOLD_RSSI -127
 
@@ -115,7 +163,28 @@
  */
 ESP_EVENT_DECLARE_BASE(MNET32_EVENTS);
 
-enum { MNET32_EVENT_UNAVAILABLE, MNET32_EVENT_READY };
+/**
+ * Define the actual component-specific events that will be emitted.
+ *
+ */
+enum mnet32_events {
+    /**
+     * Emitted before the component terminates the network connectivity.
+     *
+     * This event is emitted without event-specific data.
+     */
+    MNET32_EVENT_UNAVAILABLE,
+
+    /**
+     * Emitted when network connectivity is available.
+     *
+     * The event is emitted in the following cases:
+     *   - the component could successfully establish a connection to a WiFi
+     *     network;
+     *   - the component has successfully started its internal access point.
+     */
+    MNET32_EVENT_READY
+};
 
 
 /**
@@ -154,7 +223,7 @@ esp_err_t mnet32_stop(void);
  * @param arg        Generic arguments.
  * @param event_base ``esp_event``'s ``EVENT_BASE``. Every event is specified
  *                   by the ``EVENT_BASE`` and its ``EVENT_ID``.
- * @param event_id   `esp_event``'s ``EVENT_ID``. Every event is specified by
+ * @param event_id   ``esp_event``'s ``EVENT_ID``. Every event is specified by
  *                   the ``EVENT_BASE`` and its ``EVENT_ID``.
  * @param event_data Events might provide a pointer to additional,
  *                   event-related data. This handler assumes, that the

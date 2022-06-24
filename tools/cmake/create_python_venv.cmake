@@ -36,22 +36,22 @@ function(create_python_venv TARGET)
 
   # At least try to work "cross platform". Python's ``venv`` module has subtle
   # differences on Windows.
-  if (WIN32)
+  if(WIN32)
     set(BIN_DIR ${VENV_FULL_PATH}/Scripts)
     set(PYTHON ${BIN_DIR}/python.exe)
-  else ()
+  else()
     set(BIN_DIR ${VENV_FULL_PATH}/bin)
     set(PYTHON ${BIN_DIR}/python)
-  endif ()
+  endif()
 
   # Parse the provided requirements and prepare the installation command.
-  if (ARG_REQUIREMENTS_FILE)
+  if(ARG_REQUIREMENTS_FILE)
     set(REQUIREMENTS -r ${ARG_REQUIREMENTS_FILE})
   endif()
 
   set(REQUIREMENTS ${REQUIREMENTS} "${ARG_REQUIREMENTS}")
 
-  if (REQUIREMENTS)
+  if(REQUIREMENTS)
     set(INSTALL_CMD ${BIN_DIR}/pip install --disable-pip-version-check)
     set(INSTALL_CMD ${INSTALL_CMD} ${REQUIREMENTS})
   else()
@@ -99,16 +99,16 @@ function(create_python_venv TARGET)
 
   # Make some relevant things available to the parent/calling scope. Which of
   # these things will be available is determined with (optional) parameters.
-  if (ARG_OUT_PYTHON_EXE)
+  if(ARG_OUT_PYTHON_EXE)
     set(${ARG_OUT_PYTHON_EXE} ${PYTHON} PARENT_SCOPE)
-  endif ()
+  endif()
 
-  if (ARG_OUT_BIN_DIR)
+  if(ARG_OUT_BIN_DIR)
     set(${ARG_OUT_BIN_DIR} ${BIN_DIR} PARENT_SCOPE)
-  endif ()
+  endif()
 
-  if (ARG_OUT_VENV_DIR)
+  if(ARG_OUT_VENV_DIR)
     set(${ARG_OUT_VENV_DIR} ${VENV_FULL_PATH} PARENT_SCOPE)
-  endif ()
+  endif()
 
 endfunction()

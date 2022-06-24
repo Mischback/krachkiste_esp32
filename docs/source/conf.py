@@ -5,7 +5,30 @@
 # Python imports
 import datetime
 import os
+import subprocess
 import sys
+
+
+def generate_doxygen_xml(app):
+    """Run the doxygen make commands if we're on the ReadTheDocs server.
+
+    The function is adapted from the official documentation of ``breathe``, see
+    https://breathe.readthedocs.io/en/latest/readthedocs.html.
+    """
+
+    read_the_docs_build = os.environ.get("READTHEDOCS", None) == "True"
+
+    if not read_the_docs_build:
+        return
+
+    try:
+        retcode = subprocess.call("cd ../../; doxygen docs/source/Doxyfile", shell=True)
+        if retcode < 0:
+            sys.stderr.write(
+                "[FAIL] doxygen terminated by signal {}\n".format(-retcode)
+            )
+    except OSError as e:
+        sys.stderr.write("[FAIL] doxygen execution failed: {}\n".format(e))
 
 
 def read_version_from_file():
@@ -132,3 +155,14 @@ html_static_path = ["_static"]
 
 # provide a logo (max 200px width)
 # html_logo = ""
+
+
+def setup(app):
+    """Make this config an actual Sphinx plugin.
+
+    The function is adapted from the official documentation of ``breathe``, see
+    https://breathe.readthedocs.io/en/latest/readthedocs.html.
+    """
+
+    # Add hook for building doxygen xml when needed
+    app.connect("builder-inited", generate_doxygen_xml)

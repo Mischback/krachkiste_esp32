@@ -53,7 +53,7 @@ esp_err_t mnet32_nvs_get_string(nvs_handle_t handle,
  * The NVS must be opened before calling this function to retrieve a handle,
  * see ::mnet32_nvs_get_handle .
  *
- * @param handle The handle to be used, see ::mnet32_get_nbs_handle.
+ * @param handle The handle to be used, see ::mnet32_nvs_get_handle.
  * @param key    The key to store the value to.
  * @param value  The actual value to store.
  * @return esp_err_t

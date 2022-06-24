@@ -4,6 +4,7 @@
 
 set(MINIMIZER_SCRIPT_DIR ${PROJECT_DIR}/tools/minimizer)
 set(MINIMIZER_SCRIPT_HTML ${MINIMIZER_SCRIPT_DIR}/html.py)
+set(MINIMIZER_STAMP ${CMAKE_BINARY_DIR}/minimizer.stamp)
 
 # Minimize HTML source code with minify-html.
 #
@@ -16,7 +17,7 @@ set(MINIMIZER_SCRIPT_HTML ${MINIMIZER_SCRIPT_DIR}/html.py)
 #
 # @param MIN_SOURCE      The filename of the source (HTML) file
 # @param MIN_DESTINATION The filename of the minified result
-function(minimizeHTML MIN_SOURCE MIN_DESTINATION)
+function(minimize_html MIN_SOURCE MIN_DESTINATION)
   # Please note that this whole block is wrapped in an ``if()`` statement.
   #
   # Though the referenced variable starts with ``CMAKE_``, it is not a CMake
@@ -29,9 +30,9 @@ function(minimizeHTML MIN_SOURCE MIN_DESTINATION)
   # https://github.com/espressif/esp-idf/issues/4540)
   if(NOT CMAKE_BUILD_EARLY_EXPANSION)
     add_custom_command(
-      OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${MIN_DESTINATION}
-      COMMAND ${MINIMIZER_PYTHON} ${MINIMIZER_SCRIPT_HTML} ${CMAKE_CURRENT_SOURCE_DIR}/${MIN_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/${MIN_DESTINATION}
-      DEPENDS minimizer_init ${CMAKE_CURRENT_SOURCE_DIR}/${MIN_SOURCE}
+      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${MIN_DESTINATION}
+      COMMAND ${MINIMIZER_PYTHON} ${MINIMIZER_SCRIPT_HTML} ${CMAKE_CURRENT_SOURCE_DIR}/${MIN_SOURCE} ${CMAKE_CURRENT_BINARY_DIR}/${MIN_DESTINATION}
+      DEPENDS ${MINIMIZER_STAMP} ${CMAKE_CURRENT_SOURCE_DIR}/${MIN_SOURCE}
     )
   endif()
 endfunction()
@@ -46,7 +47,7 @@ endfunction()
 # This variable is in fact more than just a tracker, but it is actively used in
 # the function ``minimizeHTML`` (defined above!) to access the virtual
 # environment's Python executable.
-if (NOT MINIMIZER_PYTHON)
+if(NOT MINIMIZER_PYTHON)
   include(${PROJECT_DIR}/tools/cmake/create_python_venv.cmake)
 
   create_python_venv(
@@ -55,12 +56,23 @@ if (NOT MINIMIZER_PYTHON)
     OUT_PYTHON_EXE VENV_PYTHON_EXE
   )
 
-  set(MINIMIZER_PYTHON ${VENV_PYTHON_EXE} CACHE INTERNAL "make minimizer's python available" FORCE)
+  set(
+    MINIMIZER_PYTHON
+    ${VENV_PYTHON_EXE}
+    CACHE INTERNAL
+    "make minimizer's python available"
+    FORCE)
 
   if(NOT CMAKE_BUILD_EARLY_EXPANSION)
+    add_custom_command(
+        OUTPUT ${MINIMIZER_STAMP}
+        COMMAND cmake -E echo "stamp" > ${MINIMIZER_STAMP}
+        DEPENDS minimizer_venv ${MINIMIZER_SCRIPT_HTML}
+    )
+
     add_custom_target(
       minimizer_init
-      DEPENDS minimizer_venv ${MINIMIZER_SCRIPT_HTML}
+      DEPENDS ${MINIMIZER_STAMP}
     )
   endif()
 endif()

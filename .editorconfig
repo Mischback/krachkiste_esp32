@@ -32,5 +32,5 @@ indent_size = 2
 # keep trailing whitespaces in documentation files
 trim_trailing_whitespace = false
 
-[*.{yaml|yml}]
+[{*.yaml, *.yml}]
 indent_size = 2

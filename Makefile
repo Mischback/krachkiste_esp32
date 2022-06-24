@@ -61,6 +61,12 @@ util/clang-format : | $(STAMP_TOX_UTIL)
 	$(MAKE) util/pre-commit pre-commit_id="clang-format" pre-commit_files="--all-files"
 .PHONY : util/clang-format
 
+## Run "clang-format" on all files
+## @category Code Quality
+util/cmake-lint : | $(STAMP_TOX_UTIL)
+	$(MAKE) util/pre-commit pre-commit_id="cmakelint" pre-commit_files="--all-files"
+.PHONY : util/cmake-lint
+
 ## Run "cppcheck" on all files
 ## @category Code Quality
 util/cppcheck : | $(STAMP_TOX_UTIL)
