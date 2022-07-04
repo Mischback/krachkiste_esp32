@@ -1,6 +1,6 @@
 # KrachkisteESP32
 
-[![GitHub branch checks state](https://img.shields.io/github/workflow/status/mischback/krachkiste_esp32/CI%20default%20branch?style=flat&logo=github)](https://github.com/Mischback/krachkiste_esp32/actions/workflows/ci-default.yml?query=branch%3Adevelopment)
+[![GitHub branch checks state](https://img.shields.io/github/workflow/status/Mischback/krachkiste_esp32/CI%20Default%20Branch/development?style=flat&logo=github)](https://github.com/Mischback/krachkiste_esp32/actions/workflows/ci-default.yml?query=branch%3Adevelopment)
 [![GitHub License](https://img.shields.io/github/license/mischback/imp?style=flat)](https://github.com/Mischback/krachkiste_esp32/blob/development/LICENSE)
 
 [![C style: custom](https://img.shields.io/badge/ESP--IDF-4.4-brightgreen)](https://docs.espressif.com/projects/esp-idf/en/v4.4.1/esp32/index.html)
