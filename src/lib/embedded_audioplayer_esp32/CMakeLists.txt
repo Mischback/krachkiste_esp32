@@ -5,7 +5,7 @@
 # they are included by default, see
 # https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#common-component-requirements
 idf_component_register(
-  SRCS "main.c"
-  INCLUDE_DIRS "."
-  PRIV_REQUIRES "esp_event log min_httpd nvs_flash embedded_audioplayer_esp32 embedded_networking_esp32"
+  SRCS "src/map32.c"
+  INCLUDE_DIRS "include"
+  PRIV_REQUIRES "esp_common esp_event"
 )
