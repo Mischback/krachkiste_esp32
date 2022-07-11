@@ -59,7 +59,7 @@ doc: sphinx/serve/html
 
 esp_idf_command ?= clean
 esp/idf/base : | $(ESP_TOOLS)
-	IDF_TOOLS_PATH="$(ESP_TOOLS)" bash -c 'source $(ESP_IDF)/export.sh && idf.py $(esp_idf_command)'
+	IDF_TOOLS_PATH="$(ESP_TOOLS)" bash -c 'source $(ESP_IDF)/export.sh 1> /dev/null && idf.py $(esp_idf_command)'
 .PHONY : esp/idf/base
 
 ## Build the source files to the actual executable
