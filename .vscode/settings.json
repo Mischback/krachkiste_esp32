@@ -4,5 +4,11 @@
   "files.associations": {
     "sdkconfig": "kconfig",
     "sdkconfig.*": "kconfig"
+  },
+  "files.watcherExclude": {
+    "${workspaceFolder}/.esp/**": true,
+    "${workspaceFolder}/.tox/**": true,
+    "${workspaceFolder}/.tox-env/**": true,
+    "${workspaceFolder}/build/**": true
   }
 }
