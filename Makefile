@@ -60,42 +60,62 @@ esp/idf/base :
 	IDF_TOOLS_PATH="$(ESP_TOOLS)" bash -c 'source .esp/esp-idf/export.sh && idf.py $(esp_idf_command)'
 .PHONY : esp/idf/base
 
+## Build the source files to the actual executable
+## @category IDF
 esp/idf/build :
 	$(MAKE) esp/idf/base esp_idf_command="build"
 .PHONY : esp/idf/build
 
+## Remove the build files / the built image
+## @category IDF
 esp/idf/clean :
 	$(MAKE) esp/idf/base esp_idf_command="clean"
 .PHONY : esp/idf/clean
 
+## Flash the built image to the controller, build as required
+## @category IDF
 esp/idf/flash :
 	$(MAKE) esp/idf/base esp_idf_command="flash"
 .PHONY : esp/idf/flash
 
+## Delete the entire build directory
+## @category IDF
 esp/idf/fullclean :
 	$(MAKE) esp/idf/base esp_idf_command="fullclean"
 .PHONY : esp/idf/fullclean
 
+## Run the menuconfig utility
+## @category IDF
 esp/idf/menuconfig :
 	$(MAKE) esp/idf/base esp_idf_command="menuconfig"
 .PHONY : esp/idf/menuconfig
 
+## Launch the monitor, build and flash as required
+## @category IDF
 esp/idf/monitor :
 	$(MAKE) esp/idf/base esp_idf_command="monitor"
 .PHONY : esp/idf/monitor
 
+## Force a reconfiguration of the project and run CMake
+## @category IDF
 esp/idf/reconfigure :
 	$(MAKE) esp/idf/base esp_idf_command="reconfigure"
 .PHONY : esp/idf/reconfigure
 
+## Show build size
+## @category IDF
 esp/idf/size :
 	$(MAKE) esp/idf/base esp_idf_command="size"
 .PHONY : esp/idf/size
 
+## Show build sizes by components
+## @category IDF
 esp/idf/size-components :
 	$(MAKE) esp/idf/base esp_idf_command="size-components"
 .PHONY : esp/idf/size-components
 
+## Show build sizes by source files
+## @category IDF
 esp/idf/size-files :
 	$(MAKE) esp/idf/base esp_idf_command="size-files"
 .PHONY : esp/idf/size-files
