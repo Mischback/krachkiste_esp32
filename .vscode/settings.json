@@ -10,5 +10,6 @@
     "${workspaceFolder}/.tox/**": true,
     "${workspaceFolder}/.tox-env/**": true,
     "${workspaceFolder}/build/**": true
-  }
+  },
+  "git.autoRepositoryDetection": "openEditors"
 }
