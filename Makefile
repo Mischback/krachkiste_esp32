@@ -6,7 +6,7 @@
 # tasks while developing the application and serves as a convenient way to
 # launch different tools with sane default settings.
 #
-# Actually, some of "make"'s capabilities is used to make sure that the
+# Actually, some of "make"'s capabilities are used to make sure that the
 # tox environments, which are used to run most of the commands, are rebuild, if
 # environment specifc configuration or requirements have changed.
 #
@@ -17,19 +17,25 @@
 
 # ### INTERNAL SETTINGS / CONSTANTS
 
+# Find the (absolute) path to this Makefile
+# Required to provide the paths to several tools, e.g. the ESP-IDF build chain.
+MAKEFILE_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
 # Make's internal stamp directory
 # Stamps are used to keep track of certain build steps.
 # Should be included in .gitignore
-STAMP_DIR := .make-stamps
+STAMP_DIR := $(MAKEFILE_DIR).make-stamps
 
 STAMP_TOX_UTIL := $(STAMP_DIR)/tox-util
 STAMP_TOX_SPHINX := $(STAMP_DIR)/tox-sphinx
 STAMP_DOXYGEN := $(STAMP_DIR)/doxygen
 
-UTIL_REQUIREMENTS := requirements/python/util.txt
-DOCUMENTATION_REQUIREMENTS := requirements/python/documentation.txt
+UTIL_REQUIREMENTS := $(MAKEFILE_DIR)/requirements/python/util.txt
+DOCUMENTATION_REQUIREMENTS := $(MAKEFILE_DIR)requirements/python/documentation.txt
 SOURCE_ALL_FILES := $(shell find src -type f)
-DOXYGEN_CONFIG := docs/source/Doxyfile
+DOXYGEN_CONFIG := $(MAKEFILE_DIR)/docs/source/Doxyfile
+
+ESP_TOOLS := $(MAKEFILE_DIR)/.esp/tools
 
 # some make settings
 .SILENT :
@@ -47,6 +53,52 @@ tree : util/tree/project
 ## Shortcut to build and serve the documentation
 doc: sphinx/serve/html
 .PHONY : doc
+
+
+esp_idf_command ?= clean
+esp/idf/base :
+	IDF_TOOLS_PATH="$(ESP_TOOLS)" bash -c 'source .esp/esp-idf/export.sh && idf.py $(esp_idf_command)'
+.PHONY : esp/idf/base
+
+esp/idf/build :
+	$(MAKE) esp/idf/base esp_idf_command="build"
+.PHONY : esp/idf/build
+
+esp/idf/clean :
+	$(MAKE) esp/idf/base esp_idf_command="clean"
+.PHONY : esp/idf/clean
+
+esp/idf/flash :
+	$(MAKE) esp/idf/base esp_idf_command="flash"
+.PHONY : esp/idf/flash
+
+esp/idf/fullclean :
+	$(MAKE) esp/idf/base esp_idf_command="fullclean"
+.PHONY : esp/idf/fullclean
+
+esp/idf/menuconfig :
+	$(MAKE) esp/idf/base esp_idf_command="menuconfig"
+.PHONY : esp/idf/menuconfig
+
+esp/idf/monitor :
+	$(MAKE) esp/idf/base esp_idf_command="monitor"
+.PHONY : esp/idf/monitor
+
+esp/idf/reconfigure :
+	$(MAKE) esp/idf/base esp_idf_command="reconfigure"
+.PHONY : esp/idf/reconfigure
+
+esp/idf/size :
+	$(MAKE) esp/idf/base esp_idf_command="size"
+.PHONY : esp/idf/size
+
+esp/idf/size-components :
+	$(MAKE) esp/idf/base esp_idf_command="size-components"
+.PHONY : esp/idf/size-components
+
+esp/idf/size-files :
+	$(MAKE) esp/idf/base esp_idf_command="size-files"
+.PHONY : esp/idf/size-files
 
 
 ## Run "black" on all files
