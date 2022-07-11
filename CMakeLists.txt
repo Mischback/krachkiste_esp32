@@ -4,13 +4,28 @@
 # CMakeLists in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.5)
 
+# Enable ESP-ADF for the project
+# Basically ESP-ADF provides several (audio-related) additional components.
+# To make them available, ESP-ADF's component directory must be added to the
+# project.
+message(STATUS "ADF_PATH $ENV{ADF_PATH}")
+execute_process(COMMAND git describe --always --tags --dirty
+                WORKING_DIRECTORY $ENV{ADF_PATH}
+                OUTPUT_VARIABLE ADF_VER
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
+message(STATUS "ADF_VER ${ADF_VER}")
+set(EXTRA_COMPONENT_DIRS $ENV{ADF_PATH}/components)
+
 # The project does not follow the pre-defined directory structure of the ESP-IDF
 # framework. Thus, the actual "components" of the project have to be specified
 # manually, including the project's "main" component ("src/app") and
 # project-specific libraries ("src/lib").
 # See
 # https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#renaming-main-component
-set(EXTRA_COMPONENT_DIRS "src/app src/lib")
+set(EXTRA_COMPONENT_DIRS "${EXTRA_COMPONENT_DIRS} src/app src/lib")
+
+# TODO(mischback) May be removed as soon as ESP-ADF seems to be working!
+# message(STATUS "EXTRA_COMPONENT_DIRS ${EXTRA_COMPONENT_DIRS}")
 
 # By default, all available components are built, including all components of
 # ESP-IDF and the project.

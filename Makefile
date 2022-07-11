@@ -36,8 +36,9 @@ SOURCE_ALL_FILES := $(shell find src -type f)
 DOXYGEN_CONFIG := $(MAKEFILE_DIR)/docs/source/Doxyfile
 
 ESP_DIR := $(MAKEFILE_DIR)/.esp
-ESP_TOOLS := $(ESP_DIR)/tools
+ESP_ADF := $(ESP_DIR)/esp-adf
 ESP_IDF := $(ESP_DIR)/esp-idf
+ESP_TOOLS := $(ESP_DIR)/tools
 
 # some make settings
 .SILENT :
@@ -59,7 +60,7 @@ doc: sphinx/serve/html
 
 esp_idf_command ?= clean
 esp/idf/base : | $(ESP_TOOLS)
-	IDF_TOOLS_PATH="$(ESP_TOOLS)" bash -c 'source $(ESP_IDF)/export.sh 1> /dev/null && idf.py $(esp_idf_command)'
+	IDF_TOOLS_PATH="$(ESP_TOOLS)" bash -c 'export ADF_PATH=$(ESP_ADF) && source $(ESP_IDF)/export.sh 1> /dev/null && idf.py $(esp_idf_command)'
 .PHONY : esp/idf/base
 
 ## Build the source files to the actual executable
