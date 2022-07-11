@@ -11,5 +11,13 @@
     "${workspaceFolder}/.tox-env/**": true,
     "${workspaceFolder}/build/**": true
   },
-  "git.autoRepositoryDetection": "openEditors"
+  "git.autoRepositoryDetection": "openEditors",
+  "git.ignoredRepositories": [
+    "${workspaceFolder}/.esp/esp-idf",
+    "${workspaceFolder}/.esp/esp-adf"
+  ],
+  "git.repositoryScanIgnoredFolders": [
+    "node_modules",
+    "${workspaceFolder}/.esp/**"
+  ]
 }
