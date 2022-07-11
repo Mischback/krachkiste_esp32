@@ -31,7 +31,7 @@ STAMP_TOX_SPHINX := $(STAMP_DIR)/tox-sphinx
 STAMP_DOXYGEN := $(STAMP_DIR)/doxygen
 
 UTIL_REQUIREMENTS := $(MAKEFILE_DIR)/requirements/python/util.txt
-DOCUMENTATION_REQUIREMENTS := $(MAKEFILE_DIR)requirements/python/documentation.txt
+DOCUMENTATION_REQUIREMENTS := $(MAKEFILE_DIR)/requirements/python/documentation.txt
 SOURCE_ALL_FILES := $(shell find src -type f)
 DOXYGEN_CONFIG := $(MAKEFILE_DIR)/docs/source/Doxyfile
 
