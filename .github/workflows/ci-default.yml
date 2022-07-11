@@ -39,6 +39,7 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+        submodules: recursive
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -59,26 +60,8 @@ jobs:
             libssl-dev \
             dfu-util \
             libusb-1.0-0
-      - name: Setting Internal Variables
-        run: |
-          __REPO_DIR=`pwd`
-          __IDF="${__REPO_DIR}/esp"
-          echo "__IDF=${__IDF}" >> ${GITHUB_ENV}
-      - name: Get ESP-IDF
-        uses: actions/checkout@v3
-        with:
-          repository: espressif/esp-idf
-          path: esp
-          submodules: recursive
-          ref: v4.4.1
-      - name: Setup ESP-IDF
-        run: ${__IDF}/install.sh
       - name: Build the Project
-        run: |
-          . ${__IDF}/export.sh
-          idf.py build
-          idf.py size
-          idf.py size-components
+        run: make esp/idf/size-components
 
   documentation:
     name: Documentation
