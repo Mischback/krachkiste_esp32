@@ -35,7 +35,9 @@ DOCUMENTATION_REQUIREMENTS := $(MAKEFILE_DIR)requirements/python/documentation.t
 SOURCE_ALL_FILES := $(shell find src -type f)
 DOXYGEN_CONFIG := $(MAKEFILE_DIR)/docs/source/Doxyfile
 
-ESP_TOOLS := $(MAKEFILE_DIR)/.esp/tools
+ESP_DIR := $(MAKEFILE_DIR)/.esp
+ESP_TOOLS := $(ESP_DIR)/tools
+ESP_IDF := $(ESP_DIR)/esp-idf
 
 # some make settings
 .SILENT :
@@ -56,8 +58,8 @@ doc: sphinx/serve/html
 
 
 esp_idf_command ?= clean
-esp/idf/base :
-	IDF_TOOLS_PATH="$(ESP_TOOLS)" bash -c 'source .esp/esp-idf/export.sh && idf.py $(esp_idf_command)'
+esp/idf/base : | $(ESP_TOOLS)
+	IDF_TOOLS_PATH="$(ESP_TOOLS)" bash -c 'source $(ESP_IDF)/export.sh && idf.py $(esp_idf_command)'
 .PHONY : esp/idf/base
 
 ## Build the source files to the actual executable
@@ -233,6 +235,9 @@ $(STAMP_TOX_SPHINX) : $(DOCUMENTATION_REQUIREMENTS) tox.ini
 	$(create_dir)
 	tox --recreate -e sphinx
 	touch $@
+
+$(ESP_TOOLS): $(ESP_IDF)
+	IDF_TOOLS_PATH="$(ESP_TOOLS)" bash -c '$(ESP_IDF)/install.sh'
 
 # utility function to create required directories on the fly
 create_dir = @mkdir -p $(@D)
