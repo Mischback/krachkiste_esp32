@@ -37,7 +37,7 @@ DOXYGEN_CONFIG := $(MAKEFILE_DIR)/docs/source/Doxyfile
 
 ESP_DIR := $(MAKEFILE_DIR)/.esp
 ESP_ADF := $(ESP_DIR)/esp-adf
-ESP_IDF := $(ESP_DIR)/esp-idf
+ESP_IDF := $(ESP_ADF)/esp-idf
 ESP_TOOLS := $(ESP_DIR)/tools
 
 # some make settings
@@ -238,7 +238,7 @@ $(STAMP_TOX_SPHINX) : $(DOCUMENTATION_REQUIREMENTS) tox.ini
 	touch $@
 
 $(ESP_TOOLS): $(ESP_IDF)
-	IDF_TOOLS_PATH="$(ESP_TOOLS)" bash -c '$(ESP_IDF)/install.sh'
+	IDF_TOOLS_PATH="$(ESP_TOOLS)" bash -c '$(ESP_IDF)/install.sh esp32'
 
 # utility function to create required directories on the fly
 create_dir = @mkdir -p $(@D)

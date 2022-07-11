@@ -13,7 +13,6 @@
   },
   "git.autoRepositoryDetection": "openEditors",
   "git.ignoredRepositories": [
-    "${workspaceFolder}/.esp/esp-idf",
     "${workspaceFolder}/.esp/esp-adf"
   ],
   "git.repositoryScanIgnoredFolders": [

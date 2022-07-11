@@ -6,12 +6,14 @@
             "cStandard": "c11",
             "cppStandard": "c++17",
             "includePath": [
-                "${workspaceFolder}/.esp/esp-idf/components/**",
+                "${workspaceFolder}/.esp/esp-adf/esp-idf/components/**",
+                "${workspaceFolder}/.esp/esp-adf/components/**",
                 "${workspaceFolder}/**"
             ],
             "browse": {
                 "path": [
-                    "${workspaceFolder}/.esp/esp-idf/components/**",
+                    "${workspaceFolder}/.esp/esp-adf/esp-idf/components/**",
+                    "${workspaceFolder}/.esp/esp-adf/components/**",
                     "${workspaceFolder}"
                 ],
                 "limitSymbolsToIncludedHeaders": false
