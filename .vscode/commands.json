@@ -1,0 +1,42 @@
+{
+  "commands": [
+    {
+      "command": "commands.refresh",
+      "text": "$(sync)",
+      "tooltip": "Refresh commands",
+      "color": "#666666"
+    },
+    {
+      "text": "$(extensions)",
+      "tooltip": "Build with ESP-IDF and show build size",
+      "arguments": ["build (dev)"],
+      "command": "workbench.action.tasks.runTask",
+      "color": "#6699ff",
+      "priority": 49
+    },
+    {
+      "text": "$(vm-running)",
+      "tooltip": "Monitor (build / flash as required)",
+      "arguments": ["monitor"],
+      "command": "workbench.action.tasks.runTask",
+      "color": "#6699ff",
+      "priority": 48
+    },
+    {
+      "text": "$(trash)",
+      "tooltip": "Clean the build directory",
+      "arguments": ["clean"],
+      "command": "workbench.action.tasks.runTask",
+      "color": "#6699ff",
+      "priority": 47
+    },
+    {
+      "text": "$(settings-gear)",
+      "tooltip": "Run ESP-IDF's menuconfig",
+      "arguments": ["menuconfig"],
+      "command": "workbench.action.tasks.runTask",
+      "color": "#6699ff",
+      "priority": 50
+    }
+  ]
+}

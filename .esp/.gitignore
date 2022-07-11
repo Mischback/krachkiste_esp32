@@ -1,0 +1,4 @@
+# This file is used to make sure, that this directory is available.
+# This contains the actual ESP-IDF and ESP-ADF submodules, but the corresponding
+# tools aswell. These tools however should not be tracked
+tools/
