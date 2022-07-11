@@ -2,3 +2,7 @@
 	path = .esp/esp-idf
 	url = https://github.com/espressif/esp-idf.git
 	branch = release/v4.4
+[submodule ".esp/esp-adf"]
+	path = .esp/esp-adf
+	url = https://github.com/espressif/esp-adf.git
+	branch = release/v2.4
