@@ -31,12 +31,20 @@
       "priority": 47
     },
     {
+      "text": "$(trash)",
+      "tooltip": "Clean the build directory (fullclean)",
+      "arguments": ["fullclean"],
+      "command": "workbench.action.tasks.runTask",
+      "color": "#ff6633",
+      "priority": 46
+    },
+    {
       "text": "$(preview)",
       "tooltip": "Serve the project documentation (build as required)",
       "arguments": ["doc"],
       "command": "workbench.action.tasks.runTask",
       "color": "#6699ff",
-      "priority": 46
+      "priority": 45
     },
     {
       "text": "$(settings-gear)",
