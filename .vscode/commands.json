@@ -31,6 +31,14 @@
       "priority": 47
     },
     {
+      "text": "$(preview)",
+      "tooltip": "Serve the project documentation (build as required)",
+      "arguments": ["doc"],
+      "command": "workbench.action.tasks.runTask",
+      "color": "#6699ff",
+      "priority": 46
+    },
+    {
       "text": "$(settings-gear)",
       "tooltip": "Run ESP-IDF's menuconfig",
       "arguments": ["menuconfig"],

@@ -28,6 +28,19 @@
       }
     },
     {
+      "label": "doc",
+      "type": "shell",
+      "command": "make sphinx/serve/html",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
       "label": "monitor",
       "type": "shell",
       "command": "make esp/idf/monitor",
