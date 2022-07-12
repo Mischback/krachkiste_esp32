@@ -21,17 +21,26 @@
 # Required to provide the paths to several tools, e.g. the ESP-IDF build chain.
 MAKEFILE_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
+# The repository relies on ``tox`` for several internal utility tasks. ``tox``
+# is provided internally as a Python virtual environment.
+TOX_VENV := .tox-env
+TOX_VENV_DIR := $(MAKEFILE_DIR)/$(TOX_VENV)
+TOX_ACTIVATION := $(TOX_VENV_DIR)/bin/activate
+
 # Make's internal stamp directory
 # Stamps are used to keep track of certain build steps.
 # Should be included in .gitignore
-STAMP_DIR := $(MAKEFILE_DIR).make-stamps
+STAMP_DIR := $(MAKEFILE_DIR)/.make-stamps
 
-STAMP_TOX_UTIL := $(STAMP_DIR)/tox-util
-STAMP_TOX_SPHINX := $(STAMP_DIR)/tox-sphinx
-STAMP_DOXYGEN := $(STAMP_DIR)/doxygen
+STAMP_TOX := $(STAMP_DIR)/tox  # track installation of ``tox``
+STAMP_TOX_UTIL := $(STAMP_DIR)/tox-util  # track ``tox`` env "util"
+STAMP_TOX_SPHINX := $(STAMP_DIR)/tox-sphinx  # track ``tox`` env "sphinx"
+STAMP_DOXYGEN := $(STAMP_DIR)/doxygen  # track runs of ``doxygen``
 
+TOX_REQUIREMENTS := $(MAKEFILE_DIR)/requirements/python/tox.txt
 UTIL_REQUIREMENTS := $(MAKEFILE_DIR)/requirements/python/util.txt
 DOCUMENTATION_REQUIREMENTS := $(MAKEFILE_DIR)/requirements/python/documentation.txt
+
 SOURCE_ALL_FILES := $(shell find src -type f)
 DOXYGEN_CONFIG := $(MAKEFILE_DIR)/docs/source/Doxyfile
 
@@ -171,19 +180,19 @@ pre-commit_files ?= ""
 ## Run all code quality tools as defined in .pre-commit-config.yaml
 ## @category Code Quality
 util/pre-commit : $(STAMP_TOX_UTIL)
-	tox -q -e util -- pre-commit run $(pre-commit_files) $(pre-commit_id)
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox -q -e util -- pre-commit run $(pre-commit_files) $(pre-commit_id)'
 .PHONY : util/pre-commit
 
 ## Install pre-commit hooks to be executed automatically
 ## @category Code Quality
 util/pre-commit/install : $(STAMP_TOX_UTIL)
-	tox -q -e util -- pre-commit install
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox -q -e util -- pre-commit install'
 .PHONY : util/pre-commit/install
 
 ## Update pre-commit hooks
 ## @category Code Quality
 util/pre-commit/update : $(STAMP_TOX_UTIL)
-	tox -q -e util -- pre-commit autoupdate
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox -q -e util -- pre-commit autoupdate'
 .PHONY : util/pre-commit/update
 
 ## Use "tree" to list project files
@@ -198,25 +207,25 @@ util/tree/project :
 ## Build the documentation using "Sphinx"
 ## @category Documentation
 sphinx/build/html : $(STAMP_DOXYGEN) | $(STAMP_TOX_SPHINX)
-	tox -q -e sphinx
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox -q -e sphinx'
 .PHONY : sphinx/build/html
 
 ## Serve the documentation locally on port 8082
 ## @category Documentation
 sphinx/serve/html : sphinx/build/html
-	tox -q -e sphinx-serve
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox -q -e sphinx-serve'
 .PHONY : sphinx/serve/html
 
 ## Check documentation's external links
 ## @category Documentation
 sphinx/linkcheck : | $(STAMP_TOX_SPHINX)
-	tox -q -e sphinx -- make linkcheck
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox -q -e sphinx -- make linkcheck'
 .PHONY : sphinx/linkcheck
 
 ## Serve doxygen's generated documentation locally on port 8082
 ## @category Documentation
 doxygen/serve/html : $(STAMP_DOXYGEN) | $(STAMP_TOX_SPHINX)
-	tox -q -e doxygen-html-serve
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox -q -e doxygen-html-serve'
 .PHONY : doxygen/serve/html
 
 $(STAMP_DOXYGEN) : $(SOURCE_ALL_FILES) $(DOXYGEN_CONFIG)
@@ -227,15 +236,23 @@ $(STAMP_DOXYGEN) : $(SOURCE_ALL_FILES) $(DOXYGEN_CONFIG)
 
 # ### INTERNAL RECIPES
 
-$(STAMP_TOX_UTIL) : $(UTIL_REQUIREMENTS) tox.ini .pre-commit-config.yaml
+$(STAMP_TOX_UTIL) : $(STAMP_TOX) $(UTIL_REQUIREMENTS) tox.ini .pre-commit-config.yaml
 	$(create_dir)
-	tox --recreate -e util
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox --recreate -e util'
 	touch $@
 
-$(STAMP_TOX_SPHINX) : $(DOCUMENTATION_REQUIREMENTS) tox.ini
+$(STAMP_TOX_SPHINX) : $(STAMP_TOX) $(DOCUMENTATION_REQUIREMENTS) tox.ini
 	$(create_dir)
-	tox --recreate -e sphinx
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox --recreate -e sphinx'
 	touch $@
+
+$(STAMP_TOX) : $(TOX_REQUIREMENTS) $(TOX_VENV_DIR)/pyvenv.cfg
+	$(create_dir)
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && pip install -r $(TOX_REQUIREMENTS)'
+	touch $@
+
+$(TOX_VENV_DIR)/pyvenv.cfg :
+	python3 -m venv $(TOX_VENV)
 
 $(ESP_TOOLS): $(ESP_IDF)
 	IDF_TOOLS_PATH="$(ESP_TOOLS)" bash -c '$(ESP_IDF)/install.sh esp32'
