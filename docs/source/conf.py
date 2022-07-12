@@ -102,22 +102,22 @@ intersphinx_cache_limit = 90  # days
 # ##### extlinks
 extlinks = {
     # will show commit's SHA1
-    "commit": ("https://github.com/Mischback/krachkiste_esp32/commit/%s", ""),
+    "commit": ("https://github.com/Mischback/krachkiste_esp32/commit/%s", "%s"),
     # will show "issue [number]"
-    "issue": ("https://github.com/Mischback/krachkiste_esp32/issues/%s", "issue "),
+    "issue": ("https://github.com/Mischback/krachkiste_esp32/issues/%s", "issue %s"),
     # A file or directory. GitHub redirects from blob to tree if needed.
     # will show file/path relative to root-directory of the repository
     "source": (
         "https://github.com/Mischback/krachkiste_esp32/blob/development/%s",
-        "",
+        "%s",
     ),
     # ESP-IDF
     "idf_api": (
         "https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/%s",
-        "ESP-IDF: ",
+        "ESP-IDF: %s",
     ),
     # will show "Wikipedia: [title]"
-    "wiki": ("https://en.wikipedia.org/wiki/%s", "Wikipedia: "),
+    "wiki": ("https://en.wikipedia.org/wiki/%s", "Wikipedia: %s"),
 }
 
 # ##### breath
@@ -151,7 +151,7 @@ html_theme_options = {
 }
 
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_static_path
-html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 # provide a logo (max 200px width)
 # html_logo = ""
