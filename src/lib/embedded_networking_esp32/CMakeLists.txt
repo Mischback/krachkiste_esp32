@@ -13,6 +13,7 @@ minimize_html(src/wifi_config.src.html wifi_config.html)
 idf_component_register(
   SRCS "src/mnet32.c" "src/mnet32_nvs.c" "src/mnet32_state.c" "src/mnet32_web.c" "src/mnet32_wifi.c" ${CMAKE_CURRENT_BINARY_DIR}/wifi_config.html
   INCLUDE_DIRS "include"
-  PRIV_REQUIRES "esp_common esp_event esp_http_server esp_netif esp_wifi log nvs_flash"
+  REQUIRES "esp_common esp_event esp_wifi"
+  PRIV_REQUIRES "esp_http_server esp_netif log nvs_flash"
   EMBED_TXTFILES ${CMAKE_CURRENT_BINARY_DIR}/wifi_config.html
 )

@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - integration into VSCode is provided using VSCode's ``tasks.json``
   - optional integration by using VSCode's extension ``fabiospampinato.vscode-commands``
 
+### Fixed
+
+- minor adjustment of ``mnet32``'s ``CMakeLists.txt`` to differentiate between
+  ``REQUIRES`` and ``PRIV_REQUIRES`` (this is basically a cosmetical change, see
+  [ESP-IDF's documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#common-component-requirements))
+
 
 
 ## 0.1.0-alpha
