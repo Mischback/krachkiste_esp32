@@ -50,15 +50,52 @@ static const char* TAG = "map32";
 
 /* ***** PROTOTYPES ******************************************************** */
 
+static esp_err_t map32_init(void);
+static esp_err_t map32_deinit(void);
+
+
 /* ***** FUNCTIONS ********************************************************* */
 
-esp_err_t map32_start(void) {
-    ESP_LOGV(TAG, "map32_start()");
+// TODO(mischback) Add documentation!
+static esp_err_t map32_init(void) {
+    /* Adjust log settings!
+     * The component's logging is based on **ESP-IDF**'s logging library,
+     * meaning it will behave exactly like specified by the settings specified
+     * in ``sdkconfig``/``menuconfig``.
+     *
+     * However, during development it may be desirable to activate a MAXIMUM log
+     * level of VERBOSE, while keeping the DEFAULT log level to INFO. In this
+     * case, the component's logging may be set to VERBOSE manually here!
+     *
+     * Additionally, **ESP-IDF**'s and **ESP-ADF**'s internal components, that
+     * are related to or used during audio playback, are silenced here.
+     */
+    esp_log_level_set("map32", ESP_LOG_VERBOSE);
+
+    ESP_LOGV(TAG, "map32_init()");
 
     return ESP_OK;
 }
 
-esp_err_t map32_stop(void_pointer) {
+// TODO(mischback) Add documentation!
+static esp_err_t map32_deinit(void) {
+    ESP_LOGV(TAG, "map32_deinit()");
+
+    return ESP_OK;
+}
+
+esp_err_t map32_start(void) {
+    ESP_LOGV(TAG, "map32_start()");
+
+    if (map32_init() != ESP_OK) {
+        map32_deinit();
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t map32_stop(void) {
     ESP_LOGV(TAG, "map32_stop()");
 
     // TODO(mischback) Actually implement this function. Most likely, the
