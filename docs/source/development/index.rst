@@ -60,10 +60,45 @@ Repository Setup
 Code Quality Tools
 ------------------
 
-- Linters
-- Continuous Integration (GitHub Actions)
-- ``pre-commit``
-- Documentation Generation
+- **Formatters/Linters**: Several linters are prepared to be used on the
+  codebase. The recommended way is to actually use ``pre-commit`` as described
+  below to run the linters automatically during development. The following
+  linters are included:
+
+  - ``clang-format`` (automatically format ``C`` source files. A custom
+    configuration is provided in ``.clang-format``, which is heavily based on
+    *Google's C Style*)
+  - ``cpplint`` (*Google's* linter for C/C++ codebases)
+  - ``cppcheck`` (another linter for C/C++ codebases; **Needs to be installed
+    locally**)
+  - ``cmake-lint`` (linter for *CMake-related* code, including
+    ``CMakeLists.txt``; configuration provided in ``.cmakelintrc``)
+  - ``black`` (automatically format Python source files)
+  - ``isort`` (automatically sort imports in Python source files; configuration
+    provided in ``pyproject.toml``)
+  - ``flake8`` (linter for Python source files; configuration provided in
+    ``.flake8``)
+
+- **Continuous Integration (GitHub Actions)**: There is a workflow in place to
+  actually run the linters and build the documentation. This is mainly done to
+  ensure a minimum coding standard for the repository.
+
+  The workflow does perform an actual build of the project aswell, but this is
+  not an actual integration testing approach (as there is no test suite in
+  place), but may be considered another step to ensure code quality / the
+  ability to compile the project.
+- **pre-commit**: To make a long story short: Activate ``pre-commit`` and never
+  forget to run linters before committing. This is a vital part in my own
+  development workflow and really helps against messy code.
+
+  ``pre-commit`` is set up to run the formatters and linters as described above
+  (and some minor additional checks) against the code base on every commit.
+- **Documentation Generation**: The documentation you're reading right now is
+  generated using ``Sphinx``. However, ``Sphinx`` is mainly geared toward a
+  Python codebase, so in order to make it shine with our **C** code, a
+  toolchain is in place to extract the actual source documentation using
+  ``doxygen`` and then make it usable using ``breathe`` (a ``Sphinx`` plugin).
+
 
 Run Common Task using ``make``
 ------------------------------
