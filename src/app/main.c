@@ -35,6 +35,9 @@
 /* Project-specific minimal httpd implementation. */
 #include "min_httpd/min_httpd.h"
 
+/* Project-specific library to actually play audio files. */
+#include "map32/map32.h"
+
 /* Project-specific library to manage wifi connections. */
 #include "mnet32/mnet32.h"
 
@@ -66,7 +69,7 @@ void app_main(void) {  // cppcheck-suppress unusedFunction
     // The default event loop is used (and thus, required) by ESP-IDF's esp_wifi
     // component (at least).
     // As the default event loop may be re-used by application code, no
-    // application-speciifc custom event loop is created.
+    // application-specific custom event loop is created.
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     // Initialize the non-volatile storage (NVS)
@@ -113,5 +116,9 @@ void app_main(void) {  // cppcheck-suppress unusedFunction
                                             NULL,
                                             NULL));
 
+    // actually start the networking
     mnet32_start();
+
+    // start the audio player
+    map32_start();
 }

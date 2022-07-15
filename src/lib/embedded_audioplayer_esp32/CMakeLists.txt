@@ -7,5 +7,6 @@
 idf_component_register(
   SRCS "src/map32.c"
   INCLUDE_DIRS "include"
-  PRIV_REQUIRES "esp_common esp_event audio_hal"
+  REQUIRES "esp_common"
+  PRIV_REQUIRES "log"
 )
