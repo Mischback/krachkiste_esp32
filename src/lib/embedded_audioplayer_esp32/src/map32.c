@@ -17,6 +17,9 @@
 /* This file's header. */
 #include "map32/map32.h"
 
+/* ESP-ADF's audio processing pipeline
+ * - provided by ESP-ADF's component ``audio_pipeline``
+ */
 #include "audio_pipeline.h"
 
 /* This is ESP-IDF's error handling library.
@@ -35,7 +38,16 @@
  * - provided by ESP-IDF's component ``log``
  */
 #include "esp_log.h"
+
+/* ESP-ADF's abstraction of I2S streams
+ * - provided by ESP-ADF's component ``audio_stream``
+ */
 #include "i2s_stream.h"
+
+/* ESP-ADF's included decoder
+ * - provided by ESP-ADF's component ``esp-adf-libs`` (this is one of the
+ *   components that are not provided as source code!)
+ */
 #include "mp3_decoder.h"
 
 /* ***** DEFINES *********************************************************** */
