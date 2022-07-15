@@ -8,5 +8,5 @@ idf_component_register(
   SRCS "src/map32.c"
   INCLUDE_DIRS "include"
   REQUIRES "esp_common"
-  PRIV_REQUIRES "log"
+  PRIV_REQUIRES "log audio_pipeline audio_stream"
 )
