@@ -16,4 +16,8 @@
 // TODO(mischback) Include this function in ``docs/source/api/map32.rst``
 esp_err_t map32_start(void);
 
+// TODO(mischback) Actually document this function
+// TODO(mischback) Include this function in ``docs/source/api/map32.rst``
+esp_err_t map32_stop(void);
+
 #endif  // SRC_LIB_EMBEDDED_AUDIOPLAYER_ESP32_INCLUDE_MAP32_MAP32_H_

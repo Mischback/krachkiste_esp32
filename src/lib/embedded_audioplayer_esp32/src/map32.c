@@ -57,3 +57,13 @@ esp_err_t map32_start(void) {
 
     return ESP_OK;
 }
+
+esp_err_t map32_stop(void_pointer) {
+    ESP_LOGV(TAG, "map32_stop()");
+
+    // TODO(mischback) Actually implement this function. Most likely, the
+    //                 implementation will just send a message to the
+    //                 component's task (see ``mnet32.c``)
+
+    return ESP_OK;
+}
