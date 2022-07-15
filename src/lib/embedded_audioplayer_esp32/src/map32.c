@@ -53,7 +53,7 @@
 static const char* TAG = "map32";
 
 static audio_pipeline_handle_t map32_pipeline = NULL;
-static audio_element_handle_t map32_i2s_writer = NULL;
+static audio_element_handle_t map32_sink = NULL;
 static audio_element_handle_t map32_decoder = NULL;
 
 /* ***** PROTOTYPES ******************************************************** */
@@ -102,8 +102,8 @@ static esp_err_t map32_init(void) {
     //                 i2s_config.i2s_config.gpio_cfg.mclk = (?!?)
     // TODO(mischback) This may be guarded with an #ifdef to make this
     //                 compatible with ESP-ADF's logic
-    map32_i2s_writer = i2s_stream_init(&i2s_config);
-    if (map32_i2s_writer == NULL) {
+    map32_sink = i2s_stream_init(&i2s_config);
+    if (map32_sink == NULL) {
         ESP_LOGE(TAG, "Could not initialize i2s_writer!");
         return ESP_FAIL;
     }
@@ -133,11 +133,11 @@ static esp_err_t map32_deinit(void) {
         free(map32_pipeline);
     }
 
-    esp_ret = audio_element_deinit(map32_i2s_writer);
+    esp_ret = audio_element_deinit(map32_sink);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not deinitialize i2s_writer.");
         ESP_LOGD(TAG, "Calling free()");
-        free(map32_i2s_writer);
+        free(map32_sink);
     }
 
     esp_ret = audio_element_deinit(map32_decoder);
