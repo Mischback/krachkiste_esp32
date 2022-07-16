@@ -39,6 +39,15 @@
  */
 #include "esp_log.h"
 
+/* FreeRTOS headers.
+ * - the ``FreeRTOS.h`` is required
+ * - ``queue.h`` for the internal command queue
+ * - ``task.h`` for task management
+ */
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "freertos/task.h"
+
 /* ESP-ADF's abstraction of I2S streams
  * - provided by ESP-ADF's component ``audio_stream``
  */
@@ -51,6 +60,18 @@
 #include "mp3_decoder.h"
 
 /* ***** DEFINES *********************************************************** */
+
+/**
+ * The stack size to allocate for player's control task / thread.
+ *
+ * @todo The actually required stack size is dependent on various other
+ *       settings, e.g. the configured log level. As of now, the value has to be
+ *       adjusted by modifying this constant.
+ *       Using ``uxTaskGetStackHighWaterMark()`` the stack size can be
+ *       evaluated.
+ */
+#define MAP32_CTRL_TASK_STACK_SIZE 2048
+
 
 /* ***** TYPES ************************************************************* */
 
@@ -68,13 +89,44 @@ static audio_pipeline_handle_t map32_pipeline = NULL;
 static audio_element_handle_t map32_sink = NULL;
 static audio_element_handle_t map32_decoder = NULL;
 
+static QueueHandle_t map32_cmd_queue = NULL;
+static TaskHandle_t map32_ctrl_task = NULL;
+
 /* ***** PROTOTYPES ******************************************************** */
 
+static void map32_ctrl_func(void* task_parameters);
 static esp_err_t map32_init(void);
 static esp_err_t map32_deinit(void);
 
 
 /* ***** FUNCTIONS ********************************************************* */
+
+// TODO(mischback) Add documentation!
+static void map32_ctrl_func(void* task_parameters) {
+    ESP_LOGV(TAG, "map32_ctrl_task()");
+
+    // TODO(mischback) Make this configurable!
+    const TickType_t mon_freq = pdMS_TO_TICKS(5000);
+    map32_command cmd;
+    BaseType_t queue_status;
+
+    for (;;) {
+        queue_status = xQueueReceive(map32_cmd_queue, &cmd, mon_freq);
+
+        if (queue_status == pdPASS) {
+            ESP_LOGD(TAG, "There is a command waiting!");
+        } else {
+            ESP_LOGD(TAG, "'mon_freq' reached...");
+        }
+    }
+
+    /* This should probably not be reached!
+     * ``freeRTOS`` requires the task functions *to never return*. Instead,
+     * the common idiom is to delete the very own task at the end of these
+     * functions.
+     */
+    vTaskDelete(NULL);
+}
 
 // TODO(mischback) Add documentation!
 static esp_err_t map32_init(void) {
@@ -93,6 +145,9 @@ static esp_err_t map32_init(void) {
     esp_log_level_set("map32", ESP_LOG_VERBOSE);
 
     ESP_LOGV(TAG, "map32_init()");
+
+    /* initialize variables */
+    map32_cmd_queue = xQueueCreate(3, sizeof(map32_command));
 
     ESP_LOGV(TAG, "Building default pipeline configuration...");
     audio_pipeline_cfg_t pipeline_config = DEFAULT_AUDIO_PIPELINE_CONFIG();
@@ -125,6 +180,17 @@ static esp_err_t map32_init(void) {
     map32_decoder = mp3_decoder_init(&mp3_config);
     if (map32_decoder == NULL) {
         ESP_LOGE(TAG, "Could not initialize decoder!");
+        return ESP_FAIL;
+    }
+
+    /* Create the component's tasks  */
+    if (xTaskCreate(map32_ctrl_func,
+                    "map32_ctrl_task",
+                    MAP32_CTRL_TASK_STACK_SIZE,
+                    NULL,
+                    MAP32_CTRL_TASK_PRIORITY,
+                    map32_ctrl_task) != pdPASS) {
+        ESP_LOGE(TAG, "Could not create control task!");
         return ESP_FAIL;
     }
 

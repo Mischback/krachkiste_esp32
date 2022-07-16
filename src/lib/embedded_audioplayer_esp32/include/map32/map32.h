@@ -11,6 +11,37 @@
  */
 #include "esp_err.h"
 
+
+/**
+ * The **freeRTOS**-specific priority for the player's control task.
+ *
+ * This is part of the component's configuration, but can only be adjusted by
+ * modifying the actual header file ``map32.h``.
+ *
+ * @todo Determine a sane (default) value for this! Evaluate other (built-in)
+ *       task priorities.
+ */
+#define MAP32_CTRL_TASK_PRIORITY 10
+
+
+/**
+ * The player can handle the following commands.
+ *
+ * Please note that the player may perform different actions on the actual
+ * commands, depending on its internal state. But the command names are pretty
+ * much self-explanatory and should describe the expected action well enough.
+ */
+typedef enum {
+    MAP32_CMD_BASE,
+    MAP32_CMD_START,
+    MAP32_CMD_PLAY,
+    MAP32_CMD_STOP,
+    MAP32_CMD_PREV,
+    MAP32_CMD_NEXT,
+    MAP32_CMD_VOLUP,
+    MAP32_CMD_VOLDOWN,
+} map32_command;
+
 // TODO(mischback) Actually document this function, as soon as the prototype is
 //                 stable.
 // TODO(mischback) Include this function in ``docs/source/api/map32.rst``
