@@ -103,7 +103,7 @@ static esp_err_t map32_deinit(void);
 
 // TODO(mischback) Add documentation!
 static void map32_ctrl_func(void* task_parameters) {
-    ESP_LOGV(TAG, "map32_ctrl_task()");
+    ESP_LOGV(TAG, "map32_ctrl_func()");
 
     // TODO(mischback) Make this configurable!
     const TickType_t mon_freq = pdMS_TO_TICKS(5000);
@@ -114,7 +114,88 @@ static void map32_ctrl_func(void* task_parameters) {
         queue_status = xQueueReceive(map32_cmd_queue, &cmd, mon_freq);
 
         if (queue_status == pdPASS) {
-            ESP_LOGD(TAG, "There is a command waiting!");
+            switch (cmd) {
+            case MAP32_CMD_START:
+                ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_START");
+
+                /* Build the audio pipeline, depending on the input source and
+                 * start the corresponding task.
+                 */
+                // TODO(mischback) Implement something to start at the same
+                //                 source / station / track that was played
+                //                 before the ESP32 was shut down.
+                break;
+            case MAP32_CMD_PLAY:
+                ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_PLAY");
+
+                /* Depending on the internal state, this should make the music
+                 * play. If the player is already running, this command does not
+                 * have any effect.
+                 */
+                break;
+            case MAP32_CMD_PAUSE:
+                ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_PAUSE");
+
+                /* If the player is already running and actually playing music,
+                 * this command will pause playback.
+                 */
+                break;
+            case MAP32_CMD_STOP:
+                ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_STOP");
+
+                /* Totally stop playback and "destroy" the active audio pipeline
+                 * to free resources. Highly dependent on the actual state of
+                 * the player.
+                 */
+                break;
+            case MAP32_CMD_PREV_SOURCE:
+                ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_PREV_SOURCE");
+
+                /* Destroy the current audio pipeline and rebuild it with a new
+                 * source, depending on "some list"
+                 */
+                break;
+            case MAP32_CMD_NEXT_SOURCE:
+                ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_NEXT_SOURCE");
+
+                /* Destroy the current audio pipeline and rebuild it with a new
+                 * source, depending on "some list"
+                 */
+                break;
+            case MAP32_CMD_PREV_TRACK:
+                ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_PREV_TRACK");
+
+                /* Switch to the prev track of the current playlist.
+                 * (this may even be a list of radio stations)
+                 */
+                // TODO(mischback) If a single mp3 song is played, from SD card
+                //                 or a network share, should this only restart
+                //                 the current track?!
+                break;
+            case MAP32_CMD_NEXT_TRACK:
+                ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_NEXT_TRACK");
+
+                /* Switch to the prev track of the current playlist.
+                 * (this may even be a list of radio stations)
+                 */
+                break;
+            case MAP32_CMD_VOLUP:
+                ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_VOLUP");
+
+                /* Adjust the volume! */
+                // TODO(mischback) How to adjust the volume (in software), if
+                //                 an external DAC / Amp is used? Is this
+                //                 possible in I2S?!
+                break;
+            case MAP32_CMD_VOLDOWN:
+                ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_VOLDOWN");
+
+                /* Adjust the volume! */
+                // TODO(mischback) How to adjust the volume (in software), if
+                //                 an external DAC / Amp is used? Is this
+                //                 possible in I2S?!
+                break;
+            }
         } else {
             ESP_LOGD(TAG, "'mon_freq' reached...");
         }
