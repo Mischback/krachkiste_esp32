@@ -32,7 +32,6 @@
  * much self-explanatory and should describe the expected action well enough.
  */
 typedef enum {
-    MAP32_CMD_BASE,
     MAP32_CMD_START,
     MAP32_CMD_PLAY,
     MAP32_CMD_PAUSE,
