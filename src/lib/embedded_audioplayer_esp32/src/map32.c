@@ -75,6 +75,43 @@
 
 /* ***** TYPES ************************************************************* */
 
+/**
+ * Define the selectable audio sources.
+ *
+ * While the audio pipeline has some fixed elements, like the mp3 decoder and
+ * the I2S output, the input is actually dependent on the actual source.
+ * This ``enum`` defines all accepted sources that are then initialized and
+ * added to the audio pipeline as required.
+ *
+ * @todo Provide a readable string based name for the sources, e.g. by defining
+ *       a ``static const char[] *`` (syntax may vary!), so that the value of
+ *       this enum may be used as index to the ``char*`` array.
+ * @todo Implement helper functions to automatically get the previous and next
+ *       value in this enum (basically ``+1`` and ``-1``, but in a circle).
+ */
+typedef enum {
+    MAP32_SOURCE_HTTP = 0,
+} map32_source;
+
+/**
+ * Track the playback status of the player.
+ */
+typedef enum {
+    MAP32_STATUS_NOT_READY = 0,
+    MAP32_STATUS_READY,
+    MAP32_STATUS_PLAYING,
+} map32_status;
+
+/**
+ * Track the internal status of the player.
+ */
+struct map32_state {
+    map32_status status;
+    map32_source source;
+    QueueHandle_t cmd_queue;
+    TaskHandle_t ctrl_task;
+};
+
 /* ***** VARIABLES ********************************************************* */
 
 /**
@@ -89,8 +126,10 @@ static audio_pipeline_handle_t map32_pipeline = NULL;
 static audio_element_handle_t map32_sink = NULL;
 static audio_element_handle_t map32_decoder = NULL;
 
-static QueueHandle_t map32_cmd_queue = NULL;
-static TaskHandle_t map32_ctrl_task = NULL;
+// static QueueHandle_t map32_cmd_queue = NULL;
+// static TaskHandle_t map32_ctrl_task = NULL;
+
+static struct map32_state* state = NULL;
 
 /* ***** PROTOTYPES ******************************************************** */
 
@@ -111,7 +150,7 @@ static void map32_ctrl_func(void* task_parameters) {
     BaseType_t queue_status;
 
     for (;;) {
-        queue_status = xQueueReceive(map32_cmd_queue, &cmd, mon_freq);
+        queue_status = xQueueReceive(state->cmd_queue, &cmd, mon_freq);
 
         if (queue_status == pdPASS) {
             switch (cmd) {
@@ -227,8 +266,15 @@ static esp_err_t map32_init(void) {
 
     ESP_LOGV(TAG, "map32_init()");
 
-    /* initialize variables */
-    map32_cmd_queue = xQueueCreate(3, sizeof(map32_command));
+    /* initialize internal state */
+    state = calloc(1, sizeof(*state));
+    state->status = MAP32_STATUS_NOT_READY;
+    // TODO(mischback) This is the point to retrieve a saved source, basically
+    //                 making it possible to start the player with the last
+    //                 played song/station, resuming operation after a reboot
+    state->source = MAP32_SOURCE_HTTP;
+    state->cmd_queue = xQueueCreate(3, sizeof(map32_command));
+    // map32_cmd_queue = xQueueCreate(3, sizeof(map32_command));
 
     ESP_LOGV(TAG, "Building default pipeline configuration...");
     audio_pipeline_cfg_t pipeline_config = DEFAULT_AUDIO_PIPELINE_CONFIG();
@@ -270,7 +316,7 @@ static esp_err_t map32_init(void) {
                     MAP32_CTRL_TASK_STACK_SIZE,
                     NULL,
                     MAP32_CTRL_TASK_PRIORITY,
-                    map32_ctrl_task) != pdPASS) {
+                    state->ctrl_task) != pdPASS) {
         ESP_LOGE(TAG, "Could not create control task!");
         return ESP_FAIL;
     }
@@ -305,6 +351,17 @@ static esp_err_t map32_deinit(void) {
         ESP_LOGD(TAG, "Calling free()");
         free(map32_decoder);
     }
+
+    if (state->ctrl_task != NULL) {
+        vTaskDelete(state->ctrl_task);
+    }
+
+    if (state->cmd_queue != NULL) {
+        vQueueDelete(state->cmd_queue);
+    }
+
+    free(state);
+    state = NULL;
 
     return ESP_OK;
 }
