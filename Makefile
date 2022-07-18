@@ -48,6 +48,7 @@ ESP_DIR := $(MAKEFILE_DIR)/.esp
 ESP_ADF := $(ESP_DIR)/esp-adf
 ESP_IDF := $(ESP_ADF)/esp-idf
 ESP_TOOLS := $(ESP_DIR)/tools
+ESP_SERIAL_PORT := /dev/ttyUSB0
 
 # some make settings
 .SILENT :
@@ -105,7 +106,7 @@ esp/idf/menuconfig :
 ## Launch the monitor, build and flash as required
 ## @category IDF
 esp/idf/monitor :
-	$(MAKE) esp/idf/base esp_idf_command="monitor"
+	$(MAKE) esp/idf/base esp_idf_command="-p $(ESP_SERIAL_PORT) build flash monitor"
 .PHONY : esp/idf/monitor
 
 ## Force a reconfiguration of the project and run CMake
