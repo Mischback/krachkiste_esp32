@@ -48,7 +48,7 @@ ESP_DIR := $(MAKEFILE_DIR)/.esp
 ESP_ADF := $(ESP_DIR)/esp-adf
 ESP_IDF := $(ESP_ADF)/esp-idf
 ESP_TOOLS := $(ESP_DIR)/tools
-ESP_SERIAL_PORT := /dev/ttyUSB0
+ESP_SERIAL_PORT ?= /dev/ttyUSB0
 
 # some make settings
 .SILENT :
