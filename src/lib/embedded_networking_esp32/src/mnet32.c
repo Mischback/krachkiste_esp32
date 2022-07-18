@@ -175,6 +175,7 @@ static void mnet32_task(void* task_parameters) {
                  * the networking. This might give other components some time
                  * to handle the unavailability of networking.
                  */
+                ESP_LOGI(TAG, "Stopping all networking!");
                 mnet32_emit_event(MNET32_EVENT_UNAVAILABLE, NULL);
                 mnet32_deinit();
                 break;
