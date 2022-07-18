@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - minor adjustment of ``mnet32``'s ``CMakeLists.txt`` to differentiate between
   ``REQUIRES`` and ``PRIV_REQUIRES`` (this is basically a cosmetical change, see
   [ESP-IDF's documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#common-component-requirements))
+- provide notification before shutting down internal AP [#26](https://github.com/Mischback/krachkiste_esp32/issues/26)
 
 
 
