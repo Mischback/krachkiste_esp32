@@ -110,6 +110,10 @@ struct map32_state {
     map32_source source;
     QueueHandle_t cmd_queue;
     TaskHandle_t ctrl_task;
+    audio_pipeline_handle_t pipeline;
+    audio_element_handle_t audio_source;
+    audio_element_handle_t audio_decoder;
+    audio_element_handle_t audio_sink;
 };
 
 /* ***** VARIABLES ********************************************************* */
@@ -122,12 +126,6 @@ struct map32_state {
  */
 static const char* TAG = "map32";
 
-static audio_pipeline_handle_t map32_pipeline = NULL;
-static audio_element_handle_t map32_sink = NULL;
-static audio_element_handle_t map32_decoder = NULL;
-
-// static QueueHandle_t map32_cmd_queue = NULL;
-// static TaskHandle_t map32_ctrl_task = NULL;
 
 static struct map32_state* state = NULL;
 
@@ -163,6 +161,7 @@ static void map32_ctrl_func(void* task_parameters) {
                 // TODO(mischback) Implement something to start at the same
                 //                 source / station / track that was played
                 //                 before the ESP32 was shut down.
+                //                 See corresponding TODO in map32_init()!
                 break;
             case MAP32_CMD_PLAY:
                 ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_PLAY");
@@ -274,12 +273,11 @@ static esp_err_t map32_init(void) {
     //                 played song/station, resuming operation after a reboot
     state->source = MAP32_SOURCE_HTTP;
     state->cmd_queue = xQueueCreate(3, sizeof(map32_command));
-    // map32_cmd_queue = xQueueCreate(3, sizeof(map32_command));
 
     ESP_LOGV(TAG, "Building default pipeline configuration...");
     audio_pipeline_cfg_t pipeline_config = DEFAULT_AUDIO_PIPELINE_CONFIG();
-    map32_pipeline = audio_pipeline_init(&pipeline_config);
-    if (map32_pipeline == NULL) {
+    state->pipeline = audio_pipeline_init(&pipeline_config);
+    if (state->pipeline == NULL) {
         ESP_LOGE(TAG, "Could not initialize audio pipeline!");
         return ESP_FAIL;
     }
@@ -296,16 +294,16 @@ static esp_err_t map32_init(void) {
     //                 i2s_config.i2s_config.gpio_cfg.mclk = (?!?)
     // TODO(mischback) This may be guarded with an #ifdef to make this
     //                 compatible with ESP-ADF's logic
-    map32_sink = i2s_stream_init(&i2s_config);
-    if (map32_sink == NULL) {
+    state->audio_sink = i2s_stream_init(&i2s_config);
+    if (state->audio_sink == NULL) {
         ESP_LOGE(TAG, "Could not initialize i2s_writer!");
         return ESP_FAIL;
     }
 
     ESP_LOGV(TAG, "Setup of MP3 decoder...");
     mp3_decoder_cfg_t mp3_config = DEFAULT_MP3_DECODER_CONFIG();
-    map32_decoder = mp3_decoder_init(&mp3_config);
-    if (map32_decoder == NULL) {
+    state->audio_decoder = mp3_decoder_init(&mp3_config);
+    if (state->audio_decoder == NULL) {
         ESP_LOGE(TAG, "Could not initialize decoder!");
         return ESP_FAIL;
     }
@@ -331,25 +329,19 @@ static esp_err_t map32_deinit(void) {
     esp_err_t esp_ret;
 
     ESP_LOGV(TAG, "Deinitializing audio pipeline...");
-    esp_ret = audio_pipeline_deinit(map32_pipeline);
+    esp_ret = audio_pipeline_deinit(state->pipeline);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not deinitialize audio pipeline.");
-        ESP_LOGD(TAG, "Calling free()");
-        free(map32_pipeline);
     }
 
-    esp_ret = audio_element_deinit(map32_sink);
+    esp_ret = audio_element_deinit(state->audio_sink);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not deinitialize i2s_writer.");
-        ESP_LOGD(TAG, "Calling free()");
-        free(map32_sink);
     }
 
-    esp_ret = audio_element_deinit(map32_decoder);
+    esp_ret = audio_element_deinit(state->audio_decoder);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not deinitialize decoder.");
-        ESP_LOGD(TAG, "Calling free()");
-        free(map32_decoder);
     }
 
     if (state->ctrl_task != NULL) {
