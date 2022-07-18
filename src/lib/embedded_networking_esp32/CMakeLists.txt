@@ -14,6 +14,6 @@ idf_component_register(
   SRCS "src/mnet32.c" "src/mnet32_nvs.c" "src/mnet32_state.c" "src/mnet32_web.c" "src/mnet32_wifi.c" ${CMAKE_CURRENT_BINARY_DIR}/wifi_config.html
   INCLUDE_DIRS "include"
   REQUIRES "esp_common esp_event esp_wifi"
-  PRIV_REQUIRES "esp_http_server esp_netif log nvs_flash"
+  PRIV_REQUIRES "esp_http_server esp_netif freertos log nvs_flash"
   EMBED_TXTFILES ${CMAKE_CURRENT_BINARY_DIR}/wifi_config.html
 )
