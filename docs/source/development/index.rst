@@ -35,8 +35,8 @@ and
 `get started with ESP-IDF <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/index.html>`_.
 
 
-Repository Setup
-================
+Repository Structure
+====================
 
 (Embedded) Development Frameworks
 ---------------------------------
@@ -131,3 +131,49 @@ required environment and then runs the requested tools.
 
 *Internally*, ``make``'s capabilities as a *build system* are used to ensure the
 setup of the tools and environments.
+
+
+Setup
+=====
+
+Install Required System Packages
+--------------------------------
+
+The following packages have to be installed using the operating system's
+package manager:
+
+- **git**: Version Control System. Most likely you already have this on your
+  machine, but it is mentioned here explicitly, because the project makes
+  (heavy) use of git's *submodules* to fetch additional code.
+- **wget**: A simple HTTP client to download files; required to setup *ESP-IDF*.
+- **flex**: required to setup *ESP-IDF*.
+- **bison**: required to setup *ESP-IDF*.
+- **gperf**: required to setup *ESP-IDF*..
+- **python3**: *ESP-IDF* and this repository make use of Python scripts to
+  provide certain functionalities. *Python 3* should already be present on any
+  recent *Linux* machine, but is mentioned here for completeness.
+- **python3-venv**: *ESP-IDF* and this repository seperate their own Python
+  dependencies from the system, using virtual environments. While Python may
+  already be present on the system, **python3-venv** may be missing.
+- **cmake**: *ESP-IDF*'s build system is based around *cmake*; required to setup
+  *ESP-IDF*.
+- **ninja-build**: *ninja* is actually building the project; required to setup
+  *ESP-IDF*.
+- **ccache**: required to setup *ESP-IDF*.
+- **libffi-dev**: required to setup *ESP-IDF*.
+- **libssl-dev**: required to setup *ESP-IDF*.
+- **dfu-util**: required to setup *ESP-IDF*.
+- **libusb-1.0.0**: required to setup *ESP-IDF*.
+
+.. note::
+    These packages are required by **ESP-IDF**, as described in the
+    `Get Started <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html>`_
+    document.
+
+The following packages are required to make the repository-specific tooling
+work, including the linters and some comfort functions.
+
+- **cppcheck** (see Code Quality Tools)
+- **tree**: Just a comfort function for a quick overview of the repository's
+  actual source code, provided by ``util/tree/project`` recipe of the
+  ``Makefile``.
