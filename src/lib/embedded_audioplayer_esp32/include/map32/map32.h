@@ -11,6 +11,10 @@
  */
 #include "esp_err.h"
 
+/* FreeRTOS headers.
+ * - the ``FreeRTOS.h`` is required
+ */
+#include "freertos/FreeRTOS.h"
 
 /**
  * The **freeRTOS**-specific priority for the player's control task.
@@ -43,6 +47,10 @@ typedef enum {
     MAP32_CMD_VOLUP,
     MAP32_CMD_VOLDOWN,
 } map32_command;
+
+// TODO(mischback) Actually document this function, as soon as the prototype is
+//                 stable.
+BaseType_t map32_ctrl_command(map32_command cmd);
 
 // TODO(mischback) Actually document this function, as soon as the prototype is
 //                 stable.

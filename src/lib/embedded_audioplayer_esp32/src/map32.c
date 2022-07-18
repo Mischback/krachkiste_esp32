@@ -138,6 +138,11 @@ static esp_err_t map32_deinit(void);
 
 /* ***** FUNCTIONS ********************************************************* */
 
+BaseType_t map32_ctrl_command(map32_command cmd) {
+    map32_command tmp = cmd;
+    return xQueueSend(state->cmd_queue, &tmp, portMAX_DELAY);
+}
+
 // TODO(mischback) Add documentation!
 static void map32_ctrl_func(void* task_parameters) {
     ESP_LOGV(TAG, "map32_ctrl_func()");
@@ -318,6 +323,8 @@ static esp_err_t map32_init(void) {
         ESP_LOGE(TAG, "Could not create control task!");
         return ESP_FAIL;
     }
+
+    map32_ctrl_command(MAP32_CMD_START);
 
     return ESP_OK;
 }
