@@ -5,11 +5,22 @@
 /**
  * Provide the actual audio player.
  *
+ * **Resources:**
+ * - https://github.com/espressif/esp-adf/blob/master/examples/player/pipeline_http_mp3/main/play_http_mp3_example.c
+ * - https://github.com/BM45/iRadioMini/blob/master/main/modules/player.c
+ *
  * @file   map32.c
  * @author Mischback
  * @bug    Bugs are tracked with the
  *         [issue tracker](https://github.com/Mischback/krachkiste_esp32/issues)
  *         at GitHub.
+ *
+ * @todo In order to make the http_stream_reader work with "https://...", the
+ *       certificate check of ESP-TLS has to be disabled. Probably the best way
+ *       is to include the corresponding options in ``sdkconfig.defaults``, as
+ *       shown here: https://github.com/BM45/iRadioMini/blob/master/sdkconfig.defaults
+ *       THIS MAY BE UNSAFE, but as the project only perform HTTPS requests to
+ *       radio streams, it should be good enough.
  */
 
 /* ***** INCLUDES ********************************************************** */
@@ -47,6 +58,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+
+/* ESP-ADF's abstraction of HTTP (input) streams
+ * - provided by ESP-ADF's component ``audio_stream``
+ */
+#include "http_stream.h"
 
 /* ESP-ADF's abstraction of I2S streams
  * - provided by ESP-ADF's component ``audio_stream``
@@ -116,6 +132,7 @@ struct map32_state {
     audio_element_handle_t audio_sink;
 };
 
+
 /* ***** VARIABLES ********************************************************* */
 
 /**
@@ -126,11 +143,12 @@ struct map32_state {
  */
 static const char* TAG = "map32";
 
-
 static struct map32_state* state = NULL;
+
 
 /* ***** PROTOTYPES ******************************************************** */
 
+static audio_element_handle_t map32_audio_source_init(map32_source source);
 static void map32_ctrl_func(void* task_parameters);
 static esp_err_t map32_init(void);
 static esp_err_t map32_deinit(void);
@@ -138,7 +156,18 @@ static esp_err_t map32_deinit(void);
 
 /* ***** FUNCTIONS ********************************************************* */
 
+// TODO(mischback) Add documentation!
+static audio_element_handle_t map32_audio_source_init(map32_source source) {
+    ESP_LOGV(TAG, "map32_audio_source_init()");
+    ESP_LOGV(TAG, "source: %d", source);
+
+    http_stream_cfg_t http_cfg = HTTP_STREAM_CFG_DEFAULT();
+    return http_stream_init(&http_cfg);
+}
+
 BaseType_t map32_ctrl_command(map32_command cmd) {
+    ESP_LOGV(TAG, "map32_ctrl_command()");
+
     map32_command tmp = cmd;
     return xQueueSend(state->cmd_queue, &tmp, portMAX_DELAY);
 }
@@ -167,6 +196,34 @@ static void map32_ctrl_func(void* task_parameters) {
                 //                 source / station / track that was played
                 //                 before the ESP32 was shut down.
                 //                 See corresponding TODO in map32_init()!
+
+                /* Actually build the audio pipeline with the (pre-initialized)
+                 * audio elements by linking them together, switching the
+                 * internal state to MAP32_STATUS_READY and then issue the
+                 * "play" command.
+                 */
+                audio_pipeline_register(state->pipeline,
+                                        state->audio_source,
+                                        "source");
+                audio_pipeline_register(state->pipeline,
+                                        state->audio_decoder,
+                                        "decoder");
+                audio_pipeline_register(state->pipeline,
+                                        state->audio_sink,
+                                        "sink");
+                const char* link_tag[3] = {"source", "decoder", "sink"};
+                audio_pipeline_link(state->pipeline, &link_tag[0], 3);
+
+                // TODO(mischback) This is just a temporary hack, this has to be
+                //                 handled in a dedicated logic, depending on
+                //                 the saved "last played" song/station.
+                audio_element_set_uri(
+                    state->audio_source,
+                    "https://wdr-1live-live.icecastssl.wdr.de/wdr/1live/live/"
+                    "mp3/128/stream.mp3");
+
+                state->status = MAP32_STATUS_READY;
+                map32_ctrl_command(MAP32_CMD_PLAY);
                 break;
             case MAP32_CMD_PLAY:
                 ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_PLAY");
@@ -175,6 +232,15 @@ static void map32_ctrl_func(void* task_parameters) {
                  * play. If the player is already running, this command does not
                  * have any effect.
                  */
+                if (state->status != MAP32_STATUS_READY) {
+                    ESP_LOGW(TAG,
+                             "Received command PLAY but internal state is not "
+                             "READY!");
+                    continue;
+                }
+
+                audio_pipeline_run(state->pipeline);
+                state->status = MAP32_STATUS_PLAYING;
                 break;
             case MAP32_CMD_PAUSE:
                 ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_PAUSE");
@@ -279,7 +345,7 @@ static esp_err_t map32_init(void) {
     state->source = MAP32_SOURCE_HTTP;
     state->cmd_queue = xQueueCreate(3, sizeof(map32_command));
 
-    ESP_LOGV(TAG, "Building default pipeline configuration...");
+    ESP_LOGD(TAG, "Building default pipeline configuration...");
     audio_pipeline_cfg_t pipeline_config = DEFAULT_AUDIO_PIPELINE_CONFIG();
     state->pipeline = audio_pipeline_init(&pipeline_config);
     if (state->pipeline == NULL) {
@@ -289,7 +355,7 @@ static esp_err_t map32_init(void) {
 
     ESP_LOGV(TAG, "Setting up common audio elements...");
 
-    ESP_LOGV(TAG, "Setup of I2S stream writer...");
+    ESP_LOGD(TAG, "Setup of I2S stream writer...");
     i2s_stream_cfg_t i2s_config = I2S_STREAM_CFG_DEFAULT();
     i2s_config.type = AUDIO_STREAM_WRITER;
     // TODO(mischback) This is probably the place to set the actual pins of
@@ -305,11 +371,19 @@ static esp_err_t map32_init(void) {
         return ESP_FAIL;
     }
 
-    ESP_LOGV(TAG, "Setup of MP3 decoder...");
+    ESP_LOGD(TAG, "Setup of MP3 decoder...");
     mp3_decoder_cfg_t mp3_config = DEFAULT_MP3_DECODER_CONFIG();
     state->audio_decoder = mp3_decoder_init(&mp3_config);
     if (state->audio_decoder == NULL) {
         ESP_LOGE(TAG, "Could not initialize decoder!");
+        return ESP_FAIL;
+    }
+
+    ESP_LOGD(TAG, "Setup of last audio input...");
+    ESP_LOGV(TAG, "as of now, this will be a hardcoded HTTP stream!");
+    state->audio_source = map32_audio_source_init(state->source);
+    if (state->audio_source == NULL) {
+        ESP_LOGE(TAG, "Could not initialize audio source!");
         return ESP_FAIL;
     }
 
