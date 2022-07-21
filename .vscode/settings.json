@@ -1,19 +1,22 @@
 {
   "C_Cpp.autoAddFileAssociations": false,
   "C_Cpp.intelliSenseEngine": "Tag Parser",
-  "idf.espIdfPath": "${env:HOME}/esp/esp-idf",
-  "idf.pythonBinPath": "${env:HOME}/.espressif/python_env/idf4.4_py3.9_env/bin/python",
-  "idf.toolsPath": "${env:HOME}/.espressif",
-  "idf.customExtraPaths": "${env:HOME}/.espressif/tools/xtensa-esp32-elf/esp-2021r2-8.4.0/xtensa-esp32-elf/bin:${env:HOME}/.espressif/tools/xtensa-esp32s2-elf/esp-2021r2-8.4.0/xtensa-esp32s2-elf/bin:${env:HOME}/.espressif/tools/xtensa-esp32s3-elf/esp-2021r2-8.4.0/xtensa-esp32s3-elf/bin:${env:HOME}/.espressif/tools/riscv32-esp-elf/esp-2021r2-8.4.0/riscv32-esp-elf/bin:${env:HOME}/.espressif/tools/esp32ulp-elf/2.28.51-esp-20191205/esp32ulp-elf-binutils/bin:${env:HOME}/.espressif/tools/esp32s2ulp-elf/2.28.51-esp-20191205/esp32s2ulp-elf-binutils/bin:${env:HOME}/.espressif/tools/cmake/3.20.3/bin:${env:HOME}/.espressif/tools/openocd-esp32/v0.11.0-esp32-20211220/openocd-esp32/bin:${env:HOME}/.espressif/tools/ninja/1.10.2",
-  "idf.customExtraVars": "{\"OPENOCD_SCRIPTS\":\"${env:HOME}/.espressif/tools/openocd-esp32/v0.11.0-esp32-20211220/openocd-esp32/share/openocd/scripts\"}",
-  "idf.gitPath": "git",
-  "idf.port": "/dev/ttyUSB0",
-  "idf.flashType": "UART",
-  "idf.adapterTargetName": "esp32",
-  "idf.showOnboardingOnInit": false,
-  "idf.telemetry": false,
   "files.associations": {
     "sdkconfig": "kconfig",
     "sdkconfig.*": "kconfig"
-  }
+  },
+  "files.watcherExclude": {
+    "${workspaceFolder}/.esp/**": true,
+    "${workspaceFolder}/.tox/**": true,
+    "${workspaceFolder}/.tox-env/**": true,
+    "${workspaceFolder}/build/**": true
+  },
+  "git.autoRepositoryDetection": "openEditors",
+  "git.ignoredRepositories": [
+    "${workspaceFolder}/.esp/esp-adf"
+  ],
+  "git.repositoryScanIgnoredFolders": [
+    "node_modules",
+    "${workspaceFolder}/.esp/**"
+  ]
 }

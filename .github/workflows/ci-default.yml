@@ -1,4 +1,6 @@
+# SPDX-FileCopyrightText: 2022 Mischback
 # SPDX-License-Identifier: MIT
+# SPDX-FileType: OTHER
 
 name: CI Default Branch
 
@@ -20,9 +22,7 @@ jobs:
         with:
           python-version: 3.9
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements/python/tox.txt
+        run: python -m pip install --upgrade pip
       - name: Run cpplint
         run: make util/cpplint
       - name: Run cmake-lint
@@ -39,6 +39,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -59,26 +61,8 @@ jobs:
             libssl-dev \
             dfu-util \
             libusb-1.0-0
-      - name: Setting Internal Variables
-        run: |
-          __REPO_DIR=`pwd`
-          __IDF="${__REPO_DIR}/esp"
-          echo "__IDF=${__IDF}" >> ${GITHUB_ENV}
-      - name: Get ESP-IDF
-        uses: actions/checkout@v3
-        with:
-          repository: espressif/esp-idf
-          path: esp
-          submodules: recursive
-          ref: v4.4.1
-      - name: Setup ESP-IDF
-        run: ${__IDF}/install.sh
       - name: Build the Project
-        run: |
-          . ${__IDF}/export.sh
-          idf.py build
-          idf.py size
-          idf.py size-components
+        run: make esp/idf/size-components
 
   documentation:
     name: Documentation
@@ -94,7 +78,6 @@ jobs:
         run: |
           sudo apt-get install doxygen
           python -m pip install --upgrade pip
-          pip install -r requirements/python/tox.txt
       - name: Run Sphinx's linkcheck
         run: make sphinx/linkcheck
       - name: Build HTML Documentation

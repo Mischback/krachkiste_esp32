@@ -10,4 +10,5 @@ The application, including this documentation's source, lives
     :maxdepth: 2
     :caption: Contents:
 
+    development/index
     api/index

@@ -1,0 +1,4 @@
+[submodule ".esp/esp-adf"]
+	path = .esp/esp-adf
+	url = https://github.com/espressif/esp-adf.git
+	branch = release/v2.4

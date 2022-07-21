@@ -6,7 +6,7 @@
 # tasks while developing the application and serves as a convenient way to
 # launch different tools with sane default settings.
 #
-# Actually, some of "make"'s capabilities is used to make sure that the
+# Actually, some of "make"'s capabilities are used to make sure that the
 # tox environments, which are used to run most of the commands, are rebuild, if
 # environment specifc configuration or requirements have changed.
 #
@@ -17,19 +17,38 @@
 
 # ### INTERNAL SETTINGS / CONSTANTS
 
+# Find the (absolute) path to this Makefile
+# Required to provide the paths to several tools, e.g. the ESP-IDF build chain.
+MAKEFILE_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
+# The repository relies on ``tox`` for several internal utility tasks. ``tox``
+# is provided internally as a Python virtual environment.
+TOX_VENV := .tox-env
+TOX_VENV_DIR := $(MAKEFILE_DIR)/$(TOX_VENV)
+TOX_ACTIVATION := $(TOX_VENV_DIR)/bin/activate
+
 # Make's internal stamp directory
 # Stamps are used to keep track of certain build steps.
 # Should be included in .gitignore
-STAMP_DIR := .make-stamps
+STAMP_DIR := $(MAKEFILE_DIR)/.make-stamps
 
-STAMP_TOX_UTIL := $(STAMP_DIR)/tox-util
-STAMP_TOX_SPHINX := $(STAMP_DIR)/tox-sphinx
-STAMP_DOXYGEN := $(STAMP_DIR)/doxygen
+STAMP_TOX := $(STAMP_DIR)/tox  # track installation of ``tox``
+STAMP_TOX_UTIL := $(STAMP_DIR)/tox-util  # track ``tox`` env "util"
+STAMP_TOX_SPHINX := $(STAMP_DIR)/tox-sphinx  # track ``tox`` env "sphinx"
+STAMP_DOXYGEN := $(STAMP_DIR)/doxygen  # track runs of ``doxygen``
 
-UTIL_REQUIREMENTS := requirements/python/util.txt
-DOCUMENTATION_REQUIREMENTS := requirements/python/documentation.txt
+TOX_REQUIREMENTS := $(MAKEFILE_DIR)/requirements/python/tox.txt
+UTIL_REQUIREMENTS := $(MAKEFILE_DIR)/requirements/python/util.txt
+DOCUMENTATION_REQUIREMENTS := $(MAKEFILE_DIR)/requirements/python/documentation.txt
+
 SOURCE_ALL_FILES := $(shell find src -type f)
-DOXYGEN_CONFIG := docs/source/Doxyfile
+DOXYGEN_CONFIG := $(MAKEFILE_DIR)/docs/source/Doxyfile
+
+ESP_DIR := $(MAKEFILE_DIR)/.esp
+ESP_ADF := $(ESP_DIR)/esp-adf
+ESP_IDF := $(ESP_ADF)/esp-idf
+ESP_TOOLS := $(ESP_DIR)/tools
+ESP_SERIAL_PORT ?= /dev/ttyUSB0
 
 # some make settings
 .SILENT :
@@ -47,6 +66,72 @@ tree : util/tree/project
 ## Shortcut to build and serve the documentation
 doc: sphinx/serve/html
 .PHONY : doc
+
+
+esp_idf_command ?= clean
+esp/idf/base : | $(ESP_TOOLS)
+	IDF_TOOLS_PATH="$(ESP_TOOLS)" bash -c 'export ADF_PATH=$(ESP_ADF) && source $(ESP_IDF)/export.sh 1> /dev/null && idf.py $(esp_idf_command)'
+.PHONY : esp/idf/base
+
+## Build the source files to the actual executable
+## @category IDF
+esp/idf/build :
+	$(MAKE) esp/idf/base esp_idf_command="build"
+.PHONY : esp/idf/build
+
+## Remove the build files / the built image
+## @category IDF
+esp/idf/clean :
+	$(MAKE) esp/idf/base esp_idf_command="clean"
+.PHONY : esp/idf/clean
+
+## Flash the built image to the controller, build as required
+## @category IDF
+esp/idf/flash :
+	$(MAKE) esp/idf/base esp_idf_command="flash"
+.PHONY : esp/idf/flash
+
+## Delete the entire build directory
+## @category IDF
+esp/idf/fullclean :
+	$(MAKE) esp/idf/base esp_idf_command="fullclean"
+.PHONY : esp/idf/fullclean
+
+## Run the menuconfig utility
+## @category IDF
+esp/idf/menuconfig :
+	$(MAKE) esp/idf/base esp_idf_command="menuconfig"
+.PHONY : esp/idf/menuconfig
+
+## Launch the monitor, build and flash as required
+## @category IDF
+esp/idf/monitor :
+	$(MAKE) esp/idf/base esp_idf_command="-p $(ESP_SERIAL_PORT) build flash monitor"
+.PHONY : esp/idf/monitor
+
+## Force a reconfiguration of the project and run CMake
+## @category IDF
+esp/idf/reconfigure :
+	$(MAKE) esp/idf/base esp_idf_command="reconfigure"
+.PHONY : esp/idf/reconfigure
+
+## Show build size
+## @category IDF
+esp/idf/size :
+	$(MAKE) esp/idf/base esp_idf_command="size"
+.PHONY : esp/idf/size
+
+## Show build sizes by components
+## @category IDF
+esp/idf/size-components :
+	$(MAKE) esp/idf/base esp_idf_command="size-components"
+.PHONY : esp/idf/size-components
+
+## Show build sizes by source files
+## @category IDF
+esp/idf/size-files :
+	$(MAKE) esp/idf/base esp_idf_command="size-files"
+.PHONY : esp/idf/size-files
 
 
 ## Run "black" on all files
@@ -96,25 +181,25 @@ pre-commit_files ?= ""
 ## Run all code quality tools as defined in .pre-commit-config.yaml
 ## @category Code Quality
 util/pre-commit : $(STAMP_TOX_UTIL)
-	tox -q -e util -- pre-commit run $(pre-commit_files) $(pre-commit_id)
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox -q -e util -- pre-commit run $(pre-commit_files) $(pre-commit_id)'
 .PHONY : util/pre-commit
 
 ## Install pre-commit hooks to be executed automatically
 ## @category Code Quality
 util/pre-commit/install : $(STAMP_TOX_UTIL)
-	tox -q -e util -- pre-commit install
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox -q -e util -- pre-commit install'
 .PHONY : util/pre-commit/install
 
 ## Update pre-commit hooks
 ## @category Code Quality
 util/pre-commit/update : $(STAMP_TOX_UTIL)
-	tox -q -e util -- pre-commit autoupdate
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox -q -e util -- pre-commit autoupdate'
 .PHONY : util/pre-commit/update
 
 ## Use "tree" to list project files
 ## @category Utility
 util/tree/project :
-	tree -alI ".git|build|.tox|doxygen" --dirsfirst
+	tree -alI ".esp|.git|.make-stamps|.tox|.tox-env|build|doxygen" --dirsfirst
 .PHONY : util/tree/project
 
 
@@ -123,25 +208,25 @@ util/tree/project :
 ## Build the documentation using "Sphinx"
 ## @category Documentation
 sphinx/build/html : $(STAMP_DOXYGEN) | $(STAMP_TOX_SPHINX)
-	tox -q -e sphinx
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox -q -e sphinx'
 .PHONY : sphinx/build/html
 
 ## Serve the documentation locally on port 8082
 ## @category Documentation
 sphinx/serve/html : sphinx/build/html
-	tox -q -e sphinx-serve
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox -q -e sphinx-serve'
 .PHONY : sphinx/serve/html
 
 ## Check documentation's external links
 ## @category Documentation
 sphinx/linkcheck : | $(STAMP_TOX_SPHINX)
-	tox -q -e sphinx -- make linkcheck
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox -q -e sphinx -- make linkcheck'
 .PHONY : sphinx/linkcheck
 
 ## Serve doxygen's generated documentation locally on port 8082
 ## @category Documentation
 doxygen/serve/html : $(STAMP_DOXYGEN) | $(STAMP_TOX_SPHINX)
-	tox -q -e doxygen-html-serve
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox -q -e doxygen-html-serve'
 .PHONY : doxygen/serve/html
 
 $(STAMP_DOXYGEN) : $(SOURCE_ALL_FILES) $(DOXYGEN_CONFIG)
@@ -152,15 +237,26 @@ $(STAMP_DOXYGEN) : $(SOURCE_ALL_FILES) $(DOXYGEN_CONFIG)
 
 # ### INTERNAL RECIPES
 
-$(STAMP_TOX_UTIL) : $(UTIL_REQUIREMENTS) tox.ini .pre-commit-config.yaml
+$(STAMP_TOX_UTIL) : $(STAMP_TOX) $(UTIL_REQUIREMENTS) tox.ini .pre-commit-config.yaml
 	$(create_dir)
-	tox --recreate -e util
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox --recreate -e util'
 	touch $@
 
-$(STAMP_TOX_SPHINX) : $(DOCUMENTATION_REQUIREMENTS) tox.ini
+$(STAMP_TOX_SPHINX) : $(STAMP_TOX) $(DOCUMENTATION_REQUIREMENTS) tox.ini
 	$(create_dir)
-	tox --recreate -e sphinx
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && tox --recreate -e sphinx'
 	touch $@
+
+$(STAMP_TOX) : $(TOX_REQUIREMENTS) $(TOX_VENV_DIR)/pyvenv.cfg
+	$(create_dir)
+	bash -c 'source $(TOX_ACTIVATION) 1> /dev/null && pip install -r $(TOX_REQUIREMENTS)'
+	touch $@
+
+$(TOX_VENV_DIR)/pyvenv.cfg :
+	python3 -m venv $(TOX_VENV)
+
+$(ESP_TOOLS): $(ESP_IDF)
+	IDF_TOOLS_PATH="$(ESP_TOOLS)" bash -c '$(ESP_IDF)/install.sh esp32'
 
 # utility function to create required directories on the fly
 create_dir = @mkdir -p $(@D)

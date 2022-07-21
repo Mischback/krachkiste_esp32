@@ -400,6 +400,7 @@ static void mnet32_wifi_ap_timed_shutdown(TimerHandle_t timer) {
     xTimerStop(timer, (TickType_t)0);
     xTimerDelete(timer, (TickType_t)0);
 
+    ESP_LOGI(TAG, "Shutting down internal Access Point!");
     mnet32_stop();
 }
 

@@ -1,4 +1,5 @@
-# do not track tox's working directory
+# do not track tox's environment and working directories
+.tox-env/
 .tox/
 
 # do not track the repository's internal make stamps
