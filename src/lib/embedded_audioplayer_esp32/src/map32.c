@@ -145,6 +145,8 @@ static const char* TAG = "map32";
 
 static struct map32_state* state = NULL;
 
+static const char* map32_pipeline_link[3] = {"source", "decoder", "sink"};
+
 
 /* ***** PROTOTYPES ******************************************************** */
 
@@ -188,39 +190,6 @@ static void map32_ctrl_func(void* task_parameters) {
             switch (cmd) {
             case MAP32_CMD_START:
                 ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_START");
-
-                /* Build the audio pipeline, depending on the input source and
-                 * start the corresponding task.
-                 */
-                // TODO(mischback) Implement something to start at the same
-                //                 source / station / track that was played
-                //                 before the ESP32 was shut down.
-                //                 See corresponding TODO in map32_init()!
-
-                /* Actually build the audio pipeline with the (pre-initialized)
-                 * audio elements by linking them together, switching the
-                 * internal state to MAP32_STATUS_READY and then issue the
-                 * "play" command.
-                 */
-                audio_pipeline_register(state->pipeline,
-                                        state->audio_source,
-                                        "source");
-                audio_pipeline_register(state->pipeline,
-                                        state->audio_decoder,
-                                        "decoder");
-                audio_pipeline_register(state->pipeline,
-                                        state->audio_sink,
-                                        "sink");
-                const char* link_tag[3] = {"source", "decoder", "sink"};
-                audio_pipeline_link(state->pipeline, &link_tag[0], 3);
-
-                // TODO(mischback) This is just a temporary hack, this has to be
-                //                 handled in a dedicated logic, depending on
-                //                 the saved "last played" song/station.
-                audio_element_set_uri(
-                    state->audio_source,
-                    "https://wdr-1live-live.icecastssl.wdr.de/wdr/1live/live/"
-                    "mp3/128/stream.mp3");
 
                 state->status = MAP32_STATUS_READY;
                 map32_ctrl_command(MAP32_CMD_PLAY);
@@ -386,6 +355,32 @@ static esp_err_t map32_init(void) {
         ESP_LOGE(TAG, "Could not initialize audio source!");
         return ESP_FAIL;
     }
+
+    /* Actually build the audio pipeline with the (pre-initialized)
+     * audio elements by linking them together.
+     * Actually, the ``audio_source`` is the only variable element in the
+     * pipeline, the decoder and the sink are stable throughout all of the
+     * player's code.
+     */
+    // TODO(mischback) Implement something to start at the same
+    //                 source / station / track that was played
+    //                 before the ESP32 was shut down.
+    //                 See corresponding TODO in map32_init()!
+    audio_pipeline_register(state->pipeline, state->audio_source, "source");
+
+    audio_pipeline_register(state->pipeline, state->audio_decoder, "decoder");
+    audio_pipeline_register(state->pipeline, state->audio_sink, "sink");
+
+    /* Link the elements together */
+    audio_pipeline_link(state->pipeline, &map32_pipeline_link[0], 3);
+
+    // TODO(mischback) This is just a temporary hack, this has to be
+    //                 handled in a dedicated logic, depending on
+    //                 the saved "last played" song/station.
+    audio_element_set_uri(
+        state->audio_source,
+        "https://wdr-1live-live.icecastssl.wdr.de/wdr/1live/live/"
+        "mp3/128/stream.mp3");
 
     /* Create the component's tasks  */
     if (xTaskCreate(map32_ctrl_func,
