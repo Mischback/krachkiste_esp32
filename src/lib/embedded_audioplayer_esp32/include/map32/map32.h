@@ -27,9 +27,42 @@
  */
 #define MAP32_CTRL_TASK_PRIORITY 10
 
+/**
+ * How many retries should be performed while waiting for peripherals.
+ *
+ * @todo Make this configurable!
+ */
 #define MAP32_PERIPHERAL_MAX_RETRY 3
 
+/**
+ * Timespan to wait between checks of the peripherals.
+ *
+ * @todo Make this configurable!
+ */
 #define MAP32_PERIPHERAL_RETRY_WAIT 1000
+
+/**
+ * The host to be used to verify internet connectivity.
+ *
+ * The component does actually perform an HTTP HEAD request to this host.
+ *
+ * @todo Make this configurable!
+ */
+#define MAP32_PERIPHERAL_WIFI_HOST "github.com"
+
+/**
+ * The port to be used to verify internet connectivity.
+ *
+ * @todo Make this configurable!
+ */
+#define MAP32_PERIPHERAL_WIFI_PORT "80"
+
+/**
+ * The actual resource to be requested to verify internet connectivity.
+ *
+ * @todo Make this configurable!
+ */
+#define MAP32_PERIPHERAL_WIFI_PATH "/"
 
 
 /**

@@ -69,6 +69,12 @@
  */
 #include "i2s_stream.h"
 
+/* Provides ESP-IDF's socket implementation
+ * - provided by ESP-IDF's component ``lwip``
+ */
+#include "lwip/netdb.h"
+#include "lwip/sockets.h"
+
 /* ESP-ADF's included decoder
  * - provided by ESP-ADF's component ``esp-adf-libs`` (this is one of the
  *   components that are not provided as source code!)
@@ -461,7 +467,86 @@ static esp_err_t map32_deinit(void) {
 static esp_err_t map32_peripheral_wifi_ready(void) {
     ESP_LOGV(TAG, "map32_peripheral_wifi_ready()");
 
-    return ESP_FAIL;
+    const char* test_request =
+        "HEAD " MAP32_PERIPHERAL_WIFI_PATH
+        " HTTP1.0\r\n"
+        "Host: " MAP32_PERIPHERAL_WIFI_HOST ":" MAP32_PERIPHERAL_WIFI_PORT
+        "\r\n"
+        "User-Agent: map32 (ESP32)\r\n\r\n";
+    const struct addrinfo hints = {
+        .ai_family = AF_INET,
+        .ai_socktype = SOCK_STREAM,
+    };
+    struct addrinfo* res;
+
+    /* perform the DNS lookup */
+    int err = getaddrinfo(MAP32_PERIPHERAL_WIFI_HOST,
+                          MAP32_PERIPHERAL_WIFI_PORT,
+                          &hints,
+                          &res);
+    if (err != 0 || res == NULL) {
+        ESP_LOGI(TAG, "Internet connection not ready!");
+        ESP_LOGD(TAG, "DNS lookup failed...");
+        return ESP_FAIL;
+    }
+
+    /* create the socket */
+    int s = socket(res->ai_family, res->ai_socktype, 0);
+    if (s < 0) {
+        freeaddrinfo(res);
+        ESP_LOGI(TAG, "Internet connection not ready!");
+        ESP_LOGD(TAG, "Could not allocate socket!");
+        return ESP_FAIL;
+    }
+
+    /* connect to host */
+    if (connect(s, res->ai_addr, res->ai_addrlen) != 0) {
+        close(s);
+        freeaddrinfo(res);
+        ESP_LOGI(TAG, "Internet connection not ready!");
+        ESP_LOGD(TAG, "Failed to connect!");
+        return ESP_FAIL;
+    }
+
+    freeaddrinfo(res);
+
+    /* perform the HTTP request */
+    if (write(s, test_request, strlen(test_request)) < 0) {
+        close(s);
+        ESP_LOGI(TAG, "Internet connection not ready!");
+        ESP_LOGD(TAG, "Could not write to socket!");
+        return ESP_FAIL;
+    }
+
+    /* set socket timeouts */
+    struct timeval receiving_timeout;
+    receiving_timeout.tv_sec = 5;
+    receiving_timeout.tv_usec = 0;
+    if (setsockopt(s,
+                   SOL_SOCKET,
+                   SO_RCVTIMEO,
+                   &receiving_timeout,
+                   sizeof(receiving_timeout)) < 0) {
+        close(s);
+        ESP_LOGI(TAG, "Internet connection not ready!");
+        ESP_LOGD(TAG, "Could not set socket timeout!");
+        return ESP_FAIL;
+    }
+
+    /* read the response */
+    int r = 0;
+    char recv_buf[64];
+    do {
+        bzero(recv_buf, sizeof(recv_buf));
+        r = read(s, recv_buf, sizeof(recv_buf) - 1);
+        for (int i = 0; i < r; i++) {
+            putchar(recv_buf[i]);
+        }
+    } while (r > 0);
+
+    close(s);
+
+    return ESP_OK;
 }
 
 esp_err_t map32_start(void) {
