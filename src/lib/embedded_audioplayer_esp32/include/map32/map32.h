@@ -27,6 +27,10 @@
  */
 #define MAP32_CTRL_TASK_PRIORITY 10
 
+#define MAP32_PERIPHERAL_MAX_RETRY 3
+
+#define MAP32_PERIPHERAL_RETRY_WAIT 1000
+
 
 /**
  * The player can handle the following commands.
@@ -46,6 +50,7 @@ typedef enum {
     MAP32_CMD_NEXT_TRACK,
     MAP32_CMD_VOLUP,
     MAP32_CMD_VOLDOWN,
+    MAP32_CMD_PERIPHERALS_READY,
 } map32_command;
 
 // TODO(mischback) Actually document this function, as soon as the prototype is

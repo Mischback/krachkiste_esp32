@@ -114,6 +114,10 @@ typedef enum {
  */
 typedef enum {
     MAP32_STATUS_NOT_READY = 0,
+    /* The player is considered READY when the audio_pipeline is set up *and*
+     * the required peripherals (like WiFi connection, SD card access, ...) are
+     * ready.
+     */
     MAP32_STATUS_READY,
     MAP32_STATUS_PLAYING,
 } map32_status;
@@ -143,8 +147,14 @@ struct map32_state {
  */
 static const char* TAG = "map32";
 
+/**
+ * The internal state of this component.
+ */
 static struct map32_state* state = NULL;
 
+/**
+ * The component only provides one pipeline, so this may be provided once.
+ */
 static const char* map32_pipeline_link[3] = {"source", "decoder", "sink"};
 
 
@@ -154,6 +164,8 @@ static audio_element_handle_t map32_audio_source_init(map32_source source);
 static void map32_ctrl_func(void* task_parameters);
 static esp_err_t map32_init(void);
 static esp_err_t map32_deinit(void);
+static esp_err_t map32_peripheral_wifi_ready(void);
+static esp_err_t map32_wait_for_peripheral(map32_source source);
 
 
 /* ***** FUNCTIONS ********************************************************* */
@@ -190,6 +202,17 @@ static void map32_ctrl_func(void* task_parameters) {
             switch (cmd) {
             case MAP32_CMD_START:
                 ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_START");
+
+                if (map32_wait_for_peripheral(state->source) == ESP_OK) {
+                    map32_ctrl_command(MAP32_CMD_PERIPHERALS_READY);
+                } else {
+                    ESP_LOGW(TAG,
+                             "Required peripheral for source failed to become "
+                             "ready.");
+                }
+                break;
+            case MAP32_CMD_PERIPHERALS_READY:
+                ESP_LOGD(TAG, "map32_ctrl_func: MAP32_CMD_PERIPHERALS_READY");
 
                 state->status = MAP32_STATUS_READY;
                 map32_ctrl_command(MAP32_CMD_PLAY);
@@ -434,6 +457,13 @@ static esp_err_t map32_deinit(void) {
     return ESP_OK;
 }
 
+// TODO(mischback) Add documentation!
+static esp_err_t map32_peripheral_wifi_ready(void) {
+    ESP_LOGV(TAG, "map32_peripheral_wifi_ready()");
+
+    return ESP_FAIL;
+}
+
 esp_err_t map32_start(void) {
     ESP_LOGV(TAG, "map32_start()");
 
@@ -453,4 +483,29 @@ esp_err_t map32_stop(void) {
     //                 component's task (see ``mnet32.c``)
 
     return ESP_OK;
+}
+
+// TODO(mischback) Add documentation!
+static esp_err_t map32_wait_for_peripheral(map32_source source) {
+    ESP_LOGV(TAG, "map32_wait_for_peripheral()");
+
+    uint8_t wait_counter = 0;
+
+    ESP_LOGI(TAG, "Waiting for peripherals to become ready!");
+
+    do {
+        ESP_LOGV(TAG, "Waiting for peripheral...");
+        switch (source) {
+        case MAP32_SOURCE_HTTP:
+            if (map32_peripheral_wifi_ready() == ESP_OK) {
+                return ESP_OK;
+            }
+            break;
+        default:
+            return ESP_FAIL;
+        }
+        vTaskDelay(pdMS_TO_TICKS(MAP32_PERIPHERAL_RETRY_WAIT));
+    } while (++wait_counter < MAP32_PERIPHERAL_MAX_RETRY);
+
+    return ESP_FAIL;
 }

@@ -120,10 +120,5 @@ void app_main(void) {  // cppcheck-suppress unusedFunction
     mnet32_start();
 
     // start the audio player
-    // FIXME(mischback) map32 needs a working network connection to operate. As
-    //                  of now, a delay is introduced "manually", but obviously
-    //                  this should be included in the player's logic and
-    //                  removed here.
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
     map32_start();
 }
